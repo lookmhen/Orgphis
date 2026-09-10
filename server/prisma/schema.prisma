@@ -1,0 +1,179 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model TargetGroup {
+  id          String     @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  targets     Target[]
+  campaigns   Campaign[]
+}
+
+model Target {
+  id            String          @id @default(uuid())
+  email         String
+  firstName     String?
+  lastName      String?
+  employeeId    String?
+  department    String?
+  position      String?
+  targetGroupId String
+  targetGroup   TargetGroup     @relation(fields: [targetGroupId], references: [id], onDelete: Cascade)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  campaignTargets CampaignTarget[]
+
+  @@unique([email, targetGroupId])
+  @@index([email])
+  @@index([department])
+}
+
+model SmtpProfile {
+  id             String     @id @default(uuid())
+  name           String
+  host           String
+  port           Int
+  secure         Boolean    @default(false)
+  username       String?
+  password       String?
+  fromName       String
+  fromEmail      String
+  rateLimit      Int        @default(5)  // emails per batch
+  delaySeconds   Int        @default(2)  // delay between batches
+  maxConnections Int        @default(3)
+  customHeaders  String?    // JSON string for custom headers
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  campaigns      Campaign[]
+}
+
+model EmailTemplate {
+  id          String     @id @default(uuid())
+  name        String
+  subject     String
+  bodyHtml    String
+  bodyText    String?
+  isPreset    Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  campaigns   Campaign[]
+}
+
+model LandingPageTemplate {
+  id               String           @id @default(uuid())
+  name             String
+  pageTitle        String
+  logoUrl          String?
+  headerText       String?
+  subHeaderText    String?
+  submitButtonText String           @default("Sign In")
+  showEmpIdField   Boolean          @default(true)
+  showEmailField   Boolean          @default(true)
+  showPasswordField Boolean         @default(true)
+  postSubmitAction String           @default("AWARENESS_PAGE") // AWARENESS_PAGE, REDIRECT, SIMULATED_ERROR
+  redirectUrl      String?
+  awarenessContent String?
+  customHtml       String?
+  isPreset         Boolean          @default(false)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  campaigns        Campaign[]
+}
+
+model Campaign {
+  id                    String              @id @default(uuid())
+  name                  String
+  description           String?
+  status                String              @default("DRAFT") // DRAFT, SCHEDULED, RUNNING, COMPLETED, CANCELLED
+  createdById           String?
+  targetGroupId         String
+  targetGroup           TargetGroup         @relation(fields: [targetGroupId], references: [id], onDelete: Restrict)
+  emailTemplateId       String
+  emailTemplate         EmailTemplate       @relation(fields: [emailTemplateId], references: [id], onDelete: Restrict)
+  landingPageTemplateId String
+  landingPageTemplate   LandingPageTemplate @relation(fields: [landingPageTemplateId], references: [id], onDelete: Restrict)
+  smtpProfileId         String
+  smtpProfile           SmtpProfile         @relation(fields: [smtpProfileId], references: [id], onDelete: Restrict)
+  scheduledAt           DateTime?
+  startedAt             DateTime?
+  endedAt               DateTime?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  campaignTargets       CampaignTarget[]
+  events                EventLog[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model CampaignTarget {
+  id             String     @id @default(uuid())
+  campaignId     String
+  campaign       Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  targetId       String
+  target         Target     @relation(fields: [targetId], references: [id], onDelete: Restrict)
+  token          String     @unique // High-entropy URL-safe token
+  expiresAt      DateTime?
+  
+  // Dispatch queue status
+  dispatchStatus String     @default("PENDING") // PENDING, QUEUED, SENDING, SENT, FAILED
+  sendAttempts   Int        @default(0)
+  lastError      String?
+  
+  // Tracking flags (First Occurrence)
+  isSent         Boolean    @default(false)
+  isOpened       Boolean    @default(false)
+  isClicked      Boolean    @default(false)
+  isSubmitted    Boolean    @default(false)
+  isReported     Boolean    @default(false)
+  sentAt         DateTime?
+  openedAt       DateTime?
+  clickedAt      DateTime?
+  submittedAt    DateTime?
+  reportedAt     DateTime?
+  events         EventLog[]
+
+  @@unique([campaignId, targetId])
+  @@index([token])
+  @@index([campaignId, dispatchStatus])
+  @@index([campaignId, isSent, isClicked, isSubmitted])
+}
+
+model EventLog {
+  id               String          @id @default(uuid())
+  campaignId       String
+  campaign         Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaignTargetId String?
+  campaignTarget   CampaignTarget? @relation(fields: [campaignTargetId], references: [id], onDelete: SetNull)
+  eventType        String          // SENT, OPENED, CLICKED, SUBMITTED, REPORTED
+  ipAddress        String?
+  userAgent        String?
+  isBot            Boolean         @default(false)
+  metadata         String?         // JSON string for telemetry context
+  createdAt        DateTime        @default(now())
+
+  @@index([campaignId, eventType])
+  @@index([campaignTargetId, createdAt])
+  @@index([campaignId, createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String
+  resource  String?
+  ipAddress String?
+  details   String?
+  createdAt DateTime @default(now())
+
+  @@index([action])
+  @@index([createdAt])
+}

@@ -1,3 +1,13 @@
-node_modules/
+﻿node_modules/
 /logs/*
 data.csv
+.env
+.env.*
+dist/
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+client/dist/
+server/dist/
