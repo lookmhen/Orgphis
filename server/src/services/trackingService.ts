@@ -14,7 +14,7 @@ interface BufferedEvent {
 class TrackingService {
   private eventBuffer: BufferedEvent[] = [];
   private flushTimer: NodeJS.Timeout | null = null;
-  private socIpWhitelist: Set<string> = new Set(['127.0.0.1', '::1']); // Default local SOC testing
+  private socIpWhitelist: Set<string> = new Set([]); // SOC team IPs to exclude from statistics
 
   constructor() {
     // Flush buffer every 1.5 seconds to handle spike traffic without locking SQLite

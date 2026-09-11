@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { Send, Play, Square, Download, Plus, CheckCircle2, Clock } from 'lucide-react';
+﻿import React, { useEffect, useState } from 'react';
+import { Send, Play, Square, Download, Plus, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export const Campaigns: React.FC = () => {
   const [campaigns, setCampaigns] = useState<any[]>([]);
@@ -24,9 +25,8 @@ export const Campaigns: React.FC = () => {
       .then(setCampaigns);
   };
 
-  useEffect(() => {
-    fetchCampaigns();
-    Promise.all([
+  const loadDependencies = () => {
+    return Promise.all([
       fetch('/api/targets/groups').then(r => r.json()),
       fetch('/api/templates/emails').then(r => r.json()),
       fetch('/api/templates/landing-pages').then(r => r.json()),
@@ -36,15 +36,33 @@ export const Campaigns: React.FC = () => {
       setEmailTemplates(emails);
       setLandingTemplates(landings);
       setSmtpProfiles(smtps);
-      if (groups.length > 0) setForm(f => ({ ...f, targetGroupId: groups[0].id }));
-      if (emails.length > 0) setForm(f => ({ ...f, emailTemplateId: emails[0].id }));
-      if (landings.length > 0) setForm(f => ({ ...f, landingPageTemplateId: landings[0].id }));
-      if (smtps.length > 0) setForm(f => ({ ...f, smtpProfileId: smtps[0].id }));
+      setForm(f => ({
+        ...f,
+        targetGroupId: f.targetGroupId || (groups.length > 0 ? groups[0].id : ''),
+        emailTemplateId: f.emailTemplateId || (emails.length > 0 ? emails[0].id : ''),
+        landingPageTemplateId: f.landingPageTemplateId || (landings.length > 0 ? landings[0].id : ''),
+        smtpProfileId: f.smtpProfileId || (smtps.length > 0 ? smtps[0].id : '')
+      }));
     });
+  };
+
+  useEffect(() => {
+    fetchCampaigns();
+    loadDependencies();
   }, []);
+
+  const handleOpenCreateModal = () => {
+    loadDependencies();
+    setShowCreateModal(true);
+  };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.targetGroupId || !form.emailTemplateId || !form.landingPageTemplateId || !form.smtpProfileId) {
+      alert('กรุณาเลือกข้อมูลให้ครบทุกช่อง (กลุ่มเป้าหมาย, เทมเพลตอีเมล, Landing Page, และ SMTP Profile)');
+      return;
+    }
+
     const res = await fetch('/api/campaigns', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -53,7 +71,18 @@ export const Campaigns: React.FC = () => {
 
     if (res.ok) {
       setShowCreateModal(false);
+      setForm({
+        name: '',
+        description: '',
+        targetGroupId: targetGroups[0]?.id || '',
+        emailTemplateId: emailTemplates[0]?.id || '',
+        landingPageTemplateId: landingTemplates[0]?.id || '',
+        smtpProfileId: smtpProfiles[0]?.id || ''
+      });
       fetchCampaigns();
+    } else {
+      const err = await res.json();
+      alert('สร้างแคมเปญไม่สำเร็จ: ' + (err.error || 'Unknown error'));
     }
   };
 
@@ -83,7 +112,7 @@ export const Campaigns: React.FC = () => {
           <p className="text-sm text-gray-500 mt-1">สร้าง รันคิวส่งอีเมลจำลอง ติดตามผล และดาวน์โหลดรายงานสถิติ</p>
         </div>
         <button
-          onClick={() => setShowCreateModal(true)}
+          onClick={handleOpenCreateModal}
           className="flex items-center space-x-1.5 px-4 py-2 bg-forest text-white rounded-xl text-xs font-semibold hover:bg-forest-hover shadow-soft"
         >
           <Plus className="w-4 h-4" />
@@ -114,7 +143,8 @@ export const Campaigns: React.FC = () => {
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
                     กลุ่มผู้รับ: <span className="font-semibold text-deep-slate">{c.targetGroup?.name}</span> &bull;
-                    เทมเพลต: <span className="font-semibold text-deep-slate">{c.emailTemplate?.name}</span>
+                    เทมเพลต: <span className="font-semibold text-deep-slate">{c.emailTemplate?.name}</span> &bull;
+                    SMTP Profile: <span className="font-semibold text-deep-slate">{c.smtpProfile?.name}</span>
                   </p>
                 </div>
 
@@ -141,47 +171,56 @@ export const Campaigns: React.FC = () => {
 
                   <a
                     href={`/api/campaigns/${c.id}/export`}
-                    className="flex items-center space-x-1 px-3 py-1.5 border border-stone-border rounded-lg text-xs font-semibold text-gray-700 hover:bg-stone-muted"
+                    download
+                    className="flex items-center space-x-1 px-3 py-1.5 border border-stone-border rounded-lg text-xs font-semibold text-gray-700 hover:bg-stone-muted transition-all"
                   >
                     <Download className="w-3.5 h-3.5" />
-                    <span>Export CSV</span>
+                    <span>CSV Report</span>
                   </a>
                 </div>
               </div>
 
-              {/* Progress Summary Cards */}
-              <div className="grid grid-cols-5 gap-3 pt-2 border-t border-stone-border">
-                <div className="p-2.5 bg-stone-muted/40 rounded-lg text-center">
-                  <span className="text-[11px] text-gray-500 block">Sent</span>
-                  <span className="text-sm font-bold text-deep-slate">{c.metrics?.sent || 0}</span>
-                </div>
-                <div className="p-2.5 bg-stone-muted/40 rounded-lg text-center">
-                  <span className="text-[11px] text-gray-500 block">Opened</span>
-                  <span className="text-sm font-bold text-amber-600">{c.metrics?.opened || 0}</span>
-                </div>
-                <div className="p-2.5 bg-stone-muted/40 rounded-lg text-center">
-                  <span className="text-[11px] text-gray-500 block">Clicked</span>
-                  <span className="text-sm font-bold text-amber-terracotta">{c.metrics?.clicked || 0}</span>
-                </div>
-                <div className="p-2.5 bg-red-50/60 rounded-lg text-center">
-                  <span className="text-[11px] text-red-600 block font-medium">Compromised</span>
-                  <span className="text-sm font-bold text-red-700">{c.metrics?.submitted || 0}</span>
-                </div>
-                <div className="p-2.5 bg-forest-light/60 rounded-lg text-center">
-                  <span className="text-[11px] text-forest block font-medium">Reported</span>
-                  <span className="text-sm font-bold text-forest">{c.metrics?.reported || 0}</span>
-                </div>
+              {/* Mini Stats Funnel */}
+              <div className="grid grid-cols-5 gap-3 pt-2">
+                {[
+                  { label: 'ส่งแล้ว (Sent)', val: c.stats?.sent || 0, color: 'text-deep-slate' },
+                  { label: 'เปิดอ่าน (Opened)', val: c.stats?.opened || 0, color: 'text-forest' },
+                  { label: 'คลิกลิงก์ (Clicked)', val: c.stats?.clicked || 0, color: 'text-amber-terracotta' },
+                  { label: 'กรอกฟอร์ม (Submitted)', val: c.stats?.submitted || 0, color: 'text-red-600 font-bold' },
+                  { label: 'แจ้งเบาะแส (Reported)', val: c.stats?.reported || 0, color: 'text-blue-600 font-bold' }
+                ].map((s, idx) => (
+                  <div key={idx} className="bg-stone-muted/40 p-2.5 rounded-lg border border-stone-border/40 text-center">
+                    <p className="text-[11px] text-gray-500">{s.label}</p>
+                    <p className={`text-base font-mono font-semibold mt-0.5 ${s.color}`}>{s.val}</p>
+                  </div>
+                ))}
               </div>
             </div>
           ))
         )}
       </div>
 
-      {/* Create Campaign Modal */}
+      {/* CREATE CAMPAIGN MODAL */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-stone-border space-y-4">
-            <h3 className="font-bold text-deep-slate text-base">สร้างแคมเปญ Phishing Simulation ใหม่</h3>
+            <h3 className="font-bold text-deep-slate text-base">➕ สร้างแคมเปญทดสอบ Phishing</h3>
+            
+            {/* Warning if no targets or smtps */}
+            {(targetGroups.length === 0 || smtpProfiles.length === 0) && (
+              <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-xs space-y-1">
+                <p className="font-semibold flex items-center space-x-1">
+                  <AlertCircle className="w-4 h-4 text-amber-terracotta" />
+                  <span>ข้อมูลที่จำเป็นยังไม่ครบ:</span>
+                </p>
+                {targetGroups.length === 0 && (
+                  <p>&bull; ยังไม่มีกลุ่มเป้าหมาย (กรุณาไปสร้างที่เมนู <Link to="/targets" className="underline font-semibold">Targets</Link>)</p>
+                )}
+                {smtpProfiles.length === 0 && (
+                  <p>&bull; ยังไม่มีโปรไฟล์การส่งอีเมล (กรุณาไปสร้างที่เมนู <Link to="/smtp" className="underline font-semibold">SMTP Profiles</Link>)</p>
+                )}
+              </div>
+            )}
 
             <form onSubmit={handleCreate} className="space-y-3 text-xs">
               <div>
@@ -199,19 +238,25 @@ export const Campaigns: React.FC = () => {
               <div>
                 <label className="block font-medium text-gray-700 mb-1">กลุ่มเป้าหมาย (Target Group)</label>
                 <select
+                  required
                   value={form.targetGroupId}
                   onChange={e => setForm({ ...form, targetGroupId: e.target.value })}
                   className="w-full p-2 border border-stone-border rounded-lg outline-none focus:border-forest"
                 >
-                  {targetGroups.map(g => (
-                    <option key={g.id} value={g.id}>{g.name} ({g._count?.targets || 0} คน)</option>
-                  ))}
+                  {targetGroups.length === 0 ? (
+                    <option value="">-- ยังไม่มีกลุ่มเป้าหมาย กรุณาสร้างที่หน้า Targets --</option>
+                  ) : (
+                    targetGroups.map(g => (
+                      <option key={g.id} value={g.id}>{g.name} ({g._count?.targets || 0} คน)</option>
+                    ))
+                  )}
                 </select>
               </div>
 
               <div>
                 <label className="block font-medium text-gray-700 mb-1">Email Template</label>
                 <select
+                  required
                   value={form.emailTemplateId}
                   onChange={e => setForm({ ...form, emailTemplateId: e.target.value })}
                   className="w-full p-2 border border-stone-border rounded-lg outline-none focus:border-forest"
@@ -225,6 +270,7 @@ export const Campaigns: React.FC = () => {
               <div>
                 <label className="block font-medium text-gray-700 mb-1">Landing Page Template</label>
                 <select
+                  required
                   value={form.landingPageTemplateId}
                   onChange={e => setForm({ ...form, landingPageTemplateId: e.target.value })}
                   className="w-full p-2 border border-stone-border rounded-lg outline-none focus:border-forest"
@@ -236,15 +282,20 @@ export const Campaigns: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-medium text-gray-700 mb-1">SMTP Profile</label>
+                <label className="block font-medium text-gray-700 mb-1">SMTP Profile (เซิร์ฟเวอร์ส่งอีเมล)</label>
                 <select
+                  required
                   value={form.smtpProfileId}
                   onChange={e => setForm({ ...form, smtpProfileId: e.target.value })}
                   className="w-full p-2 border border-stone-border rounded-lg outline-none focus:border-forest"
                 >
-                  {smtpProfiles.map(s => (
-                    <option key={s.id} value={s.id}>{s.name} ({s.fromEmail})</option>
-                  ))}
+                  {smtpProfiles.length === 0 ? (
+                    <option value="">-- ยังไม่มี SMTP Profile --</option>
+                  ) : (
+                    smtpProfiles.map(s => (
+                      <option key={s.id} value={s.id}>{s.name} ({s.fromEmail})</option>
+                    ))
+                  )}
                 </select>
               </div>
 
@@ -258,7 +309,12 @@ export const Campaigns: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-forest text-white hover:bg-forest-hover shadow-soft"
+                  disabled={targetGroups.length === 0 || smtpProfiles.length === 0}
+                  className={`px-4 py-2 rounded-xl text-xs font-semibold shadow-soft ${
+                    targetGroups.length === 0 || smtpProfiles.length === 0
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-forest text-white hover:bg-forest-hover'
+                  }`}
                 >
                   สร้างแคมเปญ
                 </button>

@@ -13,6 +13,7 @@ campaignsRouter.get('/', async (_req: Request, res: Response) => {
         targetGroup: { select: { name: true } },
         emailTemplate: { select: { name: true, subject: true } },
         landingPageTemplate: { select: { name: true } },
+        smtpProfile: { select: { name: true, fromEmail: true } },
         _count: {
           select: { campaignTargets: true }
         }
@@ -48,18 +49,21 @@ campaignsRouter.get('/', async (_req: Request, res: Response) => {
         const compromiseRate = sent > 0 ? ((submitted / sent) * 100).toFixed(1) : '0';
         const reportRate = sent > 0 ? ((reported / sent) * 100).toFixed(1) : '0';
 
+        const statsObj = {
+          total: totalTargets,
+          sent,
+          opened,
+          clicked,
+          submitted,
+          reported,
+          compromiseRate: parseFloat(compromiseRate),
+          reportRate: parseFloat(reportRate)
+        };
+
         return {
           ...c,
-          metrics: {
-            total: totalTargets,
-            sent,
-            opened,
-            clicked,
-            submitted,
-            reported,
-            compromiseRate: parseFloat(compromiseRate),
-            reportRate: parseFloat(reportRate)
-          }
+          metrics: statsObj,
+          stats: statsObj
         };
       })
     );

@@ -44,18 +44,24 @@ class DispatchService {
       });
 
       // Initialize Nodemailer connection pool
+      const isPort587 = Number(campaign.smtpProfile.port) === 587;
       const transporter = nodemailer.createTransport({
         pool: true,
-        host: campaign.smtpProfile.host,
-        port: campaign.smtpProfile.port,
-        secure: campaign.smtpProfile.secure,
+        host: campaign.smtpProfile.host.trim(),
+        port: Number(campaign.smtpProfile.port),
+        secure: campaign.smtpProfile.secure ?? false,
+        requireTLS: isPort587,
         maxConnections: campaign.smtpProfile.maxConnections || 3,
-        connectionTimeout: 10000,
-        greetingTimeout: 5000,
-        socketTimeout: 15000,
+        connectionTimeout: 15000,
+        greetingTimeout: 7000,
+        socketTimeout: 20000,
+        tls: {
+          ciphers: 'SSLv3',
+          rejectUnauthorized: false
+        },
         auth: campaign.smtpProfile.username ? {
-          user: campaign.smtpProfile.username,
-          pass: campaign.smtpProfile.password || ''
+          user: campaign.smtpProfile.username.trim(),
+          pass: (campaign.smtpProfile.password || '').trim()
         } : undefined
       });
 

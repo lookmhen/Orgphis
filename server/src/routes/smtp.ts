@@ -91,12 +91,18 @@ smtpRouter.post('/:id/test', async (req: Request, res: Response) => {
     const smtp = await prisma.smtpProfile.findUnique({ where: { id } });
     if (!smtp) return res.status(404).json({ error: 'SMTP profile not found' });
 
+    const isPort587 = Number(smtp.port) === 587;
     const transporter = nodemailer.createTransport({
-      host: smtp.host,
-      port: smtp.port,
-      secure: smtp.secure,
-      auth: smtp.username ? { user: smtp.username, pass: smtp.password || '' } : undefined,
-      connectionTimeout: 7000
+      host: smtp.host.trim(),
+      port: Number(smtp.port),
+      secure: smtp.secure ?? false,
+      requireTLS: isPort587,
+      auth: smtp.username ? { user: smtp.username.trim(), pass: (smtp.password || '').trim() } : undefined,
+      connectionTimeout: 10000,
+      tls: {
+        ciphers: 'SSLv3',
+        rejectUnauthorized: false
+      }
     });
 
     await transporter.verify();

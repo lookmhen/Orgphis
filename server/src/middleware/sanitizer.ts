@@ -43,8 +43,15 @@ export function sanitizeObject(obj: any): any {
 
 /**
  * Top-level Express Middleware to enforce Zero Password Storage Policy
+ * Drops victim passwords submitted on phishing landing pages
+ * (Exempts administrative SMTP configuration route /api/smtp-profiles)
  */
 export function zeroPasswordSanitizer(req: Request, _res: Response, next: NextFunction): void {
+  // Allow system administrators to configure and save SMTP mail server credentials
+  if (req.path.startsWith('/api/smtp-profiles')) {
+    return next();
+  }
+
   if (req.body && typeof req.body === 'object') {
     req.body = sanitizeObject(req.body);
   }

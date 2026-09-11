@@ -97,3 +97,57 @@ targetsRouter.post('/groups/:id/import', async (req: Request, res: Response) => 
     return res.status(500).json({ error: 'Failed to import targets' });
   }
 });
+
+// ADD single target to group
+targetsRouter.post('/groups/:id/targets', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { email, firstName, lastName, employeeId, department, position } = req.body;
+
+  if (!email || !email.includes('@')) {
+    return res.status(400).json({ error: 'Valid email address is required' });
+  }
+
+  try {
+    const cleanEmail = email.trim().toLowerCase();
+    const target = await prisma.target.upsert({
+      where: {
+        email_targetGroupId: {
+          email: cleanEmail,
+          targetGroupId: id
+        }
+      },
+      update: {
+        firstName,
+        lastName,
+        employeeId,
+        department,
+        position
+      },
+      create: {
+        email: cleanEmail,
+        firstName,
+        lastName,
+        employeeId,
+        department: department || 'General',
+        position,
+        targetGroupId: id
+      }
+    });
+
+    return res.status(201).json(target);
+  } catch (err: any) {
+    console.error('[Targets] Add single target error:', err);
+    return res.status(500).json({ error: 'Failed to add target: ' + err.message });
+  }
+});
+
+// DELETE target
+targetsRouter.delete('/groups/:id/targets/:targetId', async (req: Request, res: Response) => {
+  const { targetId } = req.params;
+  try {
+    await prisma.target.delete({ where: { id: targetId } });
+    return res.json({ success: true });
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Failed to delete target' });
+  }
+});
