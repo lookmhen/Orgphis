@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Upload, Users, Plus, Trash2, UserPlus, Download, FileSpreadsheet, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export const Targets: React.FC = () => {
@@ -73,7 +73,8 @@ export const Targets: React.FC = () => {
         setNewGroupName('');
         fetchGroups(created.id);
       } else {
-        alert('ไม่สามารถสร้างกลุ่มเป้าหมายได้');
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || 'ไม่สามารถสร้างกลุ่มเป้าหมายได้');
       }
     } catch (err: any) {
       alert('Error: ' + err.message);
