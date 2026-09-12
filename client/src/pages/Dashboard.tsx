@@ -30,7 +30,6 @@ import {
 interface DepartmentStat {
   department: string;
   sent: number;
-  opened: number;
   clicked: number;
   submitted: number;
   reported: number;
@@ -45,7 +44,6 @@ interface CampaignTrend {
   round: string;
   date: string;
   sent: number;
-  opened: number;
   clicked: number;
   submitted: number;
   reported: number;
@@ -137,7 +135,6 @@ export const Dashboard: React.FC = () => {
 
   // Aggregate global metrics from campaigns
   let totalSent = 0;
-  let totalOpened = 0;
   let totalClicked = 0;
   let totalSubmitted = 0;
   let totalReported = 0;
@@ -145,7 +142,6 @@ export const Dashboard: React.FC = () => {
   campaigns.forEach(c => {
     if (c.metrics) {
       totalSent += c.metrics.sent || 0;
-      totalOpened += c.metrics.opened || 0;
       totalClicked += c.metrics.clicked || 0;
       totalSubmitted += c.metrics.submitted || 0;
       totalReported += c.metrics.reported || 0;
@@ -157,9 +153,9 @@ export const Dashboard: React.FC = () => {
 
   const funnelData = [
     { stage: 'Sent (ส่งแล้ว)', count: totalSent, fill: '#6B7280' },
-    { stage: 'Opened (เปิดอ่าน)', count: totalOpened, fill: '#D97706' },
     { stage: 'Clicked (คลิกลิงก์)', count: totalClicked, fill: '#D97736' },
-    { stage: 'Compromised (เผลอกรอก)', count: totalSubmitted, fill: '#DC2626' }
+    { stage: 'Compromised (เผลอกรอก)', count: totalSubmitted, fill: '#DC2626' },
+    { stage: 'Reported (แจ้งเตือน)', count: totalReported, fill: '#3A5A40' }
   ];
 
   return (

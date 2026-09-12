@@ -40,7 +40,6 @@ dashboardRouter.get('/insights', async (_req: Request, res: Response) => {
     const deptMap = new Map<string, {
       department: string;
       sent: number;
-      opened: number;
       clicked: number;
       submitted: number;
       reported: number;
@@ -52,7 +51,6 @@ dashboardRouter.get('/insights', async (_req: Request, res: Response) => {
         deptMap.set(deptName, {
           department: deptName,
           sent: 0,
-          opened: 0,
           clicked: 0,
           submitted: 0,
           reported: 0
@@ -60,7 +58,6 @@ dashboardRouter.get('/insights', async (_req: Request, res: Response) => {
       }
       const entry = deptMap.get(deptName)!;
       if (ct.isSent) entry.sent += 1;
-      if (ct.isOpened) entry.opened += 1;
       if (ct.isClicked) entry.clicked += 1;
       if (ct.isSubmitted) entry.submitted += 1;
       if (ct.isReported) entry.reported += 1;
@@ -87,7 +84,6 @@ dashboardRouter.get('/insights', async (_req: Request, res: Response) => {
         campaignTargets: {
           select: {
             isSent: true,
-            isOpened: true,
             isClicked: true,
             isSubmitted: true,
             isReported: true
@@ -99,14 +95,12 @@ dashboardRouter.get('/insights', async (_req: Request, res: Response) => {
 
     const campaignTrends = campaigns.map((c, index) => {
       let sent = 0;
-      let opened = 0;
       let clicked = 0;
       let submitted = 0;
       let reported = 0;
 
       for (const ct of c.campaignTargets) {
         if (ct.isSent) sent += 1;
-        if (ct.isOpened) opened += 1;
         if (ct.isClicked) clicked += 1;
         if (ct.isSubmitted) submitted += 1;
         if (ct.isReported) reported += 1;
@@ -122,7 +116,6 @@ dashboardRouter.get('/insights', async (_req: Request, res: Response) => {
         round: `แคมเปญ ${index + 1}`,
         date: dateStr,
         sent,
-        opened,
         clicked,
         submitted,
         reported,

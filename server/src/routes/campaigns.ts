@@ -31,13 +31,12 @@ campaignsRouter.get('/', async (_req: Request, res: Response) => {
     const enriched = await Promise.all(
       campaigns.map(async (c) => {
         const stats = await prisma.campaignTarget.groupBy({
-          by: ['isSent', 'isOpened', 'isClicked', 'isSubmitted', 'isReported'],
+          by: ['isSent', 'isClicked', 'isSubmitted', 'isReported'],
           where: { campaignId: c.id },
           _count: { _all: true }
         });
 
         let sent = 0;
-        let opened = 0;
         let clicked = 0;
         let submitted = 0;
         let reported = 0;
@@ -45,7 +44,6 @@ campaignsRouter.get('/', async (_req: Request, res: Response) => {
         for (const s of stats) {
           const count = s._count._all;
           if (s.isSent) sent += count;
-          if (s.isOpened) opened += count;
           if (s.isClicked) clicked += count;
           if (s.isSubmitted) submitted += count;
           if (s.isReported) reported += count;
@@ -58,7 +56,6 @@ campaignsRouter.get('/', async (_req: Request, res: Response) => {
         const statsObj = {
           total: totalTargets,
           sent,
-          opened,
           clicked,
           submitted,
           reported,
@@ -346,20 +343,19 @@ campaignsRouter.get('/:id/export', async (req: Request, res: Response) => {
     res.setHeader('Content-Disposition', `attachment; filename="campaign-${id}-report.csv"`);
 
     // UTF-8 BOM for Excel compatibility
-    res.write('\ufeffEmail,Name,Department,Status,SentAt,OpenedAt,ClickedAt,SubmittedAt,ReportedAt\n');
+    res.write('\ufeffEmail,Name,Department,Status,SentAt,ClickedAt,SubmittedAt,ReportedAt\n');
 
     for (const ct of campaign.campaignTargets) {
       const name = `"${(`${ct.target.firstName || ''} ${ct.target.lastName || ''}`).trim()}"`;
       const email = `"${ct.target.email}"`;
       const dept = `"${ct.target.department || ''}"`;
-      const status = ct.isSubmitted ? 'COMPROMISED' : ct.isReported ? 'REPORTED' : ct.isClicked ? 'CLICKED' : ct.isOpened ? 'OPENED' : ct.isSent ? 'SENT' : 'PENDING';
+      const status = ct.isSubmitted ? 'COMPROMISED' : ct.isReported ? 'REPORTED' : ct.isClicked ? 'CLICKED' : ct.isSent ? 'SENT' : 'PENDING';
       const sent = ct.sentAt ? `"${ct.sentAt.toISOString()}"` : '""';
-      const opened = ct.openedAt ? `"${ct.openedAt.toISOString()}"` : '""';
       const clicked = ct.clickedAt ? `"${ct.clickedAt.toISOString()}"` : '""';
       const submitted = ct.submittedAt ? `"${ct.submittedAt.toISOString()}"` : '""';
       const reported = ct.reportedAt ? `"${ct.reportedAt.toISOString()}"` : '""';
 
-      res.write(`${email},${name},${dept},${status},${sent},${opened},${clicked},${submitted},${reported}\n`);
+      res.write(`${email},${name},${dept},${status},${sent},${clicked},${submitted},${reported}\n`);
     }
 
     res.end();

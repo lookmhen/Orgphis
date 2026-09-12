@@ -13,42 +13,15 @@ const TRANSPARENT_GIF_BUFFER = Buffer.from(
 );
 
 /**
- * 1x1 Tracking Pixel Endpoint for Email Open
+ * 1x1 Tracking Pixel Endpoint for Email Open (No-op placeholder for backwards compatibility)
  */
-publicTrackingRouter.get('/track/open/:token', async (req: Request, res: Response) => {
-  const { token } = req.params;
-  const userAgent = req.headers['user-agent'] || '';
-  const ipAddress = req.ip || req.socket.remoteAddress;
-  const isBot = isBotUserAgent(userAgent);
-
-  // Serve image response immediately with zero-cache headers
+publicTrackingRouter.get('/track/open/:token', async (_req: Request, res: Response) => {
+  // Serve harmless image response immediately with zero-cache headers
   res.setHeader('Content-Type', 'image/gif');
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
   res.end(TRANSPARENT_GIF_BUFFER);
-
-  // Process tracking asynchronously in memory buffer
-  try {
-    const target = await prisma.campaignTarget.findUnique({
-      where: { token },
-      select: { id: true, campaignId: true, isReported: true }
-    });
-
-    if (target) {
-      trackingService.enqueueEvent({
-        campaignId: target.campaignId,
-        campaignTargetId: target.id,
-        eventType: 'OPENED',
-        ipAddress: ipAddress || undefined,
-        userAgent,
-        isBot,
-        createdAt: new Date()
-      });
-    }
-  } catch (err) {
-    console.error('[Tracking] Open tracking error:', err);
-  }
 });
 
 /**

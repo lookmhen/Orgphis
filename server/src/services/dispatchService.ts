@@ -120,7 +120,6 @@ class DispatchService {
             });
 
             const phishingUrl = `${baseUrl}/l/${ct.token}`;
-            const trackingPixelUrl = `${baseUrl}/track/open/${ct.token}`;
             const reportUrl = `${baseUrl}/report/${ct.token}`;
 
             const variables = {
@@ -136,9 +135,6 @@ class DispatchService {
               ? renderTemplate(campaign.emailTemplate.bodyText, variables)
               : undefined;
 
-            // Embed 1x1 Transparent Tracking Pixel
-            const trackedHtml = `${htmlBody}\n<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;" alt="" />`;
-
             // Simulation headers
             const headers: Record<string, string> = {
               'X-PhishCentral-Simulation': campaignId,
@@ -149,7 +145,7 @@ class DispatchService {
               from: `"${campaign.smtpProfile.fromName}" <${campaign.smtpProfile.fromEmail}>`,
               to: ct.target.email,
               subject: renderTemplate(campaign.emailTemplate.subject, variables),
-              html: trackedHtml,
+              html: htmlBody,
               text: textBody,
               headers
             });

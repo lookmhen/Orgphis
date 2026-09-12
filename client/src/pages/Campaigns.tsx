@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Send, Play, Square, Download, Plus, CheckCircle2, Clock, AlertCircle, RotateCcw, Trash2 } from 'lucide-react';
+import { Send, Play, Square, Download, Plus, CheckCircle2, Clock, AlertCircle, RotateCcw, Trash2, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const Campaigns: React.FC = () => {
   const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [targetGroups, setTargetGroups] = useState<any[]>([]);
   const [emailTemplates, setEmailTemplates] = useState<any[]>([]);
@@ -26,10 +27,22 @@ export const Campaigns: React.FC = () => {
     smtpProfileId: ''
   });
 
-  const fetchCampaigns = () => {
-    fetch('/api/campaigns')
-      .then(r => r.json())
-      .then(setCampaigns);
+  const fetchCampaigns = async () => {
+    try {
+      const res = await fetch('/api/campaigns');
+      if (res.ok) {
+        const data = await res.json();
+        setCampaigns(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch campaigns:', err);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchCampaigns();
+    setTimeout(() => setIsRefreshing(false), 400);
   };
 
   const loadDependencies = () => {
@@ -195,6 +208,15 @@ export const Campaigns: React.FC = () => {
           <p className="text-sm text-gray-500 mt-1">สร้าง รันคิวส่งอีเมลจำลอง ติดตามผล และดาวน์โหลดรายงานสถิติ</p>
         </div>
         <div className="flex items-center space-x-2">
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center space-x-1.5 px-3.5 py-2 border border-stone-border text-gray-700 bg-white hover:bg-stone-muted rounded-xl text-xs font-semibold shadow-xs transition-all disabled:opacity-50"
+            title="รีเฟรชข้อมูลและสถิติล่าสุด"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-forest ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>รีเฟรช (Refresh)</span>
+          </button>
           {campaigns.length > 0 && (
             <button
               onClick={handleResetAllCampaigns}
@@ -298,14 +320,13 @@ export const Campaigns: React.FC = () => {
                 </div>
               </div>
 
-              {/* Mini Stats Funnel */}
-              <div className="grid grid-cols-5 gap-3 pt-2">
+              {/* Mini Stats Funnel (4 Stages) */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
                 {[
                   { label: 'ส่งแล้ว (Sent)', val: c.stats?.sent || 0, color: 'text-deep-slate' },
-                  { label: 'เปิดอ่าน (Opened)', val: c.stats?.opened || 0, color: 'text-forest' },
                   { label: 'คลิกลิงก์ (Clicked)', val: c.stats?.clicked || 0, color: 'text-amber-terracotta' },
                   { label: 'กรอกฟอร์ม (Submitted)', val: c.stats?.submitted || 0, color: 'text-red-600 font-bold' },
-                  { label: 'แจ้งเบาะแส (Reported)', val: c.stats?.reported || 0, color: 'text-blue-600 font-bold' }
+                  { label: 'แจ้งเบาะแส (Reported)', val: c.stats?.reported || 0, color: 'text-forest font-bold' }
                 ].map((s, idx) => (
                   <div key={idx} className="bg-stone-muted/40 p-2.5 rounded-lg border border-stone-border/40 text-center">
                     <p className="text-[11px] text-gray-500">{s.label}</p>
