@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { Send, MailOpen, MousePointerClick, AlertTriangle, ShieldCheck, TrendingUp } from 'lucide-react';
+import { Send, MailOpen, MousePointerClick, AlertTriangle, ShieldCheck, TrendingUp, RotateCcw } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchCampaigns = () => {
     fetch('/api/campaigns')
       .then(res => res.json())
       .then(data => {
@@ -14,7 +14,28 @@ export const Dashboard: React.FC = () => {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchCampaigns();
   }, []);
+
+  const handleResetAll = async () => {
+    const confirmation = prompt('⚠️ คำเตือน: คุณต้องการล้างประวัติการทดสอบและแคมเปญทั้งหมดออกจากระบบเพื่อเริ่มใช้งานจริงใช่หรือไม่?\n\n(กลุ่มเป้าหมาย, เทมเพลต, และ SMTP Profile จะยังคงอยู่ครบถ้วน)\n\nพิมพ์คำว่า "RESET" เพื่อยืนยัน:');
+    if (confirmation !== 'RESET') {
+      if (confirmation !== null) alert('คำยืนยันไม่ถูกต้อง ยกเลิกการล้างข้อมูล');
+      return;
+    }
+
+    const res = await fetch('/api/campaigns/reset-all', { method: 'POST' });
+    if (res.ok) {
+      alert('ล้างประวัติการทดสอบทั้งหมดเรียบร้อยแล้ว สถิติบน Dashboard ถูกรีเซ็ตเป็น 0');
+      fetchCampaigns();
+    } else {
+      const data = await res.json();
+      alert(data.error || 'ล้างประวัติไม่สำเร็จ');
+    }
+  };
 
   // Aggregate global metrics
   let totalSent = 0;
@@ -46,9 +67,21 @@ export const Dashboard: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-deep-slate tracking-tight">ภาพรวมความปลอดภัย (Security Dashboard)</h2>
-        <p className="text-sm text-gray-500 mt-1">สรุปผลการทดสอบ Phishing Simulation และระดับความตระหนักรู้ขององค์กร</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-deep-slate tracking-tight">ภาพรวมความปลอดภัย (Security Dashboard)</h2>
+          <p className="text-sm text-gray-500 mt-1">สรุปผลการทดสอบ Phishing Simulation และระดับความตระหนักรู้ขององค์กร</p>
+        </div>
+        {campaigns.length > 0 && (
+          <button
+            onClick={handleResetAll}
+            className="flex items-center space-x-1.5 px-3.5 py-2 border border-red-200 text-red-600 bg-red-50/50 hover:bg-red-50 rounded-xl text-xs font-semibold shadow-xs transition-all"
+            title="ล้างแคมเปญและประวัติการทดสอบทั้งหมดเพื่อเริ่มใช้งานจริง"
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-red-600" />
+            <span>ล้างประวัติทดสอบทั้งหมด (Reset All)</span>
+          </button>
+        )}
       </div>
 
       {/* KPI Cards */}

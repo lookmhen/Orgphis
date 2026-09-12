@@ -193,6 +193,93 @@ campaignsRouter.post('/:id/kill', async (req: Request, res: Response) => {
   }
 });
 
+// RESET SINGLE CAMPAIGN (Reset stats back to 0 & DRAFT)
+campaignsRouter.post('/:id/reset', async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    // If currently running, stop queue first
+    dispatchService.killCampaign(id);
+
+    await prisma.$transaction([
+      // 1. Delete all event logs associated with this campaign
+      prisma.eventLog.deleteMany({ where: { campaignId: id } }),
+      // 2. Reset campaign targets stats
+      prisma.campaignTarget.updateMany({
+        where: { campaignId: id },
+        data: {
+          dispatchStatus: 'PENDING',
+          sendAttempts: 0,
+          lastError: null,
+          isSent: false,
+          isOpened: false,
+          isClicked: false,
+          isSubmitted: false,
+          isReported: false,
+          sentAt: null,
+          openedAt: null,
+          clickedAt: null,
+          submittedAt: null,
+          reportedAt: null
+        }
+      }),
+      // 3. Reset campaign status
+      prisma.campaign.update({
+        where: { id },
+        data: {
+          status: 'DRAFT',
+          startedAt: null,
+          endedAt: null
+        }
+      })
+    ]);
+
+    return res.json({ success: true, message: 'Campaign stats reset successfully.' });
+  } catch (err: any) {
+    console.error('[Campaigns] Reset error:', err);
+    return res.status(500).json({ error: 'Failed to reset campaign' });
+  }
+});
+
+// DELETE SINGLE CAMPAIGN
+campaignsRouter.delete('/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    dispatchService.killCampaign(id);
+
+    await prisma.$transaction([
+      prisma.eventLog.deleteMany({ where: { campaignId: id } }),
+      prisma.campaignTarget.deleteMany({ where: { campaignId: id } }),
+      prisma.campaign.delete({ where: { id } })
+    ]);
+
+    return res.json({ success: true, message: 'Campaign deleted successfully.' });
+  } catch (err: any) {
+    console.error('[Campaigns] Delete error:', err);
+    return res.status(500).json({ error: 'Failed to delete campaign' });
+  }
+});
+
+// RESET ALL CAMPAIGNS & TEST HISTORY (Clean slate for production, keeps Targets, Templates, SMTP)
+campaignsRouter.post('/reset-all', async (_req: Request, res: Response) => {
+  try {
+    await prisma.$transaction([
+      prisma.eventLog.deleteMany({}),
+      prisma.campaignTarget.deleteMany({}),
+      prisma.campaign.deleteMany({})
+    ]);
+
+    return res.json({
+      success: true,
+      message: 'All campaign history and test logs have been completely cleared. Ready for production.'
+    });
+  } catch (err: any) {
+    console.error('[Campaigns] Reset all error:', err);
+    return res.status(500).json({ error: 'Failed to reset all campaign history' });
+  }
+});
+
 // STREAMING EXPORT CSV
 campaignsRouter.get('/:id/export', async (req: Request, res: Response) => {
   const { id } = req.params;

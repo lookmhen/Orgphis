@@ -1,5 +1,5 @@
-﻿import React, { useEffect, useState } from 'react';
-import { Send, Play, Square, Download, Plus, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Send, Play, Square, Download, Plus, CheckCircle2, Clock, AlertCircle, RotateCcw, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const Campaigns: React.FC = () => {
@@ -81,17 +81,20 @@ export const Campaigns: React.FC = () => {
       });
       fetchCampaigns();
     } else {
-      const err = await res.json();
-      alert('สร้างแคมเปญไม่สำเร็จ: ' + (err.error || 'Unknown error'));
+      const data = await res.json();
+      alert(data.error || 'สร้างแคมเปญไม่สำเร็จ');
     }
   };
 
   const handleLaunch = async (id: string) => {
-    if (!confirm('ยืนยันเริ่มส่งแบบทดสอบ Phishing จำลองไปยังกลุ่มเป้าหมายทันที?')) return;
+    if (!confirm('ยืนยันเริ่มส่งอีเมลจำลอง Phishing สำหรับแคมเปญนี้?')) return;
     const res = await fetch(`/api/campaigns/${id}/launch`, { method: 'POST' });
     if (res.ok) {
-      alert('เริ่มส่งอีเมลจำลองแล้ว! ระบบจะทยอยส่งตาม Rate Limit เพื่อความปลอดภัย');
+      alert('เริ่มรันแคมเปญและส่งอีเมลเรียบร้อยแล้ว');
       fetchCampaigns();
+    } else {
+      const data = await res.json();
+      alert(data.error || 'เริ่มแคมเปญไม่สำเร็จ');
     }
   };
 
@@ -104,6 +107,47 @@ export const Campaigns: React.FC = () => {
     }
   };
 
+  const handleResetCampaign = async (id: string, name: string) => {
+    if (!confirm(`คุณต้องการ Reset สถิติและผลลัพธ์ของแคมเปญ "${name}" กลับเป็น 0 (DRAFT) เพื่อใช้ทดสอบใหม่ใช่หรือไม่?`)) return;
+    const res = await fetch(`/api/campaigns/${id}/reset`, { method: 'POST' });
+    if (res.ok) {
+      alert('Reset สถิติของแคมเปญเรียบร้อยแล้ว');
+      fetchCampaigns();
+    } else {
+      const data = await res.json();
+      alert(data.error || 'Reset แคมเปญไม่สำเร็จ');
+    }
+  };
+
+  const handleDeleteCampaign = async (id: string, name: string) => {
+    if (!confirm(`⚠️ ยืนยันลบแคมเปญ "${name}" ออกจากระบบถาวร?\n(สถิติและประวัติการส่งทั้งหมดของแคมเปญนี้จะถูกลบออก)`)) return;
+    const res = await fetch(`/api/campaigns/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      alert('ลบแคมเปญเรียบร้อยแล้ว');
+      fetchCampaigns();
+    } else {
+      const data = await res.json();
+      alert(data.error || 'ลบแคมเปญไม่สำเร็จ');
+    }
+  };
+
+  const handleResetAllCampaigns = async () => {
+    const confirmation = prompt('⚠️ คำเตือนระดับสูงสุด: คุณต้องการล้างประวัติการทดสอบและแคมเปญทั้งหมดออกจากระบบเพื่อเริ่มใช้งานจริงใช่หรือไม่?\n\n(กลุ่มเป้าหมาย, เทมเพลต, และ SMTP Profile จะยังคงอยู่ครบถ้วน)\n\nพิมพ์คำว่า "RESET" เพื่อยืนยัน:');
+    if (confirmation !== 'RESET') {
+      if (confirmation !== null) alert('คำยืนยันไม่ถูกต้อง ยกเลิกการล้างข้อมูล');
+      return;
+    }
+
+    const res = await fetch('/api/campaigns/reset-all', { method: 'POST' });
+    if (res.ok) {
+      alert('ล้างประวัติการทดสอบทั้งหมดเรียบร้อยแล้ว ระบบสะอาดพร้อมเริ่มใช้งานจริง');
+      fetchCampaigns();
+    } else {
+      const data = await res.json();
+      alert(data.error || 'ล้างประวัติไม่สำเร็จ');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -111,13 +155,25 @@ export const Campaigns: React.FC = () => {
           <h2 className="text-2xl font-bold text-deep-slate tracking-tight">การจัดการแคมเปญ (Campaigns)</h2>
           <p className="text-sm text-gray-500 mt-1">สร้าง รันคิวส่งอีเมลจำลอง ติดตามผล และดาวน์โหลดรายงานสถิติ</p>
         </div>
-        <button
-          onClick={handleOpenCreateModal}
-          className="flex items-center space-x-1.5 px-4 py-2 bg-forest text-white rounded-xl text-xs font-semibold hover:bg-forest-hover shadow-soft"
-        >
-          <Plus className="w-4 h-4" />
-          <span>สร้างแคมเปญใหม่</span>
-        </button>
+        <div className="flex items-center space-x-2">
+          {campaigns.length > 0 && (
+            <button
+              onClick={handleResetAllCampaigns}
+              className="flex items-center space-x-1.5 px-3.5 py-2 border border-red-200 text-red-600 bg-red-50/50 hover:bg-red-50 rounded-xl text-xs font-semibold shadow-xs transition-all"
+              title="ล้างแคมเปญและประวัติการทดสอบทั้งหมดเพื่อเริ่มใช้งานจริง"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-red-600" />
+              <span>ล้างประวัติทั้งหมด (Reset All)</span>
+            </button>
+          )}
+          <button
+            onClick={handleOpenCreateModal}
+            className="flex items-center space-x-1.5 px-4 py-2 bg-forest text-white rounded-xl text-xs font-semibold hover:bg-forest-hover shadow-soft"
+          >
+            <Plus className="w-4 h-4" />
+            <span>สร้างแคมเปญใหม่</span>
+          </button>
+        </div>
       </div>
 
       <div className="space-y-4">
@@ -169,6 +225,17 @@ export const Campaigns: React.FC = () => {
                     </button>
                   )}
 
+                  {c.status !== 'RUNNING' && (
+                    <button
+                      onClick={() => handleResetCampaign(c.id, c.name)}
+                      className="flex items-center space-x-1 px-2.5 py-1.5 border border-stone-border text-gray-600 hover:text-deep-slate hover:bg-stone-muted rounded-lg text-xs font-medium transition-all"
+                      title="Reset สถิติของแคมเปญนี้กลับเป็น 0 เพื่อเริ่มส่งใหม่"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Reset</span>
+                    </button>
+                  )}
+
                   <a
                     href={`/api/campaigns/${c.id}/export`}
                     download
@@ -177,6 +244,14 @@ export const Campaigns: React.FC = () => {
                     <Download className="w-3.5 h-3.5" />
                     <span>CSV Report</span>
                   </a>
+
+                  <button
+                    onClick={() => handleDeleteCampaign(c.id, c.name)}
+                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                    title="ลบแคมเปญนี้ทิ้ง"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
 
