@@ -1,7 +1,7 @@
 {
-  "name": "mailtest",
-  "version": "1.0.0",
-  "main": "app.js",
+  "name": "phishcentral-root",
+  "version": "2.1.0",
+  "private": true,
   "scripts": {
     "dev:server": "npm --prefix server run dev",
     "dev:client": "npm --prefix client run dev",
@@ -9,19 +9,6 @@
     "build:server": "npm --prefix server run build",
     "build": "npm run build:client && npm run build:server",
     "test": "npm --prefix server run test",
-    "start": "npm --prefix server run start",
-    "legacy:start": "nodemon app-kpi.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "async-mutex": "^0.5.0",
-    "cookie-parser": "^1.4.6",
-    "ejs": "^3.1.10",
-    "express": "^4.19.2",
-    "nodemon": "^3.1.4",
-    "package.json": "^0.0.0"
+    "start": "npm --prefix server run start"
   }
 }
