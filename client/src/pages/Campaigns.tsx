@@ -114,9 +114,22 @@ export const Campaigns: React.FC = () => {
 
   const handleLaunch = async (id: string) => {
     if (!confirm('ยืนยันเริ่มส่งอีเมลจำลอง Phishing สำหรับแคมเปญนี้?')) return;
-    const res = await fetch(`/api/campaigns/${id}/launch`, { method: 'POST' });
+    
+    // Automatically infer accessible Base URL from client browser
+    // In dev mode (port 5173), target backend port 3000
+    let clientBaseUrl = window.location.origin;
+    if (clientBaseUrl.includes(':5173')) {
+      clientBaseUrl = clientBaseUrl.replace(':5173', ':3000');
+    }
+
+    const res = await fetch(`/api/campaigns/${id}/launch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ baseUrl: clientBaseUrl })
+    });
     if (res.ok) {
-      alert('เริ่มรันแคมเปญและส่งอีเมลเรียบร้อยแล้ว');
+      const data = await res.json();
+      alert(data.message || 'เริ่มรันแคมเปญและส่งอีเมลเรียบร้อยแล้ว');
       fetchCampaigns();
     } else {
       const data = await res.json();

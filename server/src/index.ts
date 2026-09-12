@@ -12,6 +12,7 @@ import { templatesRouter } from './routes/templates.js';
 import { smtpRouter } from './routes/smtp.js';
 import { campaignsRouter } from './routes/campaigns.js';
 import { publicTrackingRouter } from './routes/publicTracking.js';
+import { getLocalIpAddress } from './utils/network.js';
 
 dotenv.config();
 
@@ -69,9 +70,11 @@ async function bootstrap() {
   await seedOfficialPresets();
 
   app.listen(PORT, '0.0.0.0', () => {
+    const localIp = getLocalIpAddress();
     console.log(`====================================================`);
-    console.log(`🛡️  PhishCentral Server running on port ${PORT}`);
-    console.log(`🌐 Base URL: ${process.env.BASE_URL || `http://localhost:${PORT}`}`);
+    console.log(`🛡️  PhishCentral Server running on port ${PORT} (0.0.0.0)`);
+    console.log(`🌐 Base URL: ${process.env.BASE_URL || `http://${localIp}:${PORT}`}`);
+    console.log(`🏠 LAN Host Access: http://${localIp}:${PORT}`);
     console.log(`====================================================`);
   });
 }

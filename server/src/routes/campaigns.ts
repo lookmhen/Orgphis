@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { prisma } from '../prisma.js';
 import { generateTrackingToken } from '../utils/tokenAndBot.js';
 import { dispatchService } from '../services/dispatchService.js';
+import { resolveServerBaseUrl } from '../utils/network.js';
 
 export const campaignsRouter = Router();
 
@@ -211,16 +212,12 @@ campaignsRouter.post('/', async (req: Request, res: Response) => {
 // LAUNCH campaign
 campaignsRouter.post('/:id/launch', async (req: Request, res: Response) => {
   const { id } = req.params;
-  const hostHeader = req.get('host');
-  const envBaseUrl = process.env.BASE_URL;
-  // If BASE_URL is set to localhost but client connects from host IP/domain, use request host header
-  const baseUrl = (envBaseUrl && !envBaseUrl.includes('localhost') && !envBaseUrl.includes('127.0.0.1'))
-    ? envBaseUrl
-    : `${req.protocol}://${hostHeader}`;
+  const baseUrl = resolveServerBaseUrl(req.body?.baseUrl, req.get('host'), req.protocol);
 
   try {
+    console.log(`[Campaigns] Launching campaign ${id} with Phishing Base URL: ${baseUrl}`);
     await dispatchService.launchCampaign({ campaignId: id, baseUrl });
-    return res.json({ success: true, message: 'Campaign launched and email queue active.' });
+    return res.json({ success: true, message: `Campaign launched. Phishing links point to ${baseUrl}`, baseUrl });
   } catch (err: any) {
     return res.status(500).json({ error: `Launch failed: ${err.message}` });
   }
