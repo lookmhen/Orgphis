@@ -3,6 +3,7 @@ import { prisma } from '../prisma.js';
 import { generateTrackingToken } from '../utils/tokenAndBot.js';
 import { dispatchService } from '../services/dispatchService.js';
 import { resolveServerBaseUrl } from '../utils/network.js';
+import { generateRandomizedSchedule } from '../utils/scheduler.js';
 
 export const campaignsRouter = Router();
 
@@ -138,9 +139,24 @@ campaignsRouter.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
-// CREATE campaign (Supports single targetGroupId or array of targetGroupIds)
+// CREATE campaign (Supports single targetGroupId or array of targetGroupIds + Randomized Scheduling)
 campaignsRouter.post('/', async (req: Request, res: Response) => {
-  const { name, description, targetGroupId, targetGroupIds, emailTemplateId, landingPageTemplateId, smtpProfileId } = req.body;
+  const {
+    name,
+    description,
+    targetGroupId,
+    targetGroupIds,
+    emailTemplateId,
+    landingPageTemplateId,
+    smtpProfileId,
+    scheduleType = 'IMMEDIATE',
+    startDate,
+    endDate,
+    allowedDays = '1,2,3,4,5',
+    dailyStartTime = '08:30',
+    dailyEndTime = '17:00',
+    randomizeSendTimes = true
+  } = req.body;
 
   // Accept targetGroupIds array or single targetGroupId
   const groupIds: string[] = Array.isArray(targetGroupIds) && targetGroupIds.length > 0
@@ -154,6 +170,10 @@ campaignsRouter.post('/', async (req: Request, res: Response) => {
   }
 
   try {
+    const isRandomized = scheduleType === 'RANDOMIZED';
+    const parsedStartDate = startDate ? new Date(startDate) : new Date();
+    const parsedEndDate = endDate ? new Date(endDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
     // 1. Create campaign record
     const campaign = await prisma.campaign.create({
       data: {
@@ -163,7 +183,14 @@ campaignsRouter.post('/', async (req: Request, res: Response) => {
         emailTemplateId,
         landingPageTemplateId,
         smtpProfileId,
-        status: 'DRAFT',
+        status: isRandomized ? 'SCHEDULED' : 'DRAFT',
+        scheduleType,
+        startDate: isRandomized ? parsedStartDate : null,
+        endDate: isRandomized ? parsedEndDate : null,
+        allowedDays: isRandomized ? String(allowedDays) : null,
+        dailyStartTime: isRandomized ? dailyStartTime : null,
+        dailyEndTime: isRandomized ? dailyEndTime : null,
+        randomizeSendTimes: Boolean(randomizeSendTimes),
         targetGroups: {
           create: groupIds.map(gid => ({
             targetGroupId: gid
@@ -188,13 +215,28 @@ campaignsRouter.post('/', async (req: Request, res: Response) => {
     }
     const uniqueTargets = Array.from(uniqueTargetsMap.values());
 
+    // 3. Pre-calculate randomized scheduled send dates if configured
+    let scheduledDates: Date[] = [];
+    if (isRandomized && uniqueTargets.length > 0) {
+      const parsedDays = String(allowedDays).split(',').map(d => parseInt(d.trim(), 10)).filter(Boolean);
+      scheduledDates = generateRandomizedSchedule(uniqueTargets.length, {
+        startDate: parsedStartDate,
+        endDate: parsedEndDate,
+        allowedDays: parsedDays.length > 0 ? parsedDays : [1, 2, 3, 4, 5],
+        dailyStartTime,
+        dailyEndTime,
+        randomizeSendTimes: Boolean(randomizeSendTimes)
+      });
+    }
+
     if (uniqueTargets.length > 0) {
       await prisma.campaignTarget.createMany({
-        data: uniqueTargets.map((t) => ({
+        data: uniqueTargets.map((t, idx) => ({
           campaignId: campaign.id,
           targetId: t.id,
           token: generateTrackingToken(),
-          dispatchStatus: 'PENDING'
+          dispatchStatus: 'PENDING',
+          scheduledAt: isRandomized && scheduledDates[idx] ? scheduledDates[idx] : null
         }))
       });
     }

@@ -81,19 +81,50 @@ class DispatchService {
   ): Promise<void> {
     const batchSize = campaign.smtpProfile.rateLimit || 5;
     const delayMs = (campaign.smtpProfile.delaySeconds || 2) * 1000;
+    const isRandomized = campaign.scheduleType === 'RANDOMIZED';
 
     while (this.activeCampaigns.has(campaignId)) {
-      // Find targets pending dispatch
+      const now = new Date();
+
+      // Find targets pending dispatch.
+      // If RANDOMIZED, only pick targets whose scheduledAt has arrived (scheduledAt <= now)
+      const targetQueryCondition: any = {
+        campaignId,
+        dispatchStatus: { in: ['PENDING', 'QUEUED'] }
+      };
+
+      if (isRandomized) {
+        targetQueryCondition.OR = [
+          { scheduledAt: null },
+          { scheduledAt: { lte: now } }
+        ];
+      }
+
       const pendingTargets = await prisma.campaignTarget.findMany({
-        where: {
-          campaignId,
-          dispatchStatus: { in: ['PENDING', 'QUEUED'] }
-        },
+        where: targetQueryCondition,
         include: { target: true },
-        take: batchSize
+        take: batchSize,
+        orderBy: isRandomized ? { scheduledAt: 'asc' } : { id: 'asc' }
       });
 
       if (pendingTargets.length === 0) {
+        // If it's randomized, there may still be targets scheduled for the future
+        if (isRandomized) {
+          const futureTargets = await prisma.campaignTarget.count({
+            where: {
+              campaignId,
+              dispatchStatus: { in: ['PENDING', 'QUEUED'] },
+              scheduledAt: { gt: now }
+            }
+          });
+
+          if (futureTargets > 0) {
+            // Sleep for 30 seconds before polling future scheduled targets again
+            await new Promise((resolve) => setTimeout(resolve, 30000));
+            continue;
+          }
+        }
+
         // Check if all are done
         const remaining = await prisma.campaignTarget.count({
           where: { campaignId, dispatchStatus: { in: ['PENDING', 'QUEUED', 'SENDING'] } }

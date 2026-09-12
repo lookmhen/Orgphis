@@ -103,6 +103,16 @@ model Campaign {
   landingPageTemplate   LandingPageTemplate @relation(fields: [landingPageTemplateId], references: [id], onDelete: Restrict)
   smtpProfileId         String
   smtpProfile           SmtpProfile         @relation(fields: [smtpProfileId], references: [id], onDelete: Restrict)
+  
+  // Scheduling & Randomized Smear Dispatch
+  scheduleType          String              @default("IMMEDIATE") // IMMEDIATE, RANDOMIZED
+  startDate             DateTime?
+  endDate               DateTime?
+  allowedDays           String?             // e.g. "1,2,3,4,5" (Monday to Friday, 1=Mon, 7=Sun)
+  dailyStartTime        String?             // e.g. "08:30"
+  dailyEndTime          String?             // e.g. "17:00"
+  randomizeSendTimes    Boolean             @default(true)
+  
   scheduledAt           DateTime?
   startedAt             DateTime?
   endedAt               DateTime?
@@ -133,6 +143,7 @@ model CampaignTarget {
   target         Target     @relation(fields: [targetId], references: [id], onDelete: Restrict)
   token          String     @unique // High-entropy URL-safe token
   expiresAt      DateTime?
+  scheduledAt    DateTime?  // Planned randomized send time
   
   // Dispatch queue status
   dispatchStatus String     @default("PENDING") // PENDING, QUEUED, SENDING, SENT, FAILED

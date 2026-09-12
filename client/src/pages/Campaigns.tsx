@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Send, Play, Square, Download, Plus, CheckCircle2, Clock, AlertCircle, RotateCcw, Trash2, RefreshCw } from 'lucide-react';
+import { Send, Play, Square, Download, Plus, CheckCircle2, Clock, AlertCircle, RotateCcw, Trash2, RefreshCw, Calendar, Sliders } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const Campaigns: React.FC = () => {
@@ -18,13 +18,27 @@ export const Campaigns: React.FC = () => {
     emailTemplateId: string;
     landingPageTemplateId: string;
     smtpProfileId: string;
+    scheduleType: 'IMMEDIATE' | 'RANDOMIZED';
+    startDate: string;
+    endDate: string;
+    allowedDays: number[];
+    dailyStartTime: string;
+    dailyEndTime: string;
+    randomizeSendTimes: boolean;
   }>({
     name: '',
     description: '',
     targetGroupIds: [],
     emailTemplateId: '',
     landingPageTemplateId: '',
-    smtpProfileId: ''
+    smtpProfileId: '',
+    scheduleType: 'IMMEDIATE',
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    allowedDays: [1, 2, 3, 4, 5],
+    dailyStartTime: '08:30',
+    dailyEndTime: '17:00',
+    randomizeSendTimes: true
   });
 
   const fetchCampaigns = async () => {
@@ -95,6 +109,18 @@ export const Campaigns: React.FC = () => {
     }
   };
 
+  const handleToggleDay = (dayNum: number) => {
+    setForm(prev => {
+      const exists = prev.allowedDays.includes(dayNum);
+      if (exists) {
+        if (prev.allowedDays.length <= 1) return prev; // Keep at least one day
+        return { ...prev, allowedDays: prev.allowedDays.filter(d => d !== dayNum) };
+      } else {
+        return { ...prev, allowedDays: [...prev.allowedDays, dayNum].sort() };
+      }
+    });
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.targetGroupIds.length === 0 || !form.emailTemplateId || !form.landingPageTemplateId || !form.smtpProfileId) {
@@ -102,10 +128,15 @@ export const Campaigns: React.FC = () => {
       return;
     }
 
+    const payload = {
+      ...form,
+      allowedDays: form.allowedDays.join(',')
+    };
+
     const res = await fetch('/api/campaigns', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form)
+      body: JSON.stringify(payload)
     });
 
     if (res.ok) {
@@ -116,7 +147,14 @@ export const Campaigns: React.FC = () => {
         targetGroupIds: targetGroups.length > 0 ? [targetGroups[0].id] : [],
         emailTemplateId: emailTemplates[0]?.id || '',
         landingPageTemplateId: landingTemplates[0]?.id || '',
-        smtpProfileId: smtpProfiles[0]?.id || ''
+        smtpProfileId: smtpProfiles[0]?.id || '',
+        scheduleType: 'IMMEDIATE',
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        allowedDays: [1, 2, 3, 4, 5],
+        dailyStartTime: '08:30',
+        dailyEndTime: '17:00',
+        randomizeSendTimes: true
       });
       fetchCampaigns();
     } else {
@@ -257,6 +295,12 @@ export const Campaigns: React.FC = () => {
                     }`}>
                       {c.status}
                     </span>
+                    {c.scheduleType === 'RANDOMIZED' && (
+                      <span className="flex items-center space-x-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                        <Calendar className="w-3 h-3 text-blue-600" />
+                        <span>Randomized Schedule ({c.startDate ? new Date(c.startDate).toLocaleDateString() : ''} - {c.endDate ? new Date(c.endDate).toLocaleDateString() : ''})</span>
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
                     กลุ่มผู้รับ: <span className="font-semibold text-deep-slate">
@@ -270,13 +314,13 @@ export const Campaigns: React.FC = () => {
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  {c.status === 'DRAFT' && (
+                  {(c.status === 'DRAFT' || c.status === 'SCHEDULED') && (
                     <button
                       onClick={() => handleLaunch(c.id)}
                       className="flex items-center space-x-1 px-3 py-1.5 bg-forest text-white rounded-lg text-xs font-semibold hover:bg-forest-hover shadow-soft"
                     >
                       <Play className="w-3.5 h-3.5" />
-                      <span>สั่งเริ่มส่ง (Launch)</span>
+                      <span>{c.scheduleType === 'RANDOMIZED' ? 'เปิดระบบส่งตามตาราง (Start Schedule)' : 'สั่งเริ่มส่ง (Launch)'}</span>
                     </button>
                   )}
 
@@ -471,6 +515,150 @@ export const Campaigns: React.FC = () => {
                     ))
                   )}
                 </select>
+              </div>
+
+              {/* Schedule Details Section */}
+              <div className="border-t border-stone-border pt-3.5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-bold text-deep-slate text-xs flex items-center space-x-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-forest" />
+                      <span>กำหนดเวลาส่ง (Schedule Details)</span>
+                    </h4>
+                    <p className="text-[11px] text-gray-500">เลือกรูปแบบการกระจายส่งอีเมลเพื่อความสมจริง</p>
+                  </div>
+                </div>
+
+                {/* Mode Selector Tabs */}
+                <div className="grid grid-cols-2 gap-2 bg-stone-100 p-1 rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, scheduleType: 'IMMEDIATE' })}
+                    className={`py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                      form.scheduleType === 'IMMEDIATE'
+                        ? 'bg-white text-forest shadow-xs'
+                        : 'text-gray-500 hover:text-deep-slate'
+                    }`}
+                  >
+                    ส่งทันที (Immediate Dispatch)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, scheduleType: 'RANDOMIZED' })}
+                    className={`py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                      form.scheduleType === 'RANDOMIZED'
+                        ? 'bg-white text-forest shadow-xs'
+                        : 'text-gray-500 hover:text-deep-slate'
+                    }`}
+                  >
+                    สุ่มกระจายเวลา (Randomized Schedule) ⭐
+                  </button>
+                </div>
+
+                {form.scheduleType === 'RANDOMIZED' && (
+                  <div className="p-3 bg-stone-50/80 border border-stone-border rounded-xl space-y-3 animate-in fade-in duration-200">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-medium text-gray-700 mb-1">
+                          วันที่เริ่มจำลอง (Simulation start) *
+                        </label>
+                        <input
+                          type="date"
+                          required
+                          value={form.startDate}
+                          onChange={e => setForm({ ...form, startDate: e.target.value })}
+                          className="w-full p-2 border border-stone-border rounded-lg bg-white outline-none focus:border-forest text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-medium text-gray-700 mb-1">
+                          วันที่สิ้นสุด (Simulation end) *
+                        </label>
+                        <input
+                          type="date"
+                          required
+                          value={form.endDate}
+                          onChange={e => setForm({ ...form, endDate: e.target.value })}
+                          className="w-full p-2 border border-stone-border rounded-lg bg-white outline-none focus:border-forest text-xs"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-medium text-gray-700 mb-1.5">
+                        วันที่อนุญาตให้ส่ง (Simulation scoping) *
+                      </label>
+                      <div className="grid grid-cols-7 gap-1.5 text-center">
+                        {[
+                          { num: 1, label: 'Mon', full: 'จันทร์' },
+                          { num: 2, label: 'Tue', full: 'อังคาร' },
+                          { num: 3, label: 'Wed', full: 'พุธ' },
+                          { num: 4, label: 'Thu', full: 'พฤหัส' },
+                          { num: 5, label: 'Fri', full: 'ศุกร์' },
+                          { num: 6, label: 'Sat', full: 'เสาร์' },
+                          { num: 7, label: 'Sun', full: 'อาทิตย์' }
+                        ].map(day => {
+                          const isChecked = form.allowedDays.includes(day.num);
+                          return (
+                            <button
+                              type="button"
+                              key={day.num}
+                              onClick={() => handleToggleDay(day.num)}
+                              className={`py-1.5 px-1 rounded-lg border text-xs font-medium transition-all ${
+                                isChecked
+                                  ? 'bg-forest-light border-forest text-forest font-semibold'
+                                  : 'bg-white border-stone-border text-gray-400 hover:bg-stone-muted'
+                              }`}
+                              title={day.full}
+                            >
+                              <div>{day.label}</div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-medium text-gray-700 mb-1">
+                          เวลาเริ่มส่งประจำวัน (Start Time)
+                        </label>
+                        <input
+                          type="time"
+                          value={form.dailyStartTime}
+                          onChange={e => setForm({ ...form, dailyStartTime: e.target.value })}
+                          className="w-full p-2 border border-stone-border rounded-lg bg-white outline-none focus:border-forest text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-medium text-gray-700 mb-1">
+                          เวลาหยุดส่งประจำวัน (End Time)
+                        </label>
+                        <input
+                          type="time"
+                          value={form.dailyEndTime}
+                          onChange={e => setForm({ ...form, dailyEndTime: e.target.value })}
+                          className="w-full p-2 border border-stone-border rounded-lg bg-white outline-none focus:border-forest text-xs"
+                        />
+                      </div>
+                    </div>
+
+                    <label className="flex items-center space-x-2 pt-1 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.randomizeSendTimes}
+                        onChange={e => setForm({ ...form, randomizeSendTimes: e.target.checked })}
+                        className="rounded text-forest focus:ring-forest cursor-pointer"
+                      />
+                      <span className="text-xs text-gray-700 font-medium">
+                        สุ่มเวลาและกระจายส่งอัตโนมัติ (Randomize send times)
+                      </span>
+                    </label>
+                    <p className="text-[10px] text-gray-400">
+                      ระบบจะสุ่มเวลาส่งของพนักงานแต่ละคนไม่ซ้ำกัน ป้องกันพนักงานส่งต่อข้อมูลเตือนกัน และป้องกัน Mail Server ดักจับสแปม
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end space-x-2 pt-3 border-t border-stone-border">
