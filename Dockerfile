@@ -8,6 +8,7 @@ RUN npm run build
 
 # Stage 2: Build Backend (Express TypeScript)
 FROM node:20-alpine AS server-builder
+RUN apk add --no-cache openssl
 WORKDIR /app/server
 COPY server/package*.json ./
 COPY server/prisma ./prisma/
@@ -18,6 +19,7 @@ RUN npm run build
 
 # Stage 3: Production Runner
 FROM node:20-alpine AS runner
+RUN apk add --no-cache openssl
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
