@@ -22,6 +22,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = parseInt(process.env.PORT || '3000', 10);
 
+// Trust reverse proxy (for correct protocol/host under Nginx, Cloudflare, etc.)
+app.set('trust proxy', true);
+
 // 1. Security Headers & CORS
 app.use(helmet({
   contentSecurityPolicy: false // Allow dynamic preview iframes

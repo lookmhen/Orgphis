@@ -16,8 +16,8 @@ export function getLocalIpAddress(): string {
       // family can be 'IPv4' or 4 depending on Node version
       const isIpv4 = net.family === 'IPv4' || (net.family as any) === 4;
       if (isIpv4 && !net.internal && !net.address.startsWith('169.254.')) {
-        // Prioritize Wi-Fi or Ethernet LAN addresses (e.g. 192.168.114.*) over VMware/VirtualBox (VMnet)
-        const isVirtual = /vmnet|vbox|wsl|hyper-v|virtual/i.test(name);
+        // Prioritize Wi-Fi or Ethernet LAN addresses (e.g. 192.168.114.*) over VMware/VirtualBox/Hyper-V/Docker/WSL
+        const isVirtual = /vmnet|vbox|wsl|hyper-v|virtual|vethernet|docker/i.test(name);
         if (!isVirtual) {
           return net.address;
         }
