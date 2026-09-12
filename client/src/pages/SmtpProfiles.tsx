@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Server, CheckCircle2, AlertCircle, Plus, Edit3, Trash2, Info, ExternalLink } from 'lucide-react';
+import { Server, CheckCircle2, AlertCircle, Plus, Edit3, Trash2, Info, ExternalLink, RefreshCw } from 'lucide-react';
 
 interface SmtpPreset {
   id: string;
@@ -23,59 +23,60 @@ const SMTP_PRESETS: SmtpPreset[] = [
     host: 'smtp.office365.com',
     port: 587,
     secure: false, // STARTTLS
-    fromName: 'IT Security Support',
-    fromEmail: 'security-alert@yourdomain.com',
+    fromName: 'IT Security Operations',
+    fromEmail: 'security@yourcompany.com',
     rateLimit: 5,
     delaySeconds: 3,
-    tip: 'Microsoft 365 ใช้ Host: smtp.office365.com, Port: 587 (STARTTLS) โดยบัญชีที่เปิด MFA ต้องสร้าง "App Password" และเปิดใช้งาน SMTP AUTH ใน M365 Admin Center'
+    tip: 'แนะนำใช้ Port 587 (STARTTLS) สำหรับ Microsoft 365 และใช้ App Password ในกรณีที่เปิดใช้งาน 2FA'
   },
   {
-    id: 'gmail_tls',
-    label: 'Google Workspace / Gmail (STARTTLS 587)',
+    id: 'gmail',
+    label: 'Google Workspace / Gmail Relay',
     badge: 'Google Workspace',
     host: 'smtp.gmail.com',
     port: 587,
-    secure: false, // STARTTLS
-    fromName: 'Security Notification',
-    fromEmail: 'it-notice@yourdomain.com',
-    rateLimit: 5,
-    delaySeconds: 2,
-    tip: 'Google Workspace/Gmail แนะนำ Port: 587 (STARTTLS) โดยต้องสร้าง "App Password" (รหัสผ่านแอป 16 ตัวอักษร) จากหน้า Google Account Security เนื่องจาก Google ยกเลิกระบบ Less Secure Apps แล้ว'
-  },
-  {
-    id: 'gmail_ssl',
-    label: 'Google Workspace / Gmail (Direct SSL 465)',
-    badge: 'Google SSL',
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // Direct SSL
-    fromName: 'Google Workspace Admin',
-    fromEmail: 'admin@yourdomain.com',
-    rateLimit: 5,
-    delaySeconds: 2,
-    tip: 'Google Workspace Port: 465 (Direct SSL) ต้องใช้ App Password 16 หลักเช่นกัน'
-  },
-  {
-    id: 'gmail_relay',
-    label: 'Google Workspace SMTP Relay (Corporate IP)',
-    badge: 'Google Relay',
-    host: 'smtp-relay.gmail.com',
-    port: 587,
     secure: false,
-    fromName: 'Company Mail Delivery',
-    fromEmail: 'mailer@yourdomain.com',
+    fromName: 'Google Security Alert',
+    fromEmail: 'no-reply@yourcompany.com',
+    rateLimit: 3,
+    delaySeconds: 4,
+    tip: 'Google บังคับใช้ App Password (รหัสผ่านสำหรับแอป 16 หลัก) หรือ Google Workspace SMTP Relay Service'
+  },
+  {
+    id: 'local_relay',
+    label: 'Internal Corporate Exchange / Postfix Relay',
+    badge: 'Internal Relay',
+    host: 'mail.internal.company.com',
+    port: 25,
+    secure: false,
+    fromName: 'Corporate IT Helpdesk',
+    fromEmail: 'helpdesk@company.com',
     rateLimit: 10,
     delaySeconds: 1,
-    tip: 'สำหรับองค์กรที่ทำ IP Whitelist ใน Google Workspace Admin Console เพื่อส่งผ่าน Relay โดยตรง'
+    tip: 'เหมาะสำหรับเมลเซิร์ฟเวอร์ภายในองค์กรที่ทำ IP Whitelist ไว้แล้ว สามารถส่งได้โดยไม่ต้องกรอกรหัสผ่าน'
+  },
+  {
+    id: 'custom',
+    label: 'Custom SMTP Server (กำหนดค่าเอง)',
+    badge: 'Custom',
+    host: '',
+    port: 587,
+    secure: false,
+    fromName: 'Security Simulation Team',
+    fromEmail: 'phish-test@domain.com',
+    rateLimit: 5,
+    delaySeconds: 2,
+    tip: 'กำหนดค่าการเชื่อมต่อ Host, Port, การเข้ารหัส และอัตราการส่งได้ตามต้องการ'
   }
 ];
 
 export const SmtpProfiles: React.FC = () => {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
-  const [testResult, setTestResult] = useState<{ id: string; success: boolean; msg: string } | null>(null);
-  const [activePresetTip, setActivePresetTip] = useState<string>('');
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [activePresetTip, setActivePresetTip] = useState<string>('');
+  const [testResult, setTestResult] = useState<{ id: string; success: boolean; msg: string } | null>(null);
+  const [testingId, setTestingId] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     name: 'Microsoft 365 Relay',
@@ -166,12 +167,15 @@ export const SmtpProfiles: React.FC = () => {
 
   const handleTestConnection = async (id: string) => {
     setTestResult(null);
+    setTestingId(id);
     try {
       const res = await fetch(`/api/smtp-profiles/${id}/test`, { method: 'POST' });
       const data = await res.json();
       setTestResult({ id, success: res.ok, msg: data.message || data.error });
     } catch (err: any) {
       setTestResult({ id, success: false, msg: err.message });
+    } finally {
+      setTestingId(null);
     }
   };
 
@@ -254,9 +258,18 @@ export const SmtpProfiles: React.FC = () => {
 
                 <button
                   onClick={() => handleTestConnection(p.id)}
-                  className="px-3 py-1.5 rounded-lg border border-stone-border text-xs font-semibold text-gray-700 hover:bg-stone-muted transition-all"
+                  disabled={testingId !== null}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border border-stone-border text-xs font-semibold text-gray-700 hover:bg-stone-muted transition-all disabled:opacity-60"
+                  title="ทดสอบการเชื่อมต่อ Handshake ไปยังเซิร์ฟเวอร์เมล"
                 >
-                  ทดสอบการเชื่อมต่อ (Test Handshake)
+                  {testingId === p.id ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-forest" />
+                      <span>กำลังทดสอบเชื่อมต่อ...</span>
+                    </>
+                  ) : (
+                    <span>ทดสอบการเชื่อมต่อ (Test Handshake)</span>
+                  )}
                 </button>
               </div>
             </div>

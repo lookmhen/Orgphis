@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../prisma.js';
 import { renderTemplate } from '../services/templateService.js';
+import { resolveServerBaseUrl } from '../utils/network.js';
 import nodemailer from 'nodemailer';
 
 export const templatesRouter = Router();
@@ -113,33 +114,60 @@ templatesRouter.post('/emails/test-send', async (req: Request, res: Response) =>
   const { smtpProfileId, recipientEmail, subject, bodyHtml } = req.body;
 
   if (!smtpProfileId || !recipientEmail || !subject || !bodyHtml) {
-    return res.status(400).json({ error: 'Missing required parameters for test send' });
+    return res.status(400).json({ error: 'กรุณาระบุ SMTP Profile, อีเมลผู้รับ, หัวข้อ และเนื้อหาอีเมลให้ครบถ้วน' });
   }
 
   try {
     const smtp = await prisma.smtpProfile.findUnique({ where: { id: smtpProfileId } });
-    if (!smtp) return res.status(404).json({ error: 'SMTP profile not found' });
+    if (!smtp) return res.status(404).json({ error: 'ไม่พบโปรไฟล์ SMTP ที่เลือก' });
 
+    const isPort587 = Number(smtp.port) === 587;
     const transporter = nodemailer.createTransport({
-      host: smtp.host,
-      port: smtp.port,
-      secure: smtp.secure,
-      auth: smtp.username ? { user: smtp.username, pass: smtp.password || '' } : undefined
+      host: smtp.host.trim(),
+      port: Number(smtp.port),
+      secure: smtp.secure ?? false,
+      requireTLS: isPort587,
+      connectionTimeout: 10000,
+      tls: {
+        rejectUnauthorized: false
+      },
+      auth: smtp.username ? {
+        user: smtp.username.trim(),
+        pass: (smtp.password || '').trim()
+      } : undefined
     });
 
-    const renderedSubject = renderTemplate(subject, { name: 'Test User', phishing_url: 'https://example.com/test' });
-    const renderedHtml = renderTemplate(bodyHtml, { name: 'Test User', phishing_url: 'https://example.com/test' });
+    const baseUrl = resolveServerBaseUrl(req.body.baseUrl, req.get('host'), req.protocol);
+    const variables = {
+      name: 'พนักงานทดสอบ (Test Admin)',
+      email: recipientEmail,
+      department: 'IT Security',
+      phishing_url: `${baseUrl}/l/test-simulation`,
+      report_url: `${baseUrl}/report/test-simulation`,
+      current_date: new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })
+    };
+
+    const renderedSubject = renderTemplate(subject, variables);
+    const renderedHtml = renderTemplate(bodyHtml, variables);
 
     await transporter.sendMail({
       from: `"${smtp.fromName}" <${smtp.fromEmail}>`,
       to: recipientEmail,
-      subject: `[TEST] ${renderedSubject}`,
-      html: renderedHtml
+      subject: `[SIMULATION TEST] ${renderedSubject}`,
+      html: renderedHtml,
+      headers: {
+        'X-PhishCentral-Simulation': 'test-preview',
+        'X-PhishCentral-Test': 'true'
+      }
     });
 
-    return res.json({ success: true, message: `Test email sent to ${recipientEmail}` });
+    return res.json({
+      success: true,
+      message: `ส่งอีเมลทดสอบไปยัง ${recipientEmail} เรียบร้อยแล้ว (กรุณาตรวจเช็คใน Inbox หรือ Junk ของท่าน)`
+    });
   } catch (err: any) {
-    return res.status(500).json({ error: `SMTP Send Error: ${err.message}` });
+    console.error('[Templates] Test send error:', err);
+    return res.status(500).json({ error: `ไม่สามารถส่งอีเมลทดสอบได้: ${err.message}` });
   }
 });
 

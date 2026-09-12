@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Copy, Plus, Eye, Edit3, Trash2, CheckCircle2, Monitor, Smartphone, Tag } from 'lucide-react';
+import { Copy, Plus, Eye, Edit3, Trash2, CheckCircle2, Monitor, Smartphone, Tag, Send, RefreshCw, AlertCircle } from 'lucide-react';
 import { EmailEditorWithTools } from '../components/EmailEditorWithTools';
 
 export const TemplateLibrary: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'email' | 'landing'>('email');
   const [emailTemplates, setEmailTemplates] = useState<any[]>([]);
   const [landingTemplates, setLandingTemplates] = useState<any[]>([]);
+  const [smtpProfiles, setSmtpProfiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modals & Editors
@@ -14,14 +15,27 @@ export const TemplateLibrary: React.FC = () => {
   const [editingEmail, setEditingEmail] = useState<any | null>(null);
   const [editingLanding, setEditingLanding] = useState<any | null>(null);
 
+  // Test Send Email Modal State
+  const [testEmailModal, setTestEmailModal] = useState<any | null>(null);
+  const [testRecipient, setTestRecipient] = useState('');
+  const [testSmtpId, setTestSmtpId] = useState('');
+  const [isSendingTest, setIsSendingTest] = useState(false);
+  const [testSendResult, setTestSendResult] = useState<{ success: boolean; msg: string } | null>(null);
+
   const fetchData = () => {
     setLoading(true);
     Promise.all([
       fetch('/api/templates/emails').then(r => r.json()),
-      fetch('/api/templates/landing-pages').then(r => r.json())
-    ]).then(([emails, landings]) => {
-      setEmailTemplates(emails);
-      setLandingTemplates(landings);
+      fetch('/api/templates/landing-pages').then(r => r.json()),
+      fetch('/api/smtp-profiles').then(r => r.json())
+    ]).then(([emails, landings, smtps]) => {
+      setEmailTemplates(Array.isArray(emails) ? emails : []);
+      setLandingTemplates(Array.isArray(landings) ? landings : []);
+      const smtpList = Array.isArray(smtps) ? smtps : [];
+      setSmtpProfiles(smtpList);
+      if (smtpList.length > 0) {
+        setTestSmtpId(prev => prev || smtpList[0].id);
+      }
       setLoading(false);
     }).catch(() => setLoading(false));
   };
@@ -29,6 +43,55 @@ export const TemplateLibrary: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handleOpenTestSend = (template: any) => {
+    setTestEmailModal(template);
+    setTestSendResult(null);
+    if (smtpProfiles.length > 0 && !testSmtpId) {
+      setTestSmtpId(smtpProfiles[0].id);
+    }
+  };
+
+  const handleSendTestEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!testEmailModal || !testSmtpId || !testRecipient) {
+      alert('กรุณาเลือก SMTP Profile และระบุอีเมลผู้รับ');
+      return;
+    }
+
+    setIsSendingTest(true);
+    setTestSendResult(null);
+
+    let clientBaseUrl = window.location.origin;
+    if (clientBaseUrl.includes(':5173')) {
+      clientBaseUrl = clientBaseUrl.replace(':5173', ':3000');
+    }
+
+    try {
+      const res = await fetch('/api/templates/emails/test-send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          smtpProfileId: testSmtpId,
+          recipientEmail: testRecipient,
+          subject: testEmailModal.subject,
+          bodyHtml: testEmailModal.bodyHtml,
+          baseUrl: clientBaseUrl
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setTestSendResult({ success: true, msg: data.message });
+      } else {
+        setTestSendResult({ success: false, msg: data.error || 'ส่งอีเมลทดสอบไม่สำเร็จ' });
+      }
+    } catch (err: any) {
+      setTestSendResult({ success: false, msg: err.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อ' });
+    } finally {
+      setIsSendingTest(false);
+    }
+  };
 
   const handleCloneEmail = async (id: string) => {
     try {
@@ -241,13 +304,24 @@ export const TemplateLibrary: React.FC = () => {
               </div>
 
               <div className="mt-5 pt-4 border-t border-stone-border flex items-center justify-between">
-                <button
-                  onClick={() => setPreviewTemplate({ type: 'email', ...t })}
-                  className="flex items-center space-x-1.5 text-xs font-semibold text-gray-600 hover:text-deep-slate"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  <span>Preview</span>
-                </button>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setPreviewTemplate({ type: 'email', ...t })}
+                    className="flex items-center space-x-1 text-xs font-semibold text-gray-600 hover:text-deep-slate"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Preview</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleOpenTestSend(t)}
+                    className="flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-semibold border border-stone-border text-forest hover:bg-forest-light transition-all"
+                    title="ทดสอบส่งอีเมลนี้เข้ากล่องจดหมายจริงของคุณ"
+                  >
+                    <Send className="w-3 h-3" />
+                    <span>ทดสอบส่ง</span>
+                  </button>
+                </div>
 
                 <div className="flex space-x-1.5">
                   {!t.isPreset && (
@@ -546,6 +620,17 @@ export const TemplateLibrary: React.FC = () => {
               </div>
 
               <div className="flex items-center space-x-3">
+                {previewTemplate.type === 'email' && (
+                  <button
+                    onClick={() => handleOpenTestSend(previewTemplate)}
+                    className="flex items-center space-x-1.5 px-3 py-1.5 bg-forest text-white rounded-lg text-xs font-semibold hover:bg-forest-hover shadow-soft transition-all"
+                    title="ทดสอบส่งอีเมลนี้เข้ากล่องจดหมายจริงของคุณ"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>ทดสอบส่งจริง</span>
+                  </button>
+                )}
+
                 {/* Viewport switch */}
                 <div className="flex items-center bg-stone-muted p-1 rounded-lg border border-stone-border">
                   <button
@@ -611,6 +696,112 @@ export const TemplateLibrary: React.FC = () => {
                 />
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: TEST SEND EMAIL ================= */}
+      {testEmailModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-stone-border space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-stone-border">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 rounded-lg bg-forest-light text-forest flex items-center justify-center">
+                  <Send className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-deep-slate text-sm">ทดสอบส่งอีเมล (Send Test Mail)</h3>
+                  <p className="text-[11px] text-gray-500">ทดลองส่งเข้ากล่องจดหมายจริงเพื่อตรวจสอบการแสดงผล</p>
+                </div>
+              </div>
+              <button
+                onClick={() => { setTestEmailModal(null); setTestSendResult(null); }}
+                className="text-gray-400 hover:text-deep-slate text-sm font-bold p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSendTestEmail} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">เทมเพลตที่เลือก</label>
+                <div className="p-2.5 bg-stone-muted/50 rounded-lg border border-stone-border">
+                  <p className="font-bold text-deep-slate text-xs line-clamp-1">{testEmailModal.name}</p>
+                  <p className="text-[11px] text-gray-500 mt-0.5 line-clamp-1">หัวเรื่อง: {testEmailModal.subject}</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">เลือกโปรไฟล์ SMTP สำหรับส่ง <span className="text-red-500">*</span></label>
+                {smtpProfiles.length === 0 ? (
+                  <div className="p-2.5 bg-amber-50 text-amber-800 rounded-lg border border-amber-200 text-[11px]">
+                    ยังไม่มีโปรไฟล์ SMTP ในระบบ กรุณาไปเพิ่มโปรไฟล์ที่หน้า "ตั้งค่า SMTP" ก่อน
+                  </div>
+                ) : (
+                  <select
+                    value={testSmtpId}
+                    onChange={e => setTestSmtpId(e.target.value)}
+                    required
+                    className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest text-xs bg-white"
+                  >
+                    {smtpProfiles.map(s => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({s.fromEmail}) - {s.host}:{s.port}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">อีเมลผู้รับปลายทาง (Recipient Email) <span className="text-red-500">*</span></label>
+                <input
+                  type="email"
+                  required
+                  placeholder="เช่น your-email@company.com"
+                  value={testRecipient}
+                  onChange={e => setTestRecipient(e.target.value)}
+                  className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest text-xs"
+                />
+                <p className="text-[11px] text-gray-400 mt-1">ใส่อีเมลของคุณเพื่อตรวจสอบความถูกต้องของเนื้อหา ฟอนต์ และลิงก์</p>
+              </div>
+
+              {testSendResult && (
+                <div className={`p-3 rounded-xl text-xs flex items-start space-x-2 border ${
+                  testSendResult.success ? 'bg-forest-light text-forest border-forest/30' : 'bg-red-50 text-red-700 border-red-200'
+                }`}>
+                  {testSendResult.success ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />}
+                  <span className="leading-relaxed">{testSendResult.msg}</span>
+                </div>
+              )}
+
+              <div className="flex justify-end space-x-2 pt-3 border-t border-stone-border">
+                <button
+                  type="button"
+                  onClick={() => { setTestEmailModal(null); setTestSendResult(null); }}
+                  className="px-3.5 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-stone-muted"
+                >
+                  ปิด
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSendingTest || smtpProfiles.length === 0}
+                  className="flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-forest text-white hover:bg-forest-hover transition-all shadow-soft disabled:opacity-50"
+                >
+                  {isSendingTest ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>กำลังส่งอีเมลทดสอบ...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" />
+                      <span>ส่งอีเมลทดสอบ (Send Test Mail)</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
