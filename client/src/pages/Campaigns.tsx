@@ -380,7 +380,6 @@ export const Campaigns: React.FC = () => {
                       return (
                         <label
                           key={g.id}
-                          onClick={() => handleToggleGroup(g.id)}
                           className={`flex items-center justify-between p-2 rounded-lg cursor-pointer border text-xs transition-all ${
                             isSelected
                               ? 'bg-forest-light border-forest text-forest font-medium'
@@ -391,8 +390,8 @@ export const Campaigns: React.FC = () => {
                             <input
                               type="checkbox"
                               checked={isSelected}
-                              onChange={() => {}} // handled by label onClick
-                              className="rounded text-forest focus:ring-forest pointer-events-none"
+                              onChange={() => handleToggleGroup(g.id)}
+                              className="rounded text-forest focus:ring-forest cursor-pointer"
                             />
                             <span>{g.name}</span>
                           </div>
