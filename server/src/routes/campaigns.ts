@@ -11,6 +11,11 @@ campaignsRouter.get('/', async (_req: Request, res: Response) => {
     const campaigns = await prisma.campaign.findMany({
       include: {
         targetGroup: { select: { name: true } },
+        targetGroups: {
+          include: {
+            targetGroup: { select: { name: true } }
+          }
+        },
         emailTemplate: { select: { name: true, subject: true } },
         landingPageTemplate: { select: { name: true } },
         smtpProfile: { select: { name: true, fromEmail: true } },
@@ -60,8 +65,15 @@ campaignsRouter.get('/', async (_req: Request, res: Response) => {
           reportRate: parseFloat(reportRate)
         };
 
+        // Determine friendly group names (supports single or multiple groups)
+        let groupNames = c.targetGroups.map(tg => tg.targetGroup.name);
+        if (groupNames.length === 0 && c.targetGroup?.name) {
+          groupNames = [c.targetGroup.name];
+        }
+
         return {
           ...c,
+          targetGroupNames: groupNames,
           metrics: statsObj,
           stats: statsObj
         };
@@ -83,6 +95,9 @@ campaignsRouter.get('/:id', async (req: Request, res: Response) => {
       where: { id },
       include: {
         targetGroup: true,
+        targetGroups: {
+          include: { targetGroup: true }
+        },
         emailTemplate: true,
         landingPageTemplate: true,
         smtpProfile: true,
@@ -110,8 +125,14 @@ campaignsRouter.get('/:id', async (req: Request, res: Response) => {
       if (ct.isReported) departmentStats[dept].reported++;
     }
 
+    let groupNames = campaign.targetGroups.map(tg => tg.targetGroup.name);
+    if (groupNames.length === 0 && campaign.targetGroup?.name) {
+      groupNames = [campaign.targetGroup.name];
+    }
+
     return res.json({
       ...campaign,
+      targetGroupNames: groupNames,
       departmentStats
     });
   } catch (err) {
@@ -119,12 +140,19 @@ campaignsRouter.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
-// CREATE campaign
+// CREATE campaign (Supports single targetGroupId or array of targetGroupIds)
 campaignsRouter.post('/', async (req: Request, res: Response) => {
-  const { name, description, targetGroupId, emailTemplateId, landingPageTemplateId, smtpProfileId } = req.body;
+  const { name, description, targetGroupId, targetGroupIds, emailTemplateId, landingPageTemplateId, smtpProfileId } = req.body;
 
-  if (!name || !targetGroupId || !emailTemplateId || !landingPageTemplateId || !smtpProfileId) {
-    return res.status(400).json({ error: 'Missing required campaign setup fields' });
+  // Accept targetGroupIds array or single targetGroupId
+  const groupIds: string[] = Array.isArray(targetGroupIds) && targetGroupIds.length > 0
+    ? targetGroupIds
+    : targetGroupId
+    ? [targetGroupId]
+    : [];
+
+  if (!name || groupIds.length === 0 || !emailTemplateId || !landingPageTemplateId || !smtpProfileId) {
+    return res.status(400).json({ error: 'Missing required campaign setup fields (name, target groups, templates, or smtp profile)' });
   }
 
   try {
@@ -133,22 +161,38 @@ campaignsRouter.post('/', async (req: Request, res: Response) => {
       data: {
         name,
         description,
-        targetGroupId,
+        targetGroupId: groupIds[0], // fallback for backward compatibility
         emailTemplateId,
         landingPageTemplateId,
         smtpProfileId,
-        status: 'DRAFT'
+        status: 'DRAFT',
+        targetGroups: {
+          create: groupIds.map(gid => ({
+            targetGroupId: gid
+          }))
+        }
       }
     });
 
-    // 2. Map targets from target group and generate unique NanoId tokens
+    // 2. Fetch all targets across the selected target groups (deduplicated by target id and email)
     const targets = await prisma.target.findMany({
-      where: { targetGroupId }
+      where: {
+        targetGroupId: { in: groupIds }
+      }
     });
 
-    if (targets.length > 0) {
+    // Deduplicate by target email in case a user is in multiple selected groups
+    const uniqueTargetsMap = new Map<string, typeof targets[0]>();
+    for (const t of targets) {
+      if (!uniqueTargetsMap.has(t.email.toLowerCase())) {
+        uniqueTargetsMap.set(t.email.toLowerCase(), t);
+      }
+    }
+    const uniqueTargets = Array.from(uniqueTargetsMap.values());
+
+    if (uniqueTargets.length > 0) {
       await prisma.campaignTarget.createMany({
-        data: targets.map((t) => ({
+        data: uniqueTargets.map((t) => ({
           campaignId: campaign.id,
           targetId: t.id,
           token: generateTrackingToken(),
@@ -167,7 +211,12 @@ campaignsRouter.post('/', async (req: Request, res: Response) => {
 // LAUNCH campaign
 campaignsRouter.post('/:id/launch', async (req: Request, res: Response) => {
   const { id } = req.params;
-  const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+  const hostHeader = req.get('host');
+  const envBaseUrl = process.env.BASE_URL;
+  // If BASE_URL is set to localhost but client connects from host IP/domain, use request host header
+  const baseUrl = (envBaseUrl && !envBaseUrl.includes('localhost') && !envBaseUrl.includes('127.0.0.1'))
+    ? envBaseUrl
+    : `${req.protocol}://${hostHeader}`;
 
   try {
     await dispatchService.launchCampaign({ campaignId: id, baseUrl });

@@ -10,10 +10,17 @@ export const Campaigns: React.FC = () => {
   const [landingTemplates, setLandingTemplates] = useState<any[]>([]);
   const [smtpProfiles, setSmtpProfiles] = useState<any[]>([]);
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    name: string;
+    description: string;
+    targetGroupIds: string[];
+    emailTemplateId: string;
+    landingPageTemplateId: string;
+    smtpProfileId: string;
+  }>({
     name: '',
     description: '',
-    targetGroupId: '',
+    targetGroupIds: [],
     emailTemplateId: '',
     landingPageTemplateId: '',
     smtpProfileId: ''
@@ -38,7 +45,7 @@ export const Campaigns: React.FC = () => {
       setSmtpProfiles(smtps);
       setForm(f => ({
         ...f,
-        targetGroupId: f.targetGroupId || (groups.length > 0 ? groups[0].id : ''),
+        targetGroupIds: f.targetGroupIds.length > 0 ? f.targetGroupIds : (groups.length > 0 ? [groups[0].id] : []),
         emailTemplateId: f.emailTemplateId || (emails.length > 0 ? emails[0].id : ''),
         landingPageTemplateId: f.landingPageTemplateId || (landings.length > 0 ? landings[0].id : ''),
         smtpProfileId: f.smtpProfileId || (smtps.length > 0 ? smtps[0].id : '')
@@ -56,10 +63,29 @@ export const Campaigns: React.FC = () => {
     setShowCreateModal(true);
   };
 
+  const handleToggleGroup = (groupId: string) => {
+    setForm(prev => {
+      const exists = prev.targetGroupIds.includes(groupId);
+      if (exists) {
+        return { ...prev, targetGroupIds: prev.targetGroupIds.filter(id => id !== groupId) };
+      } else {
+        return { ...prev, targetGroupIds: [...prev.targetGroupIds, groupId] };
+      }
+    });
+  };
+
+  const handleSelectAllGroups = () => {
+    if (form.targetGroupIds.length === targetGroups.length) {
+      setForm(prev => ({ ...prev, targetGroupIds: [] }));
+    } else {
+      setForm(prev => ({ ...prev, targetGroupIds: targetGroups.map(g => g.id) }));
+    }
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.targetGroupId || !form.emailTemplateId || !form.landingPageTemplateId || !form.smtpProfileId) {
-      alert('กรุณาเลือกข้อมูลให้ครบทุกช่อง (กลุ่มเป้าหมาย, เทมเพลตอีเมล, Landing Page, และ SMTP Profile)');
+    if (form.targetGroupIds.length === 0 || !form.emailTemplateId || !form.landingPageTemplateId || !form.smtpProfileId) {
+      alert('กรุณาเลือกกลุ่มเป้าหมายอย่างน้อย 1 กลุ่ม, เทมเพลตอีเมล, Landing Page, และ SMTP Profile ให้ครบถ้วน');
       return;
     }
 
@@ -74,7 +100,7 @@ export const Campaigns: React.FC = () => {
       setForm({
         name: '',
         description: '',
-        targetGroupId: targetGroups[0]?.id || '',
+        targetGroupIds: targetGroups.length > 0 ? [targetGroups[0].id] : [],
         emailTemplateId: emailTemplates[0]?.id || '',
         landingPageTemplateId: landingTemplates[0]?.id || '',
         smtpProfileId: smtpProfiles[0]?.id || ''
@@ -198,7 +224,11 @@ export const Campaigns: React.FC = () => {
                     </span>
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    กลุ่มผู้รับ: <span className="font-semibold text-deep-slate">{c.targetGroup?.name}</span> &bull;
+                    กลุ่มผู้รับ: <span className="font-semibold text-deep-slate">
+                      {c.targetGroupNames && c.targetGroupNames.length > 0
+                        ? c.targetGroupNames.join(', ')
+                        : c.targetGroup?.name || 'ไม่มีกลุ่ม'}
+                    </span> &bull;
                     เทมเพลต: <span className="font-semibold text-deep-slate">{c.emailTemplate?.name}</span> &bull;
                     SMTP Profile: <span className="font-semibold text-deep-slate">{c.smtpProfile?.name}</span>
                   </p>
@@ -311,21 +341,57 @@ export const Campaigns: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-medium text-gray-700 mb-1">กลุ่มเป้าหมาย (Target Group)</label>
-                <select
-                  required
-                  value={form.targetGroupId}
-                  onChange={e => setForm({ ...form, targetGroupId: e.target.value })}
-                  className="w-full p-2 border border-stone-border rounded-lg outline-none focus:border-forest"
-                >
-                  {targetGroups.length === 0 ? (
-                    <option value="">-- ยังไม่มีกลุ่มเป้าหมาย กรุณาสร้างที่หน้า Targets --</option>
-                  ) : (
-                    targetGroups.map(g => (
-                      <option key={g.id} value={g.id}>{g.name} ({g._count?.targets || 0} คน)</option>
-                    ))
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="font-medium text-gray-700">
+                    กลุ่มเป้าหมาย / แผนก ({form.targetGroupIds.length} กลุ่มที่เลือก)
+                  </label>
+                  {targetGroups.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleSelectAllGroups}
+                      className="text-[11px] text-forest font-semibold hover:underline"
+                    >
+                      {form.targetGroupIds.length === targetGroups.length ? 'ยกเลิกการเลือกทั้งหมด' : 'เลือกทุกกลุ่ม'}
+                    </button>
                   )}
-                </select>
+                </div>
+
+                {targetGroups.length === 0 ? (
+                  <p className="p-3 bg-stone-muted text-gray-500 rounded-lg text-xs">
+                    ยังไม่มีกลุ่มเป้าหมาย กรุณาสร้างที่เมนู <Link to="/targets" className="underline font-semibold text-forest">Targets</Link>
+                  </p>
+                ) : (
+                  <div className="max-h-36 overflow-y-auto border border-stone-border rounded-lg p-2 space-y-1.5 bg-stone-50/40">
+                    {targetGroups.map(g => {
+                      const isSelected = form.targetGroupIds.includes(g.id);
+                      return (
+                        <label
+                          key={g.id}
+                          onClick={() => handleToggleGroup(g.id)}
+                          className={`flex items-center justify-between p-2 rounded-lg cursor-pointer border text-xs transition-all ${
+                            isSelected
+                              ? 'bg-forest-light border-forest text-forest font-medium'
+                              : 'bg-white border-stone-border/70 text-gray-700 hover:bg-stone-muted'
+                          }`}
+                        >
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {}} // handled by label onClick
+                              className="rounded text-forest focus:ring-forest pointer-events-none"
+                            />
+                            <span>{g.name}</span>
+                          </div>
+                          <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-white/80 border border-stone-border/40 text-gray-600">
+                            {g._count?.targets || 0} คน
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+                <p className="text-[10px] text-gray-400 mt-1">สามารถเลือกได้หลายกลุ่มพร้อมกัน (ระบบจะกรองอีเมลที่ซ้ำกันออกให้อัตโนมัติ)</p>
               </div>
 
               <div>
@@ -384,9 +450,9 @@ export const Campaigns: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={targetGroups.length === 0 || smtpProfiles.length === 0}
+                  disabled={targetGroups.length === 0 || smtpProfiles.length === 0 || form.targetGroupIds.length === 0}
                   className={`px-4 py-2 rounded-xl text-xs font-semibold shadow-soft ${
-                    targetGroups.length === 0 || smtpProfiles.length === 0
+                    targetGroups.length === 0 || smtpProfiles.length === 0 || form.targetGroupIds.length === 0
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : 'bg-forest text-white hover:bg-forest-hover'
                   }`}

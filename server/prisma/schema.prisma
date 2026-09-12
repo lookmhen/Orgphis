@@ -15,6 +15,7 @@ model TargetGroup {
   updatedAt   DateTime   @updatedAt
   targets     Target[]
   campaigns   Campaign[]
+  campaignTargetGroups CampaignTargetGroup[]
 }
 
 model Target {
@@ -94,8 +95,9 @@ model Campaign {
   description           String?
   status                String              @default("DRAFT") // DRAFT, SCHEDULED, RUNNING, COMPLETED, CANCELLED
   createdById           String?
-  targetGroupId         String
-  targetGroup           TargetGroup         @relation(fields: [targetGroupId], references: [id], onDelete: Restrict)
+  targetGroupId         String?
+  targetGroup           TargetGroup?        @relation(fields: [targetGroupId], references: [id], onDelete: SetNull)
+  targetGroups          CampaignTargetGroup[]
   emailTemplateId       String
   emailTemplate         EmailTemplate       @relation(fields: [emailTemplateId], references: [id], onDelete: Restrict)
   landingPageTemplateId String
@@ -112,6 +114,16 @@ model Campaign {
 
   @@index([status])
   @@index([createdAt])
+}
+
+model CampaignTargetGroup {
+  id            String      @id @default(uuid())
+  campaignId    String
+  campaign      Campaign    @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  targetGroupId String
+  targetGroup   TargetGroup @relation(fields: [targetGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, targetGroupId])
 }
 
 model CampaignTarget {

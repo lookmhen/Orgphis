@@ -20,6 +20,32 @@ targetsRouter.get('/groups', async (_req: Request, res: Response) => {
   }
 });
 
+// GET all unique departments across all targets
+targetsRouter.get('/departments', async (_req: Request, res: Response) => {
+  try {
+    const rawDepts = await prisma.target.findMany({
+      select: { department: true },
+      distinct: ['department']
+    });
+
+    const departments = rawDepts
+      .map(d => d.department?.trim())
+      .filter((d): d is string => Boolean(d && d.length > 0));
+
+    // Get count of targets per department
+    const deptStats = await Promise.all(
+      departments.map(async (dept) => {
+        const count = await prisma.target.count({ where: { department: dept } });
+        return { name: dept, count };
+      })
+    );
+
+    return res.json(deptStats);
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to fetch departments' });
+  }
+});
+
 // CREATE target group
 targetsRouter.post('/groups', async (req: Request, res: Response) => {
   const { name, description } = req.body;
