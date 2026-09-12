@@ -160,8 +160,9 @@ templatesRouter.post('/landing-pages', async (req: Request, res: Response) => {
       }
     });
     return res.status(201).json(template);
-  } catch (err) {
-    return res.status(500).json({ error: 'Failed to create landing page template' });
+  } catch (err: any) {
+    console.error('[Templates] Create landing page error:', err);
+    return res.status(500).json({ error: `Failed to create landing page template: ${err.message}` });
   }
 });
 
@@ -190,8 +191,9 @@ templatesRouter.post('/landing-pages/:id/clone', async (req: Request, res: Respo
       }
     });
     return res.status(201).json(cloned);
-  } catch (err) {
-    return res.status(500).json({ error: 'Failed to clone landing page' });
+  } catch (err: any) {
+    console.error('[Templates] Clone landing page error:', err);
+    return res.status(500).json({ error: `Failed to clone landing page: ${err.message}` });
   }
 });
 
@@ -214,8 +216,9 @@ templatesRouter.put('/landing-pages/:id', async (req: Request, res: Response) =>
       }
     });
     return res.json(updated);
-  } catch (err) {
-    return res.status(500).json({ error: 'Failed to update landing page template' });
+  } catch (err: any) {
+    console.error('[Templates] Update landing page error:', err);
+    return res.status(500).json({ error: `Failed to update landing page template: ${err.message}` });
   }
 });
 

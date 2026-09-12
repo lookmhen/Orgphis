@@ -99,10 +99,11 @@ export const TemplateLibrary: React.FC = () => {
         setEditingLanding(null);
         fetchData();
       } else {
-        alert('Failed to save landing page template');
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.error || 'Failed to save landing page template');
       }
-    } catch (err) {
-      alert('Save error');
+    } catch (err: any) {
+      alert(`Save error: ${err.message}`);
     }
   };
 

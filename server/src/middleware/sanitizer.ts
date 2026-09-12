@@ -24,9 +24,12 @@ export function sanitizeObject(obj: any): any {
 
   const cleaned: Record<string, any> = {};
   for (const [key, value] of Object.entries(obj)) {
-    const isSensitive = SENSITIVE_KEYS.some(sensitiveKey =>
-      key.toLowerCase().includes(sensitiveKey)
-    );
+    // Check for sensitive credential keys, but ignore UI configuration boolean flags (e.g. showPasswordField, allowPassword)
+    const isBooleanField = typeof value === 'boolean';
+    const isSensitive = !isBooleanField && SENSITIVE_KEYS.some(sensitiveKey => {
+      const lower = key.toLowerCase();
+      return lower === sensitiveKey || lower.endsWith(`_${sensitiveKey}`) || lower.endsWith(sensitiveKey);
+    });
 
     if (isSensitive && typeof value !== 'object') {
       // Mark as received but drop the actual plain-text value completely
