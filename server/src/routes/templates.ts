@@ -151,7 +151,7 @@ templatesRouter.post('/landing-pages', async (req: Request, res: Response) => {
       data: {
         name, pageTitle, logoUrl, headerText, subHeaderText,
         submitButtonText: submitButtonText || 'Sign In',
-        showEmpIdField: showEmpIdField ?? true,
+        showEmpIdField: showEmpIdField ?? false,
         showEmailField: showEmailField ?? true,
         showPasswordField: showPasswordField ?? true,
         postSubmitAction: postSubmitAction || 'AWARENESS_PAGE',

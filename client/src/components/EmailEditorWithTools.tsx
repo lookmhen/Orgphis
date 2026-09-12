@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { 
   Code2, 
   Palette, 
@@ -155,7 +155,7 @@ ${subHtml}
     if (templateLang === 'th') {
       greetingHtml = `
 <p style="color: #374151; font-size: 15px; line-height: 1.6; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 16px 0;">
-  เรียนคุณ <strong>{{name}}</strong> (แผนก {{department}} - รหัสพนักงาน: {{empid}}),
+  เรียนคุณ <strong>{{name}}</strong> (แผนก {{department}}),
 </p>
 <p style="color: #374151; font-size: 15px; line-height: 1.6; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 16px 0;">
   ตามนโยบายรักษาความมั่นคงปลอดภัยสารสนเทศ ขอความร่วมมือท่านทำการตรวจสอบความถูกต้องของข้อมูลบัญชีผู้ใช้...
@@ -163,7 +163,7 @@ ${subHtml}
     } else if (templateLang === 'en') {
       greetingHtml = `
 <p style="color: #374151; font-size: 15px; line-height: 1.6; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 16px 0;">
-  Dear <strong>{{name}}</strong> (Dept: {{department}} - Staff ID: {{empid}}),
+  Dear <strong>{{name}}</strong> (Department: {{department}}),
 </p>
 <p style="color: #374151; font-size: 15px; line-height: 1.6; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 16px 0;">
   In accordance with our corporate IT security policies, you are required to verify and update your account details...
@@ -172,8 +172,8 @@ ${subHtml}
       greetingHtml = `
 <div style="font-family: 'Segoe UI', Tahoma, sans-serif; margin: 16px 0; color: #374151; line-height: 1.6;">
   <p style="margin: 0 0 6px 0; font-size: 15px;">
-    เรียนคุณ <strong>{{name}}</strong> (แผนก {{department}} - รหัสพนักงาน: {{empid}}) / <br>
-    <span style="color: #6B7280; font-size: 13px;">Dear {{name}} (Department: {{department}} - Staff ID: {{empid}}),</span>
+    เรียนคุณ <strong>{{name}}</strong> (แผนก {{department}}) / <br>
+    <span style="color: #6B7280; font-size: 13px;">Dear {{name}} (Department: {{department}}),</span>
   </p>
   <p style="margin: 12px 0 6px 0; font-size: 14px;">
     ตามนโยบายรักษาความมั่นคงปลอดภัยสารสนเทศ ขอความร่วมมือท่านทำการตรวจสอบความถูกต้องของข้อมูลบัญชีผู้ใช้...
@@ -219,7 +219,6 @@ ${subHtml}
     .replace(/\{\{name\}\}/g, 'สมชาย ใจมั่นคง (Somchai J.)')
     .replace(/\{\{email\}\}/g, 'somchai.j@company.com')
     .replace(/\{\{department\}\}/g, 'IT & Information Security')
-    .replace(/\{\{empid\}\}/g, 'EMP-90214')
     .replace(/\{\{current_date\}\}/g, new Date().toLocaleDateString('th-TH'))
     .replace(/\{\{phishing_url\}\}/g, '#sample-phish-click');
 
@@ -299,7 +298,6 @@ ${subHtml}
               { tag: '{{name}}', label: 'ชื่อพนักงาน' },
               { tag: '{{email}}', label: 'อีเมล' },
               { tag: '{{department}}', label: 'แผนก' },
-              { tag: '{{empid}}', label: 'รหัสพนักงาน' },
               { tag: '{{phishing_url}}', label: 'ลิงก์เป้าหมาย' },
               { tag: '{{current_date}}', label: 'วันที่ปัจจุบัน' }
             ].map(v => (

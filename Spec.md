@@ -111,8 +111,8 @@
   - `{{name}}`: ชื่อ-นามสกุลพนักงาน
   - `{{email}}`: อีเมลเป้าหมาย
   - `{{department}}`: แผนก
-  - `{{empid}}`: รหัสพนักงาน
   - `{{phishing_url}}`: ลิงก์ฟิชชิ่งเฉพาะบุคคล (Unique URL-safe Token)
+  - `{{report_url}}`: ลิงก์ปุ่มกดรายงานฟิชชิ่งไปยังฝ่าย IT Security
   - `{{current_date}}`: วันที่ปัจจุบัน
 - **Built-in Starter Template Library (Read-only System Presets):**
   1. **IT Urgent Password Expiry:** แจ้งเตือนรหัสผ่านหมดอายุ ต้องเปลี่ยนทันที

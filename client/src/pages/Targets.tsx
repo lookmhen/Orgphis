@@ -17,8 +17,7 @@ export const Targets: React.FC = () => {
   const [singleTarget, setSingleTarget] = useState({
     email: '',
     firstName: '',
-    department: '',
-    employeeId: ''
+    department: ''
   });
 
   const fetchGroups = (selectGroupId?: string) => {
@@ -93,7 +92,7 @@ export const Targets: React.FC = () => {
       });
 
       if (res.ok) {
-        setSingleTarget({ email: '', firstName: '', department: '', employeeId: '' });
+        setSingleTarget({ email: '', firstName: '', department: '' });
         setShowAddSingleModal(false);
         fetchTargets(selectedGroup.id);
         fetchGroups(selectedGroup.id);
@@ -127,10 +126,10 @@ export const Targets: React.FC = () => {
   const handleDownloadCsvTemplate = () => {
     const csvContent = 
       '\uFEFF' +
-      'email,name,department,empid\n' +
-      'somchai.j@company.com,สมชาย ใจมั่นคง,Information Technology,EMP-001\n' +
-      'kanya.s@company.com,กัญญา ศรีสุข,Human Resources,EMP-002\n' +
-      'vichai.p@company.com,วิชัย พัฒนาการ,Finance & Accounting,EMP-003\n';
+      'email,name,department\n' +
+      'somchai.j@company.com,สมชาย ใจมั่นคง,Information Technology\n' +
+      'kanya.s@company.com,กัญญา ศรีสุข,Human Resources\n' +
+      'vichai.p@company.com,วิชัย พัฒนาการ,Finance & Accounting\n';
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -176,14 +175,13 @@ export const Targets: React.FC = () => {
         parsed.push({
           email: parts[0],
           name: parts[1] || '',
-          department: parts[2] || 'General',
-          empid: parts[3] || ''
+          department: parts[2] || 'General'
         });
       }
     }
 
     if (parsed.length === 0) {
-      alert('ไม่พบข้อมูลอีเมลที่ถูกต้อง กรุณาตรวจสอบรูปแบบ (Email, Name, Department, EmpID)');
+      alert('ไม่พบข้อมูลอีเมลที่ถูกต้อง กรุณาตรวจสอบรูปแบบ (Email, Name, Department)');
       return;
     }
 
@@ -301,14 +299,13 @@ export const Targets: React.FC = () => {
                   <th className="p-2.5">อีเมล (Email)</th>
                   <th className="p-2.5">ชื่อ-นามสกุล</th>
                   <th className="p-2.5">แผนก (Department)</th>
-                  <th className="p-2.5">รหัสพนักงาน</th>
                   <th className="p-2.5 text-right">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-border/60">
                 {targets.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center text-gray-400">
+                    <td colSpan={4} className="p-8 text-center text-gray-400">
                       {selectedGroup ? 'ยังไม่มีรายชื่อในกลุ่มนี้ คลิกปุ่ม "+ เพิ่มรายบุคคล" หรือ "นำเข้า CSV"' : 'กรุณาสร้างกลุ่มทางซ้ายมือก่อน'}
                     </td>
                   </tr>
@@ -318,7 +315,6 @@ export const Targets: React.FC = () => {
                       <td className="p-2.5 font-medium text-deep-slate">{t.email}</td>
                       <td className="p-2.5 text-gray-600">{t.firstName || '-'}</td>
                       <td className="p-2.5 text-gray-600">{t.department || '-'}</td>
-                      <td className="p-2.5 text-gray-600">{t.employeeId || '-'}</td>
                       <td className="p-2.5 text-right">
                         <button
                           onClick={() => handleDeleteTarget(t.id)}
@@ -364,27 +360,15 @@ export const Targets: React.FC = () => {
                   className="w-full p-2 border border-stone-border rounded-lg outline-none focus:border-forest"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block font-medium text-gray-700 mb-1">แผนก</label>
-                  <input
-                    type="text"
-                    placeholder="IT, HR, Accounting"
-                    value={singleTarget.department}
-                    onChange={e => setSingleTarget({ ...singleTarget, department: e.target.value })}
-                    className="w-full p-2 border border-stone-border rounded-lg outline-none focus:border-forest"
-                  />
-                </div>
-                <div>
-                  <label className="block font-medium text-gray-700 mb-1">รหัสพนักงาน</label>
-                  <input
-                    type="text"
-                    placeholder="EMP-001"
-                    value={singleTarget.employeeId}
-                    onChange={e => setSingleTarget({ ...singleTarget, employeeId: e.target.value })}
-                    className="w-full p-2 border border-stone-border rounded-lg outline-none focus:border-forest"
-                  />
-                </div>
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">แผนก (Department)</label>
+                <input
+                  type="text"
+                  placeholder="IT, HR, Accounting"
+                  value={singleTarget.department}
+                  onChange={e => setSingleTarget({ ...singleTarget, department: e.target.value })}
+                  className="w-full p-2 border border-stone-border rounded-lg outline-none focus:border-forest"
+                />
               </div>
 
               <div className="flex justify-end space-x-2 pt-3 border-t border-stone-border">
@@ -456,11 +440,11 @@ export const Targets: React.FC = () => {
                 rows={6}
                 value={csvText}
                 onChange={e => setCsvText(e.target.value)}
-                placeholder="email,name,department,empid&#10;somchai@company.com,สมชาย ใจดี,IT,EMP001&#10;kanya@company.com,กัญญา ศรีสุข,HR,EMP002"
+                placeholder="email,name,department&#10;somchai@company.com,สมชาย ใจดี,IT&#10;kanya@company.com,กัญญา ศรีสุข,HR"
                 className="w-full p-3 border border-stone-border rounded-xl font-mono text-xs outline-none focus:border-forest"
               />
               <p className="text-[11px] text-gray-400 mt-1">
-                รูปแบบ: <code className="bg-stone-muted px-1 py-0.5 rounded font-mono">email,name,department,empid</code> (รองรับภาษาไทย 100%)
+                รูปแบบ: <code className="bg-stone-muted px-1 py-0.5 rounded font-mono">email,name,department</code> (รองรับภาษาไทย 100%)
               </p>
             </div>
 

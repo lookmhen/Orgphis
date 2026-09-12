@@ -156,7 +156,7 @@ export const TemplateLibrary: React.FC = () => {
                 headerText: 'เข้าสู่ระบบบัญชีองค์กร',
                 subHeaderText: 'กรุณากรอกข้อมูลเพื่อยืนยันตัวตน',
                 submitButtonText: 'เข้าสู่ระบบ',
-                showEmpIdField: true,
+                showEmpIdField: false,
                 showEmailField: true,
                 showPasswordField: true,
                 postSubmitAction: 'AWARENESS_PAGE'
@@ -279,7 +279,7 @@ export const TemplateLibrary: React.FC = () => {
                 <div className="mt-4 p-3 bg-stone-muted/50 rounded-lg text-[12px] text-gray-600 space-y-1 border border-stone-border/50">
                   <p>หัวข้อ: <span className="font-semibold text-deep-slate">{t.headerText}</span></p>
                   <p>ปุ่มส่ง: <span className="font-semibold text-deep-slate">{t.submitButtonText}</span></p>
-                  <p>ช่องกรอก: {t.showEmailField && 'อีเมล '}{t.showEmpIdField && 'รหัสพนักงาน '}{t.showPasswordField && 'รหัสผ่าน'}</p>
+                  <p>ช่องกรอก: {t.showEmailField && 'อีเมล '}{t.showPasswordField && 'รหัสผ่าน'}</p>
                 </div>
               </div>
 
@@ -462,16 +462,6 @@ export const TemplateLibrary: React.FC = () => {
                   <label className="flex items-center space-x-2 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={editingLanding.showEmpIdField}
-                      onChange={e => setEditingLanding({ ...editingLanding, showEmpIdField: e.target.checked })}
-                      className="rounded text-forest focus:ring-forest"
-                    />
-                    <span>ช่องรหัสพนักงาน (EmpID)</span>
-                  </label>
-
-                  <label className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
                       checked={editingLanding.showPasswordField}
                       onChange={e => setEditingLanding({ ...editingLanding, showPasswordField: e.target.checked })}
                       className="rounded text-forest focus:ring-forest"
@@ -595,7 +585,6 @@ export const TemplateLibrary: React.FC = () => {
                         <h2>${previewTemplate.headerText || previewTemplate.pageTitle}</h2>
                         <p>${previewTemplate.subHeaderText || ''}</p>
                         ${previewTemplate.showEmailField ? '<div class="group"><label>Email</label><input type="text" value="employee@company.com" /></div>' : ''}
-                        ${previewTemplate.showEmpIdField ? '<div class="group"><label>Employee ID</label><input type="text" value="EMP-1024" /></div>' : ''}
                         ${previewTemplate.showPasswordField ? '<div class="group"><label>Password</label><input type="password" /></div>' : ''}
                         <button>${previewTemplate.submitButtonText || 'เข้าสู่ระบบ'}</button>
                       </div>

@@ -105,10 +105,10 @@ docker compose up -d --build
 2. คลิกเลือกกลุ่มที่สร้างขึ้น จากนั้นคลิกปุ่ม **"นำเข้า CSV"**
 3. วางข้อความรายชื่อพนักงานตามรูปแบบ:
    ```csv
-   email,name,department,empid
-   somchai.j@company.com,สมชาย ใจดี,IT,EMP001
-   kanya.s@company.com,กัญญา ศรีสุข,HR,EMP002
-   wipa.t@company.com,วิภา ทองคำ,Finance,EMP003
+   email,name,department
+   somchai.j@company.com,สมชาย ใจดี,IT
+   kanya.s@company.com,กัญญา ศรีสุข,HR
+   wipa.t@company.com,วิภา ทองคำ,Finance
    ```
 4. กด **"ยืนยันการนำเข้า"** ระบบจะตรวจสอบและเพิ่มรายชื่อเข้าสู่กลุ่มทันที
 

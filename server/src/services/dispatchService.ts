@@ -127,7 +127,6 @@ class DispatchService {
               name: `${ct.target.firstName || ''} ${ct.target.lastName || ''}`.trim() || ct.target.email.split('@')[0],
               email: ct.target.email,
               department: ct.target.department || 'General',
-              empid: ct.target.employeeId || 'N/A',
               phishing_url: phishingUrl,
               report_url: reportUrl
             };

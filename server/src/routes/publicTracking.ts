@@ -113,7 +113,6 @@ publicTrackingRouter.get('/l/:token', async (req: Request, res: Response) => {
     const variables = {
       name: `${target.target.firstName || ''} ${target.target.lastName || ''}`.trim() || target.target.email,
       email: target.target.email,
-      empid: target.target.employeeId || '',
       department: target.target.department || ''
     };
 
@@ -227,12 +226,6 @@ publicTrackingRouter.get('/l/:token', async (req: Request, res: Response) => {
       <div class="form-group">
         <label for="email">อีเมล / บัญชีผู้ใช้</label>
         <input type="text" id="email" name="email" value="${variables.email}" required />
-      </div>` : ''}
-
-      ${lp.showEmpIdField ? `
-      <div class="form-group">
-        <label for="empid">รหัสพนักงาน</label>
-        <input type="text" id="empid" name="empid" value="${variables.empid}" />
       </div>` : ''}
 
       ${lp.showPasswordField ? `

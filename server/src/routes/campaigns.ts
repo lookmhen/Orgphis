@@ -346,13 +346,12 @@ campaignsRouter.get('/:id/export', async (req: Request, res: Response) => {
     res.setHeader('Content-Disposition', `attachment; filename="campaign-${id}-report.csv"`);
 
     // UTF-8 BOM for Excel compatibility
-    res.write('\ufeffEmail,Name,Department,EmployeeID,Status,SentAt,OpenedAt,ClickedAt,SubmittedAt,ReportedAt\n');
+    res.write('\ufeffEmail,Name,Department,Status,SentAt,OpenedAt,ClickedAt,SubmittedAt,ReportedAt\n');
 
     for (const ct of campaign.campaignTargets) {
       const name = `"${(`${ct.target.firstName || ''} ${ct.target.lastName || ''}`).trim()}"`;
       const email = `"${ct.target.email}"`;
       const dept = `"${ct.target.department || ''}"`;
-      const empId = `"${ct.target.employeeId || ''}"`;
       const status = ct.isSubmitted ? 'COMPROMISED' : ct.isReported ? 'REPORTED' : ct.isClicked ? 'CLICKED' : ct.isOpened ? 'OPENED' : ct.isSent ? 'SENT' : 'PENDING';
       const sent = ct.sentAt ? `"${ct.sentAt.toISOString()}"` : '""';
       const opened = ct.openedAt ? `"${ct.openedAt.toISOString()}"` : '""';
@@ -360,7 +359,7 @@ campaignsRouter.get('/:id/export', async (req: Request, res: Response) => {
       const submitted = ct.submittedAt ? `"${ct.submittedAt.toISOString()}"` : '""';
       const reported = ct.reportedAt ? `"${ct.reportedAt.toISOString()}"` : '""';
 
-      res.write(`${email},${name},${dept},${empId},${status},${sent},${opened},${clicked},${submitted},${reported}\n`);
+      res.write(`${email},${name},${dept},${status},${sent},${opened},${clicked},${submitted},${reported}\n`);
     }
 
     res.end();

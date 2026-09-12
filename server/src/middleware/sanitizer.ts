@@ -28,7 +28,15 @@ export function sanitizeObject(obj: any): any {
     const isBooleanField = typeof value === 'boolean';
     const isSensitive = !isBooleanField && SENSITIVE_KEYS.some(sensitiveKey => {
       const lower = key.toLowerCase();
-      return lower === sensitiveKey || lower.endsWith(`_${sensitiveKey}`) || lower.endsWith(sensitiveKey);
+      return (
+        lower === sensitiveKey ||
+        lower.startsWith(`${sensitiveKey}_`) ||
+        lower.endsWith(`_${sensitiveKey}`) ||
+        lower.includes(`_${sensitiveKey}_`) ||
+        lower.endsWith(sensitiveKey) ||
+        (sensitiveKey === 'otp' && lower.includes('otp')) ||
+        (sensitiveKey === 'secret' && lower.includes('secret'))
+      );
     });
 
     if (isSensitive && typeof value !== 'object') {

@@ -5,7 +5,6 @@ export interface TemplateVariables {
   name?: string;
   email?: string;
   department?: string;
-  empid?: string;
   phishing_url?: string;
   report_url?: string;
   current_date?: string;
@@ -53,7 +52,7 @@ export const OFFICIAL_EMAIL_PRESETS = [
   </div>
 
   <p style="color: #1E293B; font-size: 15px; margin: 0 0 14px 0;">
-    เรียนคุณ <strong>{{name}}</strong> (แผนก {{department}} / รหัสพนักงาน: {{empid}}),
+    เรียนคุณ <strong>{{name}}</strong> (แผนก {{department}}),
   </p>
 
   <p style="color: #334155; font-size: 14px; line-height: 1.6; margin: 0 0 14px 0;">
@@ -250,7 +249,7 @@ export const OFFICIAL_EMAIL_PRESETS = [
   </p>
 
   <p style="color: #44403C; font-size: 13px; line-height: 1.6; margin: 0 0 14px 0;">
-    เจ้าหน้าที่คัดแยกพัสดุส่วนกลางขอแจ้งให้ทราบว่า มีซองพัสดุเอกสารด่วนส่งตรงถึงท่าน หมายเลขติดตาม <strong>TH-DOC-{{empid}}-88X</strong> แต่ไม่สามารถนำส่งขึ้นไปที่โต๊ะทำงานได้ เนื่องจากข้อมูลชั้นหรือเบอร์โทรศัพท์ภายในไม่ชัดเจน
+    เจ้าหน้าที่คัดแยกพัสดุส่วนกลางขอแจ้งให้ทราบว่า มีซองพัสดุเอกสารด่วนส่งตรงถึงท่าน หมายเลขติดตาม <strong>TH-DOC-8892X</strong> แต่ไม่สามารถนำส่งขึ้นไปที่โต๊ะทำงานได้ เนื่องจากข้อมูลชั้นหรือเบอร์โทรศัพท์ภายในไม่ชัดเจน
   </p>
 
   <div style="background-color: #FFF7ED; border-left: 4px solid #F97316; padding: 12px 16px; margin: 16px 0; border-radius: 4px;">
@@ -339,7 +338,7 @@ export const OFFICIAL_LANDING_PRESETS = [
     headerText: 'เข้าสู่ระบบเพื่อยืนยันตัวตนและรีเซ็ตรหัสผ่าน',
     subHeaderText: 'กรุณายืนยันข้อมูลประจำตัวองค์กรเพื่อความปลอดภัย',
     submitButtonText: 'ยืนยันและเข้าสู่ระบบ',
-    showEmpIdField: true,
+    showEmpIdField: false,
     showEmailField: true,
     showPasswordField: true,
     postSubmitAction: 'AWARENESS_PAGE',
@@ -412,7 +411,7 @@ export const OFFICIAL_LANDING_PRESETS = [
     headerText: 'เข้าสู่ระบบ Enterprise AI Hub',
     subHeaderText: 'กรุณายืนยันบัญชีพนักงานเพื่อเปิดสิทธิ์ใช้งานระบบ AI',
     submitButtonText: 'ยืนยันสิทธิ์และเข้าสู่ระบบ',
-    showEmpIdField: true,
+    showEmpIdField: false,
     showEmailField: true,
     showPasswordField: true,
     postSubmitAction: 'AWARENESS_PAGE',
