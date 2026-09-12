@@ -314,7 +314,6 @@ model LandingPageTemplate {
   headerText       String?
   subHeaderText    String?
   submitButtonText String           @default("Sign In")
-  showEmpIdField   Boolean          @default(true)
   showEmailField   Boolean          @default(true)
   showPasswordField Boolean         @default(true)
   postSubmitAction PostSubmitAction @default(AWARENESS_PAGE)

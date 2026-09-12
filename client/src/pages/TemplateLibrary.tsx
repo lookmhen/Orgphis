@@ -156,7 +156,6 @@ export const TemplateLibrary: React.FC = () => {
                 headerText: 'เข้าสู่ระบบบัญชีองค์กร',
                 subHeaderText: 'กรุณากรอกข้อมูลเพื่อยืนยันตัวตน',
                 submitButtonText: 'เข้าสู่ระบบ',
-                showEmpIdField: false,
                 showEmailField: true,
                 showPasswordField: true,
                 postSubmitAction: 'AWARENESS_PAGE'

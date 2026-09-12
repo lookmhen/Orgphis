@@ -138,7 +138,7 @@ templatesRouter.get('/landing-pages', async (_req: Request, res: Response) => {
 templatesRouter.post('/landing-pages', async (req: Request, res: Response) => {
   const {
     name, pageTitle, logoUrl, headerText, subHeaderText,
-    submitButtonText, showEmpIdField, showEmailField,
+    submitButtonText, showEmailField,
     showPasswordField, postSubmitAction, redirectUrl, awarenessContent
   } = req.body;
 
@@ -151,7 +151,6 @@ templatesRouter.post('/landing-pages', async (req: Request, res: Response) => {
       data: {
         name, pageTitle, logoUrl, headerText, subHeaderText,
         submitButtonText: submitButtonText || 'Sign In',
-        showEmpIdField: showEmpIdField ?? false,
         showEmailField: showEmailField ?? true,
         showPasswordField: showPasswordField ?? true,
         postSubmitAction: postSubmitAction || 'AWARENESS_PAGE',
@@ -181,7 +180,6 @@ templatesRouter.post('/landing-pages/:id/clone', async (req: Request, res: Respo
         headerText: source.headerText,
         subHeaderText: source.subHeaderText,
         submitButtonText: source.submitButtonText,
-        showEmpIdField: source.showEmpIdField,
         showEmailField: source.showEmailField,
         showPasswordField: source.showPasswordField,
         postSubmitAction: source.postSubmitAction,
@@ -202,7 +200,7 @@ templatesRouter.put('/landing-pages/:id', async (req: Request, res: Response) =>
   const { id } = req.params;
   const {
     name, pageTitle, logoUrl, headerText, subHeaderText,
-    submitButtonText, showEmpIdField, showEmailField,
+    submitButtonText, showEmailField,
     showPasswordField, postSubmitAction, redirectUrl, awarenessContent
   } = req.body;
 
@@ -211,7 +209,7 @@ templatesRouter.put('/landing-pages/:id', async (req: Request, res: Response) =>
       where: { id },
       data: {
         name, pageTitle, logoUrl, headerText, subHeaderText,
-        submitButtonText, showEmpIdField, showEmailField,
+        submitButtonText, showEmailField,
         showPasswordField, postSubmitAction, redirectUrl, awarenessContent
       }
     });
