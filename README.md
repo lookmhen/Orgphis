@@ -106,7 +106,7 @@ Phishing-mail/
         ▼
 [ Dispatch Service ] ────(SMTP Relay)────► [ กล่องจดหมายพนักงาน ]
         │                                         │
-        │ (สร้าง Tracking Token ประจำคน)          │ (พนักงานคลิกลิงก์)
+        │ (สร้าง Tracking Token ประจำคน)            │ (พนักงานคลิกลิงก์)
         ▼                                         ▼
 [ Tracking Service Buffer ] ◄───(HTTP)─── [ Landing Page (/l/:token) ]
         │                                         │ (เผลอกรอกข้อมูล)
@@ -126,16 +126,15 @@ Phishing-mail/
 ฟังก์ชัน [`network.ts`](file:///d:/Nodejs/Phishing-mail/server/src/utils/network.ts) ป้องกันบั๊ก "ลิงก์ในอีเมลเป็น localhost":
 1. ใช้ค่า Base URL ที่ส่งมาจากหน้าต่างเบราว์เซอร์ของ Admin ก่อนเป็นอันดับแรก
 2. หากไม่มี ให้ใช้ค่า `BASE_URL` จาก `.env`
-3. หากค่าเป็น `localhost` ระบบจะค้นหา IPv4 LAN จริงของเครื่องแม่ข่ายให้อัตโนมัติ (เช่น `http://192.168.114.46:3000`)
+3. หากค่าเป็น `localhost` ระบบจะค้นหา IPv4 LAN จริงของเครื่องแม่ข่ายให้อัตโนมัติ(เช่น `http://192.168.xx.xx:3000`)
 
----
+--- 
 
 ## 4. วิธีการติดตั้งและเริ่มต้นใช้งาน (Getting Started)
 
 ### ความต้องการของระบบ (Prerequisites)
 - **Node.js:** เวอร์ชั่น 20.x ขึ้นไป
 - **npm:** เวอร์ชั่น 10.x ขึ้นไป
-- **Git**
 
 ### การติดตั้งและเริ่มรันแบบ Development Mode
 ```bash
