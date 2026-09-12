@@ -250,44 +250,8 @@ ${subHtml}
         </div>
       </div>
 
-      {/* Language Switcher Bar & Dynamic Variables */}
-      <div className="bg-stone-muted/50 p-2.5 rounded-xl border border-stone-border/60 space-y-2">
-        <div className="flex items-center justify-between flex-wrap gap-2 pb-1.5 border-b border-stone-border/40">
-          <div className="flex items-center space-x-1.5 text-xs text-deep-slate font-semibold">
-            <Languages className="w-3.5 h-3.5 text-forest" />
-            <span>ภาษาสำหรับบล็อกเนื้อหา (Block Language Mode):</span>
-          </div>
-          <div className="flex space-x-1 bg-white p-1 rounded-lg border border-stone-border">
-            <button
-              type="button"
-              onClick={() => setTemplateLang('bilingual')}
-              className={`px-2.5 py-0.5 rounded text-[11px] font-semibold transition-all ${
-                templateLang === 'bilingual' ? 'bg-forest text-white shadow-xs' : 'text-gray-600 hover:text-deep-slate'
-              }`}
-            >
-              🌐 สองภาษา (Bilingual TH/EN)
-            </button>
-            <button
-              type="button"
-              onClick={() => setTemplateLang('th')}
-              className={`px-2.5 py-0.5 rounded text-[11px] font-semibold transition-all ${
-                templateLang === 'th' ? 'bg-forest text-white shadow-xs' : 'text-gray-600 hover:text-deep-slate'
-              }`}
-            >
-              🇹🇭 ภาษาไทย (Thai Only)
-            </button>
-            <button
-              type="button"
-              onClick={() => setTemplateLang('en')}
-              className={`px-2.5 py-0.5 rounded text-[11px] font-semibold transition-all ${
-                templateLang === 'en' ? 'bg-forest text-white shadow-xs' : 'text-gray-600 hover:text-deep-slate'
-              }`}
-            >
-              🇬🇧 English Only
-            </button>
-          </div>
-        </div>
-
+      {/* Dynamic Variables Bar */}
+      <div className="bg-stone-muted/50 p-2.5 rounded-xl border border-stone-border/60">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center space-x-1.5 text-xs text-deep-slate font-semibold">
             <Tag className="w-3.5 h-3.5 text-forest" />
@@ -408,6 +372,48 @@ ${subHtml}
           {activeMode === 'tools' ? (
             <div className="space-y-3 bg-stone-50/70 p-3.5 rounded-2xl border border-stone-border max-h-[480px] overflow-y-auto">
               
+              {/* Visual Tools Header: Language Mode for New Blocks */}
+              <div className="bg-white p-3 rounded-xl border border-stone-border shadow-xs space-y-1.5">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center space-x-1.5 text-xs text-deep-slate font-bold">
+                    <Languages className="w-4 h-4 text-forest" />
+                    <span>ภาษาของบล็อกสำเร็จรูป (Block Language Mode):</span>
+                  </div>
+                  <div className="flex space-x-1 bg-stone-muted/70 p-1 rounded-lg border border-stone-border/70">
+                    <button
+                      type="button"
+                      onClick={() => setTemplateLang('bilingual')}
+                      className={`px-2.5 py-0.5 rounded text-[11px] font-semibold transition-all ${
+                        templateLang === 'bilingual' ? 'bg-forest text-white shadow-xs' : 'text-gray-600 hover:text-deep-slate'
+                      }`}
+                    >
+                      🌐 สองภาษา (TH/EN)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTemplateLang('th')}
+                      className={`px-2.5 py-0.5 rounded text-[11px] font-semibold transition-all ${
+                        templateLang === 'th' ? 'bg-forest text-white shadow-xs' : 'text-gray-600 hover:text-deep-slate'
+                      }`}
+                    >
+                      🇹🇭 ภาษาไทย (TH)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTemplateLang('en')}
+                      className={`px-2.5 py-0.5 rounded text-[11px] font-semibold transition-all ${
+                        templateLang === 'en' ? 'bg-forest text-white shadow-xs' : 'text-gray-600 hover:text-deep-slate'
+                      }`}
+                    >
+                      🇬🇧 English (EN)
+                    </button>
+                  </div>
+                </div>
+                <p className="text-[11px] text-gray-500">
+                  💡 กำหนดภาษาสำหรับบล็อกข้อความสำเร็จรูปที่จะกดปุ่ม <span className="font-semibold text-forest">"+ แทรกลงอีเมล"</span> ด้านล่างนี้
+                </p>
+              </div>
+
               {/* Tool Block 1: Call to Action Button */}
               <div className="bg-white p-3 rounded-xl border border-stone-border shadow-xs space-y-2">
                 <div className="flex items-center justify-between">
