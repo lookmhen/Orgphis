@@ -509,6 +509,10 @@ export async function seedOfficialPresets(): Promise<void> {
           headerText: preset.headerText,
           subHeaderText: preset.subHeaderText,
           submitButtonText: preset.submitButtonText,
+          showEmpIdField: preset.showEmpIdField,
+          showEmailField: preset.showEmailField,
+          showPasswordField: preset.showPasswordField,
+          postSubmitAction: preset.postSubmitAction,
           awarenessContent: preset.awarenessContent
         }
       });
