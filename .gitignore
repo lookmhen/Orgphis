@@ -1,8 +1,9 @@
-﻿node_modules/
+node_modules/
 /logs/*
 data.csv
 .env
 .env.*
+!.env.example
 dist/
 data/
 *.db
