@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { initDatabasePragmas } from './prisma.js';
@@ -58,11 +59,23 @@ app.use('/api/dashboard', dashboardRouter);
 app.use(publicTrackingRouter);
 
 // 6. Serve Local Static Assets (Logos, Icons)
-const serverPublicPath = path.resolve(__dirname, '../public');
+const serverPublicCandidates = [
+  path.resolve(__dirname, '../public'),
+  path.resolve(__dirname, './public'),
+  path.resolve(process.cwd(), 'public'),
+  path.resolve(process.cwd(), 'server/public')
+];
+const serverPublicPath = serverPublicCandidates.find(p => fs.existsSync(p)) || path.resolve(__dirname, '../public');
 app.use('/static', express.static(serverPublicPath));
 
 // 7. Serve Static Client in Production (if client build exists)
-const clientBuildPath = path.join(__dirname, '../../client/dist');
+const clientBuildCandidates = [
+  path.resolve(__dirname, '../../client/dist'),
+  path.resolve(__dirname, '../client/dist'),
+  path.resolve(process.cwd(), 'client/dist'),
+  path.resolve(process.cwd(), 'dist/client')
+];
+const clientBuildPath = clientBuildCandidates.find(p => fs.existsSync(path.join(p, 'index.html'))) || path.resolve(__dirname, '../../client/dist');
 app.use(express.static(clientBuildPath));
 app.get('*', (_req, res, next) => {
   if (_req.path.startsWith('/api') || _req.path.startsWith('/l') || _req.path.startsWith('/track') || _req.path.startsWith('/report')) {
