@@ -81,15 +81,38 @@ class TrackingService {
               if (ev.eventType === 'OPENED' && !currentTarget.isOpened) {
                 updateData.isOpened = true;
                 updateData.openedAt = ev.createdAt;
-              } else if (ev.eventType === 'CLICKED' && !currentTarget.isClicked) {
-                updateData.isClicked = true;
-                updateData.clickedAt = ev.createdAt;
-              } else if (ev.eventType === 'SUBMITTED' && !currentTarget.isSubmitted) {
-                updateData.isSubmitted = true;
-                updateData.submittedAt = ev.createdAt;
-              } else if (ev.eventType === 'REPORTED' && !currentTarget.isReported) {
-                updateData.isReported = true;
-                updateData.reportedAt = ev.createdAt;
+              } else if (ev.eventType === 'CLICKED') {
+                if (!currentTarget.isClicked) {
+                  updateData.isClicked = true;
+                  updateData.clickedAt = ev.createdAt;
+                }
+                // Logical deduction: Clicking a link inside an email implies opening it
+                if (!currentTarget.isOpened) {
+                  updateData.isOpened = true;
+                  updateData.openedAt = currentTarget.openedAt || ev.createdAt;
+                }
+              } else if (ev.eventType === 'SUBMITTED') {
+                if (!currentTarget.isSubmitted) {
+                  updateData.isSubmitted = true;
+                  updateData.submittedAt = ev.createdAt;
+                }
+                if (!currentTarget.isClicked) {
+                  updateData.isClicked = true;
+                  updateData.clickedAt = currentTarget.clickedAt || ev.createdAt;
+                }
+                if (!currentTarget.isOpened) {
+                  updateData.isOpened = true;
+                  updateData.openedAt = currentTarget.openedAt || ev.createdAt;
+                }
+              } else if (ev.eventType === 'REPORTED') {
+                if (!currentTarget.isReported) {
+                  updateData.isReported = true;
+                  updateData.reportedAt = ev.createdAt;
+                }
+                if (!currentTarget.isOpened) {
+                  updateData.isOpened = true;
+                  updateData.openedAt = currentTarget.openedAt || ev.createdAt;
+                }
               }
 
               if (Object.keys(updateData).length > 0) {
