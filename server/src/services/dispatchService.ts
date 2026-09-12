@@ -121,13 +121,15 @@ class DispatchService {
 
             const phishingUrl = `${baseUrl}/l/${ct.token}`;
             const trackingPixelUrl = `${baseUrl}/track/open/${ct.token}`;
+            const reportUrl = `${baseUrl}/report/${ct.token}`;
 
             const variables = {
               name: `${ct.target.firstName || ''} ${ct.target.lastName || ''}`.trim() || ct.target.email.split('@')[0],
               email: ct.target.email,
               department: ct.target.department || 'General',
               empid: ct.target.employeeId || 'N/A',
-              phishing_url: phishingUrl
+              phishing_url: phishingUrl,
+              report_url: reportUrl
             };
 
             const htmlBody = renderTemplate(campaign.emailTemplate.bodyHtml, variables);
