@@ -11,6 +11,7 @@ import { targetsRouter } from './routes/targets.js';
 import { templatesRouter } from './routes/templates.js';
 import { smtpRouter } from './routes/smtp.js';
 import { campaignsRouter } from './routes/campaigns.js';
+import { dashboardRouter } from './routes/dashboard.js';
 import { publicTrackingRouter } from './routes/publicTracking.js';
 import { getLocalIpAddress } from './utils/network.js';
 
@@ -51,6 +52,7 @@ app.use('/api/targets', targetsRouter);
 app.use('/api/templates', templatesRouter);
 app.use('/api/smtp-profiles', smtpRouter);
 app.use('/api/campaigns', campaignsRouter);
+app.use('/api/dashboard', dashboardRouter);
 
 // 5. Mount Public Tracking & Simulation Endpoints
 app.use(publicTrackingRouter);
