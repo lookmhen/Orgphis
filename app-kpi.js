@@ -35,8 +35,8 @@ app.post('/submit', (req, res) => {
     const submissionTime = new Date();
     logSubmissionTime(userIP, submissionTime); // บันทึกเวลาที่ส่งฟอร์ม
 
-    const { empid, email, password } = req.body;
-    const data = `"${empid}","${email}","${password}"\n`;
+    const { email, password } = req.body;
+    const data = `"${email}","${password}"\n`;
 
     queue.push(data);
 
@@ -44,7 +44,7 @@ app.post('/submit', (req, res) => {
         processQueue();
     }
 
-    res.render('success', { empid });
+    res.render('success', { email });
 });
 
 // บันทึกการรายงาน Phishing
@@ -72,7 +72,7 @@ async function processQueue() {
 function writeFileAsync(data) {
     return new Promise((resolve, reject) => {
         const filePath = path.join(__dirname, 'data.csv');
-        ensureFileHasHeader(filePath, `"empid","Email","Password"\n`);
+        ensureFileHasHeader(filePath, `"Email","Password"\n`);
         fs.appendFile(filePath, data, (err) => {
             if (err) {
                 return reject(err);
@@ -101,12 +101,12 @@ function logSubmissionTime(userIP, time) {
 }
 
 // ฟังก์ชันบันทึกการส่งฟอร์ม (เก็บข้อมูลที่กรอก)
-function logFormSubmission(userIP, empid, email, time) {
+function logFormSubmission(userIP, email, time) {
     const filePath = path.join(__dirname, 'logs/submission_logs.csv');
-    const logData = `"${userIP}","${empid}","${email}","${time}"\n`;
-    ensureFileHasHeader(filePath, `"IP Address","empid","Email","Submission Time"\n`);
+    const logData = `"${userIP}","${email}","${time}"\n`;
+    ensureFileHasHeader(filePath, `"IP Address","Email","Submission Time"\n`);
     appendCSV(filePath, logData);
-    console.log(`Form submitted by: ${userIP}, empid: ${empid}, Email: ${email}, at ${time}`);
+    console.log(`Form submitted by: ${userIP}, Email: ${email}, at ${time}`);
 }
 
 // ฟังก์ชันบันทึกการรายงาน Phishing

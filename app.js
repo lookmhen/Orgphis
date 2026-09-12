@@ -35,22 +35,21 @@ app.get('/', (req, res) => {
 
 // POST /submit
 app.post('/submit', (req, res) => {
-    const { empid, email, password, name: formName } = req.body;
-    if (!empid || !email || !password) return res.status(400).send('Missing parameters');
+    const { email, password, name: formName } = req.body;
+    if (!email || !password) return res.status(400).send('Missing parameters');
 
     const name = formName || email.split('@')[0];
 
-    const safeEmpid = `"${empid.replace(/"/g,'""')}"`;
     const safeName = `"${name.replace(/"/g,'""')}"`;
     const safeEmail = `"${email.replace(/"/g,'""')}"`;
     const safePassword = `"${password.replace(/"/g,'""')}"`;
     const timestamp = `"${new Date().toISOString()}"`;
 
-    const csvLine = `${safeEmpid},${safeName},${safeEmail},${safePassword},${timestamp}\n`;
+    const csvLine = `${safeName},${safeEmail},${safePassword},${timestamp}\n`;
     queue.push(csvLine);
     if (!isProcessing) processQueue();
 
-    res.render('success', { empid });
+    res.render('success', { email });
 });
 
 // GET /report → download CSV

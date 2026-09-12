@@ -474,6 +474,56 @@ export const OFFICIAL_LANDING_PRESETS = [
  * Seeds built-in official presets (Upserting so existing systems update to natural wording)
  */
 export async function seedOfficialPresets(): Promise<void> {
+  // 1. Sanitize any legacy empid references from all existing email templates in database
+  const allTemplates = await prisma.emailTemplate.findMany();
+  for (const t of allTemplates) {
+    if (t.bodyHtml.includes('empid') || (t.bodyText && t.bodyText.includes('empid')) || t.subject.includes('empid')) {
+      const cleanHtml = t.bodyHtml
+        .replace(/\(แผนก \{\{department\}\} \/ รหัสพนักงาน: \{\{empid\}\}\)/g, '(แผนก {{department}})')
+        .replace(/ \(รหัสพนักงาน: \{\{empid\}\}\)/g, '')
+        .replace(/\(รหัสพนักงาน: \{\{empid\}\}\)/g, '')
+        .replace(/ \(Staff ID: \{\{empid\}\}\)/g, '')
+        .replace(/\(Staff ID: \{\{empid\}\}\)/g, '')
+        .replace(/STAFF-VIP-\{\{empid\}\}/g, 'STAFF-VIP-8892')
+        .replace(/TH-DOC-\{\{empid\}\}-88X/g, 'TH-DOC-8892X')
+        .replace(/\{\{empid\}\}/g, '');
+      const cleanText = t.bodyText ? t.bodyText
+        .replace(/\(แผนก \{\{department\}\} \/ รหัสพนักงาน: \{\{empid\}\}\)/g, '(แผนก {{department}})')
+        .replace(/ \(รหัสพนักงาน: \{\{empid\}\}\)/g, '')
+        .replace(/\(รหัสพนักงาน: \{\{empid\}\}\)/g, '')
+        .replace(/ \(Staff ID: \{\{empid\}\}\)/g, '')
+        .replace(/\(Staff ID: \{\{empid\}\}\)/g, '')
+        .replace(/STAFF-VIP-\{\{empid\}\}/g, 'STAFF-VIP-8892')
+        .replace(/TH-DOC-\{\{empid\}\}-88X/g, 'TH-DOC-8892X')
+        .replace(/\{\{empid\}\}/g, '') : null;
+      const cleanSubj = t.subject.replace(/\{\{empid\}\}/g, '');
+      await prisma.emailTemplate.update({
+        where: { id: t.id },
+        data: {
+          bodyHtml: cleanHtml,
+          bodyText: cleanText,
+          subject: cleanSubj
+        }
+      });
+    }
+  }
+
+  // 2. Remove obsolete legacy preset templates not in current official presets
+  const officialEmailNames = OFFICIAL_EMAIL_PRESETS.map(p => p.name);
+  const obsoleteEmailPresets = await prisma.emailTemplate.findMany({
+    where: {
+      isPreset: true,
+      name: { notIn: officialEmailNames }
+    }
+  });
+  for (const obsolete of obsoleteEmailPresets) {
+    const usedCount = await prisma.campaign.count({ where: { emailTemplateId: obsolete.id } });
+    if (usedCount === 0) {
+      await prisma.emailTemplate.delete({ where: { id: obsolete.id } });
+    }
+  }
+
+  // 3. Upsert current official email presets
   for (const preset of OFFICIAL_EMAIL_PRESETS) {
     const exists = await prisma.emailTemplate.findFirst({ where: { name: preset.name } });
     if (!exists) {
