@@ -57,7 +57,11 @@ app.use('/api/dashboard', dashboardRouter);
 // 5. Mount Public Tracking & Simulation Endpoints
 app.use(publicTrackingRouter);
 
-// 6. Serve Static Client in Production (if client build exists)
+// 6. Serve Local Static Assets (Logos, Icons)
+const serverPublicPath = path.resolve(__dirname, '../public');
+app.use('/static', express.static(serverPublicPath));
+
+// 7. Serve Static Client in Production (if client build exists)
 const clientBuildPath = path.join(__dirname, '../../client/dist');
 app.use(express.static(clientBuildPath));
 app.get('*', (_req, res, next) => {

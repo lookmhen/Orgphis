@@ -1,0 +1,8 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 50" width="240" height="50">
+  <rect x="2" y="5" width="40" height="40" rx="10" fill="#0D9488" />
+  <path d="M16 13 L25 13 L29 17 L29 33 L16 33 Z" fill="#ffffff" />
+  <path d="M25 13 L25 17 L29 17 Z" fill="#0D9488" opacity="0.3" />
+  <path d="M19 24 L22 27 L26 21" stroke="#0D9488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  <text x="50" y="26" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="700" fill="#134E4A">e-Tax Invoice Portal</text>
+  <text x="50" y="39" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="500" fill="#0D9488">Verified Electronic Billing</text>
+</svg>

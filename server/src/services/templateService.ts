@@ -334,7 +334,7 @@ export const OFFICIAL_LANDING_PRESETS = [
   {
     name: 'Company SSO Password Reset Portal',
     pageTitle: 'Single Sign-On | Corporate Identity Portal',
-    logoUrl: 'https://cdn-icons-png.flaticon.com/512/3064/3064197.png',
+    logoUrl: '/static/logos/sso-logo.svg',
     headerText: 'เข้าสู่ระบบเพื่อยืนยันตัวตนและรีเซ็ตรหัสผ่าน',
     subHeaderText: 'กรุณายืนยันข้อมูลประจำตัวองค์กรเพื่อความปลอดภัย',
     submitButtonText: 'ยืนยันและเข้าสู่ระบบ',
@@ -371,7 +371,7 @@ export const OFFICIAL_LANDING_PRESETS = [
   {
     name: 'Microsoft 365 Login Clone',
     pageTitle: 'Sign in to your Microsoft account',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg',
+    logoUrl: '/static/logos/microsoft-logo.svg',
     headerText: 'ลงชื่อเข้าใช้',
     subHeaderText: 'เพื่อดำเนินการต่อไปยัง Microsoft 365 Corporate',
     submitButtonText: 'ถัดไป',
@@ -405,7 +405,7 @@ export const OFFICIAL_LANDING_PRESETS = [
   {
     name: 'Corporate AI Hub Access Portal',
     pageTitle: 'Corporate AI Hub | Sign in with Staff Account',
-    logoUrl: 'https://cdn-icons-png.flaticon.com/512/8649/8649595.png',
+    logoUrl: '/static/logos/ai-hub-logo.svg',
     headerText: 'เข้าสู่ระบบ Enterprise AI Hub',
     subHeaderText: 'กรุณายืนยันบัญชีพนักงานเพื่อเปิดสิทธิ์ใช้งานระบบ AI',
     submitButtonText: 'ยืนยันสิทธิ์และเข้าสู่ระบบ',
@@ -439,7 +439,7 @@ export const OFFICIAL_LANDING_PRESETS = [
   {
     name: 'e-Tax & Finance Document Verification Portal',
     pageTitle: 'e-Tax Invoice Verification & Payment Portal',
-    logoUrl: 'https://cdn-icons-png.flaticon.com/512/2382/2382461.png',
+    logoUrl: '/static/logos/etax-logo.svg',
     headerText: 'ระบบตรวจสอบใบกำกับภาษีอิเล็กทรอนิกส์ (e-Tax)',
     subHeaderText: 'กรุณายืนยันตัวตนเพื่อดูเอกสารคู่สัญญาและรายละเอียดการชำระเงิน',
     submitButtonText: 'เข้าสู่ระบบเพื่อดูเอกสาร',
@@ -563,5 +563,23 @@ export async function seedOfficialPresets(): Promise<void> {
     }
   }
 
-  console.log('[Presets] Official email and landing page templates verified and updated with natural wording.');
+  // 4. Automatically migrate any legacy external CDN logos in existing templates to local static SVGs
+  await prisma.landingPageTemplate.updateMany({
+    where: { logoUrl: { contains: '3064197' } },
+    data: { logoUrl: '/static/logos/sso-logo.svg' }
+  });
+  await prisma.landingPageTemplate.updateMany({
+    where: { logoUrl: { contains: 'Microsoft_logo' } },
+    data: { logoUrl: '/static/logos/microsoft-logo.svg' }
+  });
+  await prisma.landingPageTemplate.updateMany({
+    where: { logoUrl: { contains: '8649595' } },
+    data: { logoUrl: '/static/logos/ai-hub-logo.svg' }
+  });
+  await prisma.landingPageTemplate.updateMany({
+    where: { logoUrl: { contains: '2382461' } },
+    data: { logoUrl: '/static/logos/etax-logo.svg' }
+  });
+
+  console.log('[Presets] Official email and landing page templates verified and updated with local assets and natural wording.');
 }
