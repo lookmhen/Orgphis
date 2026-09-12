@@ -78,10 +78,33 @@ templatesRouter.put('/emails/:id', async (req: Request, res: Response) => {
 templatesRouter.delete('/emails/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
+    const template = await prisma.emailTemplate.findUnique({
+      where: { id },
+      include: {
+        campaigns: { select: { id: true, name: true } }
+      }
+    });
+
+    if (!template) {
+      return res.status(404).json({ error: 'ไม่พบเทมเพลตที่ต้องการลบ' });
+    }
+
+    if (template.isPreset) {
+      return res.status(400).json({ error: 'ไม่สามารถลบเทมเพลตที่เป็น Official System Preset ได้' });
+    }
+
+    if (template.campaigns.length > 0) {
+      const campaignNames = template.campaigns.map(c => `"${c.name}"`).join(', ');
+      return res.status(400).json({
+        error: `ไม่สามารถลบเทมเพลตนี้ได้ เนื่องจากกำลังถูกใช้งานอยู่ในแคมเปญ: ${campaignNames} (กรุณาลบหรือเปลี่ยนเทมเพลตในแคมเปญดังกล่าวก่อน)`
+      });
+    }
+
     await prisma.emailTemplate.delete({ where: { id } });
     return res.json({ success: true });
-  } catch (err) {
-    return res.status(500).json({ error: 'Failed to delete template' });
+  } catch (err: any) {
+    console.error('[Templates] Delete email template error:', err);
+    return res.status(500).json({ error: `ลบเทมเพลตไม่สำเร็จ: ${err.message}` });
   }
 });
 
@@ -224,10 +247,33 @@ templatesRouter.put('/landing-pages/:id', async (req: Request, res: Response) =>
 templatesRouter.delete('/landing-pages/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
+    const template = await prisma.landingPageTemplate.findUnique({
+      where: { id },
+      include: {
+        campaigns: { select: { id: true, name: true } }
+      }
+    });
+
+    if (!template) {
+      return res.status(404).json({ error: 'ไม่พบหน้าฟอร์มที่ต้องการลบ' });
+    }
+
+    if (template.isPreset) {
+      return res.status(400).json({ error: 'ไม่สามารถลบหน้าฟอร์มที่เป็น Official System Preset ได้' });
+    }
+
+    if (template.campaigns.length > 0) {
+      const campaignNames = template.campaigns.map(c => `"${c.name}"`).join(', ');
+      return res.status(400).json({
+        error: `ไม่สามารถลบหน้าฟอร์มนี้ได้ เนื่องจากกำลังถูกใช้งานอยู่ในแคมเปญ: ${campaignNames} (กรุณาลบหรือเปลี่ยนหน้าฟอร์มในแคมเปญดังกล่าวก่อน)`
+      });
+    }
+
     await prisma.landingPageTemplate.delete({ where: { id } });
     return res.json({ success: true });
-  } catch (err) {
-    return res.status(500).json({ error: 'Failed to delete landing page template' });
+  } catch (err: any) {
+    console.error('[Templates] Delete landing page template error:', err);
+    return res.status(500).json({ error: `ลบหน้าฟอร์มไม่สำเร็จ: ${err.message}` });
   }
 });
 

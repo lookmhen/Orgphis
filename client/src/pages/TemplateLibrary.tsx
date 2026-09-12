@@ -109,14 +109,32 @@ export const TemplateLibrary: React.FC = () => {
 
   const handleDeleteEmail = async (id: string) => {
     if (!confirm('ยืนยันลบเทมเพลตอีเมลนี้?')) return;
-    const res = await fetch(`/api/templates/emails/${id}`, { method: 'DELETE' });
-    if (res.ok) fetchData();
+    try {
+      const res = await fetch(`/api/templates/emails/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        fetchData();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'ลบเทมเพลตไม่สำเร็จ');
+      }
+    } catch (err: any) {
+      alert(`ลบเทมเพลตไม่สำเร็จ: ${err.message}`);
+    }
   };
 
   const handleDeleteLanding = async (id: string) => {
     if (!confirm('ยืนยันลบเทมเพลตหน้าฟอร์มนี้?')) return;
-    const res = await fetch(`/api/templates/landing-pages/${id}`, { method: 'DELETE' });
-    if (res.ok) fetchData();
+    try {
+      const res = await fetch(`/api/templates/landing-pages/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        fetchData();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'ลบหน้าฟอร์มไม่สำเร็จ');
+      }
+    } catch (err: any) {
+      alert(`ลบหน้าฟอร์มไม่สำเร็จ: ${err.message}`);
+    }
   };
 
   const insertVariable = (variable: string) => {
