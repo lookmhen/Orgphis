@@ -421,9 +421,9 @@ export const TemplateLibrary: React.FC = () => {
 
       {/* ================= MODAL: EDIT EMAIL TEMPLATE ================= */}
       {editingEmail && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-5xl w-full p-6 shadow-2xl border border-stone-border space-y-4 my-8">
-            <div className="flex items-center justify-between pb-3 border-b border-stone-border">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-stone-border overflow-hidden">
+            <div className="flex items-center justify-between p-5 pb-4 border-b border-stone-border bg-white flex-shrink-0">
               <div>
                 <h3 className="font-bold text-deep-slate text-lg">
                   {editingEmail.id ? '✏️ ปรับแต่งเทมเพลตอีเมล (Email Template Customizer)' : '➕ สร้างเทมเพลตอีเมลใหม่'}
@@ -432,36 +432,44 @@ export const TemplateLibrary: React.FC = () => {
                   ออกแบบผ่าน Visual Tools บล็อกสำเร็จรูป หรือสลับไปแก้โค้ด Raw HTML ได้อย่างอิสระ พร้อม Live Preview
                 </p>
               </div>
-              <button onClick={() => setEditingEmail(null)} className="text-gray-400 hover:text-deep-slate text-sm font-bold">✕ ปิด</button>
+              <button 
+                type="button"
+                onClick={() => setEditingEmail(null)} 
+                className="text-gray-400 hover:text-deep-slate font-bold p-1 rounded-lg hover:bg-stone-muted transition-all"
+              >
+                ✕ ปิด
+              </button>
             </div>
 
-            <form onSubmit={handleSaveEmail} className="space-y-4 text-xs">
-              <EmailEditorWithTools
-                name={editingEmail.name || ''}
-                subject={editingEmail.subject || ''}
-                bodyHtml={editingEmail.bodyHtml || ''}
-                hasAttachment={editingEmail.hasAttachment || false}
-                attachmentName={editingEmail.attachmentName || ''}
-                attachmentType={editingEmail.attachmentType || 'application/pdf'}
-                onChangeName={(val) => setEditingEmail({ ...editingEmail, name: val })}
-                onChangeSubject={(val) => setEditingEmail({ ...editingEmail, subject: val })}
-                onChangeBodyHtml={(val) => setEditingEmail({ ...editingEmail, bodyHtml: val })}
-                onChangeHasAttachment={(val) => setEditingEmail({ ...editingEmail, hasAttachment: val })}
-                onChangeAttachmentName={(val) => setEditingEmail({ ...editingEmail, attachmentName: val })}
-                onChangeAttachmentType={(val) => setEditingEmail({ ...editingEmail, attachmentType: val })}
-              />
+            <form onSubmit={handleSaveEmail} className="flex flex-col flex-1 overflow-hidden text-xs">
+              <div className="p-5 overflow-y-auto space-y-4 flex-1">
+                <EmailEditorWithTools
+                  name={editingEmail.name || ''}
+                  subject={editingEmail.subject || ''}
+                  bodyHtml={editingEmail.bodyHtml || ''}
+                  hasAttachment={editingEmail.hasAttachment || false}
+                  attachmentName={editingEmail.attachmentName || ''}
+                  attachmentType={editingEmail.attachmentType || 'application/pdf'}
+                  onChangeName={(val) => setEditingEmail({ ...editingEmail, name: val })}
+                  onChangeSubject={(val) => setEditingEmail({ ...editingEmail, subject: val })}
+                  onChangeBodyHtml={(val) => setEditingEmail({ ...editingEmail, bodyHtml: val })}
+                  onChangeHasAttachment={(val) => setEditingEmail({ ...editingEmail, hasAttachment: val })}
+                  onChangeAttachmentName={(val) => setEditingEmail({ ...editingEmail, attachmentName: val })}
+                  onChangeAttachmentType={(val) => setEditingEmail({ ...editingEmail, attachmentType: val })}
+                />
+              </div>
 
-              <div className="flex justify-end space-x-2 pt-3 border-t border-stone-border">
+              <div className="flex justify-end space-x-2 p-4 border-t border-stone-border bg-stone-50/70 flex-shrink-0">
                 <button
                   type="button"
                   onClick={() => setEditingEmail(null)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-stone-muted"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-stone-muted transition-all"
                 >
                   ยกเลิก
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl text-xs font-semibold bg-forest text-white hover:bg-forest-hover shadow-soft"
+                  className="px-5 py-2 rounded-xl text-xs font-semibold bg-forest text-white hover:bg-forest-hover shadow-soft transition-all"
                 >
                   บันทึกการแก้ไข
                 </button>
@@ -473,150 +481,158 @@ export const TemplateLibrary: React.FC = () => {
 
       {/* ================= MODAL: EDIT LANDING PAGE TEMPLATE ================= */}
       {editingLanding && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-stone-border space-y-4 my-8">
-            <div className="flex items-center justify-between pb-3 border-b border-stone-border">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-stone-border overflow-hidden">
+            <div className="flex items-center justify-between p-5 pb-4 border-b border-stone-border bg-white flex-shrink-0">
               <div>
                 <h3 className="font-bold text-deep-slate text-lg">
                   {editingLanding.id ? '✏️ ปรับแต่งหน้าเว็บ/ฟอร์ม (Customize Landing Page)' : '➕ สร้างหน้าเว็บใหม่'}
                 </h3>
                 <p className="text-xs text-gray-500">ปรับเปลี่ยนชื่อ โลโก้ หัวข้อฟอร์ม ปุ่มกด และเลือกเปิด-ปิดช่องกรอกข้อมูล</p>
               </div>
-              <button onClick={() => setEditingLanding(null)} className="text-gray-400 hover:text-deep-slate text-sm font-bold">✕ ปิด</button>
+              <button 
+                type="button"
+                onClick={() => setEditingLanding(null)} 
+                className="text-gray-400 hover:text-deep-slate font-bold p-1 rounded-lg hover:bg-stone-muted transition-all"
+              >
+                ✕ ปิด
+              </button>
             </div>
 
-            <form onSubmit={handleSaveLanding} className="space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-medium text-gray-700 mb-1">ชื่อเทมเพลต (Template Name)</label>
-                  <input
-                    type="text"
-                    required
-                    value={editingLanding.name}
-                    onChange={e => setEditingLanding({ ...editingLanding, name: e.target.value })}
-                    className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest"
-                  />
-                </div>
-                <div>
-                  <label className="block font-medium text-gray-700 mb-1">Title บนแท็บเบราว์เซอร์ (Page Title)</label>
-                  <input
-                    type="text"
-                    required
-                    value={editingLanding.pageTitle}
-                    onChange={e => setEditingLanding({ ...editingLanding, pageTitle: e.target.value })}
-                    className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-medium text-gray-700 mb-1">URL โลโก้ (Logo Image URL)</label>
-                <input
-                  type="text"
-                  placeholder="https://example.com/logo.png (เว้นว่างได้)"
-                  value={editingLanding.logoUrl || ''}
-                  onChange={e => setEditingLanding({ ...editingLanding, logoUrl: e.target.value })}
-                  className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-medium text-gray-700 mb-1">ข้อความหัวข้อฟอร์ม (Header Text)</label>
-                  <input
-                    type="text"
-                    required
-                    value={editingLanding.headerText}
-                    onChange={e => setEditingLanding({ ...editingLanding, headerText: e.target.value })}
-                    className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest"
-                  />
-                </div>
-                <div>
-                  <label className="block font-medium text-gray-700 mb-1">ข้อความปุ่มส่ง (Button Text)</label>
-                  <input
-                    type="text"
-                    required
-                    value={editingLanding.submitButtonText}
-                    onChange={e => setEditingLanding({ ...editingLanding, submitButtonText: e.target.value })}
-                    className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-medium text-gray-700 mb-1">คำอธิบายใต้หัวข้อ (Sub-header)</label>
-                <input
-                  type="text"
-                  value={editingLanding.subHeaderText || ''}
-                  onChange={e => setEditingLanding({ ...editingLanding, subHeaderText: e.target.value })}
-                  className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest"
-                />
-              </div>
-
-              {/* Form Fields Toggle */}
-              <div className="p-3.5 bg-stone-muted/50 rounded-xl border border-stone-border/60 space-y-2">
-                <span className="block font-bold text-deep-slate">ช่องกรอกข้อมูลในแบบฟอร์ม (Form Fields Layout):</span>
-                <div className="flex space-x-6">
-                  <label className="flex items-center space-x-2 cursor-pointer">
+            <form onSubmit={handleSaveLanding} className="flex flex-col flex-1 overflow-hidden text-xs">
+              <div className="p-5 overflow-y-auto space-y-4 flex-1">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block font-medium text-gray-700 mb-1">ชื่อเทมเพลต (Template Name)</label>
                     <input
-                      type="checkbox"
-                      checked={editingLanding.showEmailField}
-                      onChange={e => setEditingLanding({ ...editingLanding, showEmailField: e.target.checked })}
-                      className="rounded text-forest focus:ring-forest"
+                      type="text"
+                      required
+                      value={editingLanding.name}
+                      onChange={e => setEditingLanding({ ...editingLanding, name: e.target.value })}
+                      className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest"
                     />
-                    <span>ช่องอีเมล (Email)</span>
-                  </label>
-
-                  <label className="flex items-center space-x-2 cursor-pointer">
+                  </div>
+                  <div>
+                    <label className="block font-medium text-gray-700 mb-1">Title บนแท็บเบราว์เซอร์ (Page Title)</label>
                     <input
-                      type="checkbox"
-                      checked={editingLanding.showPasswordField}
-                      onChange={e => setEditingLanding({ ...editingLanding, showPasswordField: e.target.checked })}
-                      className="rounded text-forest focus:ring-forest"
+                      type="text"
+                      required
+                      value={editingLanding.pageTitle}
+                      onChange={e => setEditingLanding({ ...editingLanding, pageTitle: e.target.value })}
+                      className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest"
                     />
-                    <span>ช่องรหัสผ่าน (Password)</span>
-                  </label>
+                  </div>
                 </div>
-              </div>
 
-              {/* Post Submit Action */}
-              <div>
-                <label className="block font-medium text-gray-700 mb-1">พฤติกรรมหลังจากผู้ใช้กด Submit</label>
-                <select
-                  value={editingLanding.postSubmitAction}
-                  onChange={e => setEditingLanding({ ...editingLanding, postSubmitAction: e.target.value })}
-                  className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest"
-                >
-                  <option value="AWARENESS_PAGE">แสดงหน้า Security Awareness ให้ความรู้ทันที (แนะนำ)</option>
-                  <option value="REDIRECT">Redirect ส่งต่อไปยังเว็บไซต์อื่น</option>
-                  <option value="SIMULATED_ERROR">แสดงหน้า Error 500 จำลอง</option>
-                </select>
-              </div>
-
-              {editingLanding.postSubmitAction === 'REDIRECT' && (
                 <div>
-                  <label className="block font-medium text-gray-700 mb-1">URL ปลายทางที่ต้องการให้ Redirect ไป</label>
+                  <label className="block font-medium text-gray-700 mb-1">URL โลโก้ (Logo Image URL)</label>
                   <input
-                    type="url"
-                    placeholder="https://intranet.company.com"
-                    value={editingLanding.redirectUrl || ''}
-                    onChange={e => setEditingLanding({ ...editingLanding, redirectUrl: e.target.value })}
+                    type="text"
+                    placeholder="https://example.com/logo.png (เว้นว่างได้)"
+                    value={editingLanding.logoUrl || ''}
+                    onChange={e => setEditingLanding({ ...editingLanding, logoUrl: e.target.value })}
                     className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest"
                   />
                 </div>
-              )}
 
-              <div className="flex justify-end space-x-2 pt-3 border-t border-stone-border">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block font-medium text-gray-700 mb-1">ข้อความหัวข้อฟอร์ม (Header Text)</label>
+                    <input
+                      type="text"
+                      required
+                      value={editingLanding.headerText}
+                      onChange={e => setEditingLanding({ ...editingLanding, headerText: e.target.value })}
+                      className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-medium text-gray-700 mb-1">ข้อความปุ่มส่ง (Button Text)</label>
+                    <input
+                      type="text"
+                      required
+                      value={editingLanding.submitButtonText}
+                      onChange={e => setEditingLanding({ ...editingLanding, submitButtonText: e.target.value })}
+                      className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-medium text-gray-700 mb-1">คำอธิบายใต้หัวข้อ (Sub-header)</label>
+                  <input
+                    type="text"
+                    value={editingLanding.subHeaderText || ''}
+                    onChange={e => setEditingLanding({ ...editingLanding, subHeaderText: e.target.value })}
+                    className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest"
+                  />
+                </div>
+
+                {/* Form Fields Toggle */}
+                <div className="p-3.5 bg-stone-muted/50 rounded-xl border border-stone-border/60 space-y-2">
+                  <span className="block font-bold text-deep-slate">ช่องกรอกข้อมูลในแบบฟอร์ม (Form Fields Layout):</span>
+                  <div className="flex space-x-6">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={editingLanding.showEmailField}
+                        onChange={e => setEditingLanding({ ...editingLanding, showEmailField: e.target.checked })}
+                        className="rounded text-forest focus:ring-forest"
+                      />
+                      <span>ช่องอีเมล (Email)</span>
+                    </label>
+
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={editingLanding.showPasswordField}
+                        onChange={e => setEditingLanding({ ...editingLanding, showPasswordField: e.target.checked })}
+                        className="rounded text-forest focus:ring-forest"
+                      />
+                      <span>ช่องรหัสผ่าน (Password)</span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Post Submit Action */}
+                <div>
+                  <label className="block font-medium text-gray-700 mb-1">พฤติกรรมหลังจากผู้ใช้กด Submit</label>
+                  <select
+                    value={editingLanding.postSubmitAction}
+                    onChange={e => setEditingLanding({ ...editingLanding, postSubmitAction: e.target.value })}
+                    className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest"
+                  >
+                    <option value="AWARENESS_PAGE">แสดงหน้า Security Awareness ให้ความรู้ทันที (แนะนำ)</option>
+                    <option value="REDIRECT">Redirect ส่งต่อไปยังเว็บไซต์อื่น</option>
+                    <option value="SIMULATED_ERROR">แสดงหน้า Error 500 จำลอง</option>
+                  </select>
+                </div>
+
+                {editingLanding.postSubmitAction === 'REDIRECT' && (
+                  <div>
+                    <label className="block font-medium text-gray-700 mb-1">URL ปลายทางที่ต้องการให้ Redirect ไป</label>
+                    <input
+                      type="url"
+                      placeholder="https://intranet.company.com"
+                      value={editingLanding.redirectUrl || ''}
+                      onChange={e => setEditingLanding({ ...editingLanding, redirectUrl: e.target.value })}
+                      className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end space-x-2 p-4 border-t border-stone-border bg-stone-50/70 flex-shrink-0">
                 <button
                   type="button"
                   onClick={() => setEditingLanding(null)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-stone-muted"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-stone-muted transition-all"
                 >
                   ยกเลิก
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl text-xs font-semibold bg-forest text-white hover:bg-forest-hover shadow-soft"
+                  className="px-5 py-2 rounded-xl text-xs font-semibold bg-forest text-white hover:bg-forest-hover shadow-soft transition-all"
                 >
                   บันทึกการปรับแต่ง
                 </button>
@@ -727,9 +743,9 @@ export const TemplateLibrary: React.FC = () => {
 
       {/* ================= MODAL: TEST SEND EMAIL ================= */}
       {testEmailModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-stone-border space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-stone-border">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] flex flex-col shadow-2xl border border-stone-border overflow-hidden">
+            <div className="flex items-center justify-between p-5 pb-4 border-b border-stone-border bg-white flex-shrink-0">
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 rounded-lg bg-forest-light text-forest flex items-center justify-center">
                   <Send className="w-4 h-4" />
@@ -740,79 +756,82 @@ export const TemplateLibrary: React.FC = () => {
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => { setTestEmailModal(null); setTestSendResult(null); }}
-                className="text-gray-400 hover:text-deep-slate text-sm font-bold p-1"
+                className="text-gray-400 hover:text-deep-slate font-bold p-1 rounded-lg hover:bg-stone-muted transition-all"
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleSendTestEmail} className="space-y-3.5 text-xs">
-              <div>
-                <label className="block font-medium text-gray-700 mb-1">เทมเพลตที่เลือก</label>
-                <div className="p-2.5 bg-stone-muted/50 rounded-lg border border-stone-border">
-                  <div className="flex items-center justify-between">
-                    <p className="font-bold text-deep-slate text-xs line-clamp-1">{testEmailModal.name}</p>
-                    {testEmailModal.hasAttachment && (
-                      <span className="flex items-center space-x-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
-                        <Paperclip className="w-3 h-3 text-purple-600" />
-                        <span>{testEmailModal.attachmentName}</span>
-                      </span>
-                    )}
+            <form onSubmit={handleSendTestEmail} className="flex flex-col flex-1 overflow-hidden text-xs">
+              <div className="p-5 overflow-y-auto space-y-3.5 flex-1">
+                <div>
+                  <label className="block font-medium text-gray-700 mb-1">เทมเพลตที่เลือก</label>
+                  <div className="p-2.5 bg-stone-muted/50 rounded-lg border border-stone-border">
+                    <div className="flex items-center justify-between">
+                      <p className="font-bold text-deep-slate text-xs line-clamp-1">{testEmailModal.name}</p>
+                      {testEmailModal.hasAttachment && (
+                        <span className="flex items-center space-x-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+                          <Paperclip className="w-3 h-3 text-purple-600" />
+                          <span>{testEmailModal.attachmentName}</span>
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-gray-500 mt-0.5 line-clamp-1">หัวเรื่อง: {testEmailModal.subject}</p>
                   </div>
-                  <p className="text-[11px] text-gray-500 mt-0.5 line-clamp-1">หัวเรื่อง: {testEmailModal.subject}</p>
                 </div>
-              </div>
 
-              <div>
-                <label className="block font-medium text-gray-700 mb-1">เลือกโปรไฟล์ SMTP สำหรับส่ง <span className="text-red-500">*</span></label>
-                {smtpProfiles.length === 0 ? (
-                  <div className="p-2.5 bg-amber-50 text-amber-800 rounded-lg border border-amber-200 text-[11px]">
-                    ยังไม่มีโปรไฟล์ SMTP ในระบบ กรุณาไปเพิ่มโปรไฟล์ที่หน้า "ตั้งค่า SMTP" ก่อน
-                  </div>
-                ) : (
-                  <select
-                    value={testSmtpId}
-                    onChange={e => setTestSmtpId(e.target.value)}
+                <div>
+                  <label className="block font-medium text-gray-700 mb-1">เลือกโปรไฟล์ SMTP สำหรับส่ง <span className="text-red-500">*</span></label>
+                  {smtpProfiles.length === 0 ? (
+                    <div className="p-2.5 bg-amber-50 text-amber-800 rounded-lg border border-amber-200 text-[11px]">
+                      ยังไม่มีโปรไฟล์ SMTP ในระบบ กรุณาไปเพิ่มโปรไฟล์ที่หน้า "ตั้งค่า SMTP" ก่อน
+                    </div>
+                  ) : (
+                    <select
+                      value={testSmtpId}
+                      onChange={e => setTestSmtpId(e.target.value)}
+                      required
+                      className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest text-xs bg-white"
+                    >
+                      {smtpProfiles.map(s => (
+                        <option key={s.id} value={s.id}>
+                          {s.name} ({s.fromEmail}) - {s.host}:{s.port}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block font-medium text-gray-700 mb-1">อีเมลผู้รับปลายทาง (Recipient Email) <span className="text-red-500">*</span></label>
+                  <input
+                    type="email"
                     required
-                    className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest text-xs bg-white"
-                  >
-                    {smtpProfiles.map(s => (
-                      <option key={s.id} value={s.id}>
-                        {s.name} ({s.fromEmail}) - {s.host}:{s.port}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="เช่น your-email@company.com"
+                    value={testRecipient}
+                    onChange={e => setTestRecipient(e.target.value)}
+                    className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest text-xs"
+                  />
+                  <p className="text-[11px] text-gray-400 mt-1">ใส่อีเมลของคุณเพื่อตรวจสอบความถูกต้องของเนื้อหา ฟอนต์ และลิงก์</p>
+                </div>
+
+                {testSendResult && (
+                  <div className={`p-3 rounded-xl text-xs flex items-start space-x-2 border ${
+                    testSendResult.success ? 'bg-forest-light text-forest border-forest/30' : 'bg-red-50 text-red-700 border-red-200'
+                  }`}>
+                    {testSendResult.success ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />}
+                    <span className="leading-relaxed">{testSendResult.msg}</span>
+                  </div>
                 )}
               </div>
 
-              <div>
-                <label className="block font-medium text-gray-700 mb-1">อีเมลผู้รับปลายทาง (Recipient Email) <span className="text-red-500">*</span></label>
-                <input
-                  type="email"
-                  required
-                  placeholder="เช่น your-email@company.com"
-                  value={testRecipient}
-                  onChange={e => setTestRecipient(e.target.value)}
-                  className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest text-xs"
-                />
-                <p className="text-[11px] text-gray-400 mt-1">ใส่อีเมลของคุณเพื่อตรวจสอบความถูกต้องของเนื้อหา ฟอนต์ และลิงก์</p>
-              </div>
-
-              {testSendResult && (
-                <div className={`p-3 rounded-xl text-xs flex items-start space-x-2 border ${
-                  testSendResult.success ? 'bg-forest-light text-forest border-forest/30' : 'bg-red-50 text-red-700 border-red-200'
-                }`}>
-                  {testSendResult.success ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />}
-                  <span className="leading-relaxed">{testSendResult.msg}</span>
-                </div>
-              )}
-
-              <div className="flex justify-end space-x-2 pt-3 border-t border-stone-border">
+              <div className="flex justify-end space-x-2 p-4 border-t border-stone-border bg-stone-50/70 flex-shrink-0">
                 <button
                   type="button"
                   onClick={() => { setTestEmailModal(null); setTestSendResult(null); }}
-                  className="px-3.5 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-stone-muted"
+                  className="px-3.5 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-stone-muted transition-all"
                 >
                   ปิด
                 </button>
