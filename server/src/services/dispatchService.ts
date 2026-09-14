@@ -172,13 +172,31 @@ class DispatchService {
               'X-PhishCentral-Target': ct.token
             };
 
+            // Attachment Simulation
+            const attachments: any[] = [];
+            const tmpl = campaign.emailTemplate;
+            if (tmpl.hasAttachment && tmpl.attachmentName) {
+              const content = tmpl.attachmentContent || (
+                tmpl.attachmentName.endsWith('.html')
+                  ? `<!DOCTYPE html><html><body style="font-family:sans-serif;text-align:center;padding:40px;"><h2>⚠️ Phishing Simulation Notice</h2><p>This is a simulated security drill document.</p><p><a href="${phishingUrl}">Click here to verify your identity</a></p></body></html>`
+                  : `[Phishing Simulation Document: ${tmpl.attachmentName}]\r\nThis document is part of an authorized security exercise.\r\nPlease visit: ${phishingUrl} to verify.`
+              );
+
+              attachments.push({
+                filename: tmpl.attachmentName,
+                content: content,
+                contentType: tmpl.attachmentType || 'application/pdf'
+              });
+            }
+
             await transporter.sendMail({
               from: `"${campaign.smtpProfile.fromName}" <${campaign.smtpProfile.fromEmail}>`,
               to: ct.target.email,
               subject: renderTemplate(campaign.emailTemplate.subject, variables),
               html: htmlBody,
               text: textBody,
-              headers
+              headers,
+              attachments: attachments.length > 0 ? attachments : undefined
             });
 
             const now = new Date();

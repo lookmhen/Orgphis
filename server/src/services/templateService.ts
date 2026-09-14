@@ -185,6 +185,9 @@ export const OFFICIAL_EMAIL_PRESETS = [
   {
     name: 'Finance e-Tax Invoice & Overdue Notice',
     subject: '[แจ้งเตือนยอดค้างชำระ] ใบกำกับภาษีอิเล็กทรอนิกส์ (e-Tax Invoice) ประจำงวด {{current_date}}',
+    hasAttachment: true,
+    attachmentName: 'Invoice_eTax_Receipt_9842.pdf',
+    attachmentType: 'application/pdf',
     bodyHtml: `
 <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #E2E8F0; border-radius: 8px; background-color: #ffffff;">
   <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #3B82F6; padding-bottom: 12px; margin-bottom: 18px;">
@@ -207,6 +210,7 @@ export const OFFICIAL_EMAIL_PRESETS = [
       <tr><td style="padding: 4px 0;"><strong>รายการ:</strong></td><td>ค่าบริการโครงสร้างพื้นฐานไอทีและซอฟต์แวร์รายไตรมาส</td></tr>
       <tr><td style="padding: 4px 0;"><strong>ยอดสุทธิ (รวมภาษี 7%):</strong></td><td style="color: #B91C1C; font-weight: 700;">148,500.00 บาท</td></tr>
       <tr><td style="padding: 4px 0;"><strong>สถานะเอกสาร:</strong></td><td><span style="background: #FEE2E2; color: #991B1B; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 11px;">รอตรวจสอบยอดและยืนยัน</span></td></tr>
+      <tr><td style="padding: 4px 0;"><strong>เอกสารแนบ:</strong></td><td><span style="color: #2563EB; font-weight: 600;">📎 Invoice_eTax_Receipt_9842.pdf (แนบมาพร้อมอีเมลนี้)</span></td></tr>
     </table>
   </div>
 
@@ -227,7 +231,7 @@ export const OFFICIAL_EMAIL_PRESETS = [
   ${SECURITY_FOOTER_HTML}
 </div>
 `,
-    bodyText: 'แจ้งเตือนใบกำกับภาษีอิเล็กทรอนิกส์ (e-Tax Invoice) ตรวจสอบเอกสาร: {{phishing_url}} หรือรายงาน: {{report_url}}',
+    bodyText: 'แจ้งเตือนใบกำกับภาษีอิเล็กทรอนิกส์ (e-Tax Invoice) พร้อมไฟล์แนบ ตรวจสอบเอกสาร: {{phishing_url}} หรือรายงาน: {{report_url}}',
     isPreset: true
   },
 
@@ -535,7 +539,10 @@ export async function seedOfficialPresets(): Promise<void> {
         data: {
           subject: preset.subject,
           bodyHtml: preset.bodyHtml,
-          bodyText: preset.bodyText
+          bodyText: preset.bodyText,
+          hasAttachment: (preset as any).hasAttachment ?? false,
+          attachmentName: (preset as any).attachmentName ?? null,
+          attachmentType: (preset as any).attachmentType ?? null
         }
       });
     }

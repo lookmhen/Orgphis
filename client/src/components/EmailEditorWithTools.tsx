@@ -12,25 +12,39 @@ import {
   LayoutTemplate,
   Undo2,
   Redo2,
-  Languages
+  Languages,
+  Paperclip,
+  FileText
 } from 'lucide-react';
 
 interface EmailEditorWithToolsProps {
   name: string;
   subject: string;
   bodyHtml: string;
+  hasAttachment?: boolean;
+  attachmentName?: string;
+  attachmentType?: string;
   onChangeName: (val: string) => void;
   onChangeSubject: (val: string) => void;
   onChangeBodyHtml: (val: string) => void;
+  onChangeHasAttachment?: (val: boolean) => void;
+  onChangeAttachmentName?: (val: string) => void;
+  onChangeAttachmentType?: (val: string) => void;
 }
 
 export const EmailEditorWithTools: React.FC<EmailEditorWithToolsProps> = ({
   name,
   subject,
   bodyHtml,
+  hasAttachment = false,
+  attachmentName = '',
+  attachmentType = 'application/pdf',
   onChangeName,
   onChangeSubject,
-  onChangeBodyHtml
+  onChangeBodyHtml,
+  onChangeHasAttachment,
+  onChangeAttachmentName,
+  onChangeAttachmentType
 }) => {
   const [activeMode, setActiveMode] = useState<'tools' | 'html'>('tools');
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
@@ -248,6 +262,84 @@ ${subHtml}
             className="w-full p-2.5 border border-stone-border rounded-xl text-xs outline-none focus:border-forest"
           />
         </div>
+      </div>
+
+      {/* File Attachment Simulation Configuration */}
+      <div className="bg-stone-50 border border-stone-border/80 rounded-xl p-3.5 space-y-2.5">
+        <div className="flex items-center justify-between">
+          <label className="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={hasAttachment}
+              onChange={e => onChangeHasAttachment && onChangeHasAttachment(e.target.checked)}
+              className="rounded text-forest focus:ring-forest cursor-pointer"
+            />
+            <span className="text-xs font-bold text-deep-slate flex items-center space-x-1.5">
+              <Paperclip className="w-3.5 h-3.5 text-forest" />
+              <span>เปิดใช้งานไฟล์แนบจำลอง (Simulated Email Attachment)</span>
+            </span>
+          </label>
+          <span className="text-[11px] text-gray-400">สำหรับทดสอบความตระหนักรู้ด้านการเปิดไฟล์อันตราย (.pdf, .html, .docx)</span>
+        </div>
+
+        {hasAttachment && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-stone-border/60 animate-in fade-in duration-150">
+            <div>
+              <label className="block font-medium text-gray-700 mb-1 text-[11px]">ชื่อไฟล์แนบ (File Name) *</label>
+              <div className="flex space-x-1.5">
+                <input
+                  type="text"
+                  required={hasAttachment}
+                  value={attachmentName}
+                  onChange={e => onChangeAttachmentName && onChangeAttachmentName(e.target.value)}
+                  placeholder="เช่น Invoice_eTax_2026.pdf หรือ Salary_Slip.html"
+                  className="flex-1 p-2 border border-stone-border rounded-lg text-xs bg-white outline-none focus:border-forest"
+                />
+              </div>
+              <div className="flex items-center space-x-1.5 mt-1">
+                <span className="text-[10px] text-gray-400">ตัวอย่างด่วน:</span>
+                {[
+                  'Tax_Invoice_2026.pdf',
+                  'Salary_Slip_Payroll.html',
+                  'Copilot_Setup_Guide.docx'
+                ].map(presetName => (
+                  <button
+                    type="button"
+                    key={presetName}
+                    onClick={() => {
+                      if (onChangeAttachmentName) onChangeAttachmentName(presetName);
+                      if (onChangeAttachmentType) {
+                        if (presetName.endsWith('.pdf')) onChangeAttachmentType('application/pdf');
+                        else if (presetName.endsWith('.html')) onChangeAttachmentType('text/html');
+                        else if (presetName.endsWith('.docx')) onChangeAttachmentType('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+                      }
+                    }}
+                    className="text-[10px] text-forest underline hover:opacity-80"
+                  >
+                    {presetName}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block font-medium text-gray-700 mb-1 text-[11px]">ประเภทไฟล์ (MIME Type)</label>
+              <select
+                value={attachmentType}
+                onChange={e => onChangeAttachmentType && onChangeAttachmentType(e.target.value)}
+                className="w-full p-2 border border-stone-border rounded-lg text-xs bg-white outline-none focus:border-forest"
+              >
+                <option value="application/pdf">📄 Adobe PDF Document (.pdf)</option>
+                <option value="text/html">🌐 HTML Web Document (.html / .htm)</option>
+                <option value="application/vnd.openxmlformats-officedocument.wordprocessingml.document">📝 Microsoft Word (.docx)</option>
+                <option value="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">📊 Microsoft Excel (.xlsx)</option>
+              </select>
+              <p className="text-[10px] text-gray-400 mt-1">
+                ระบบจะสร้างไฟล์แนบจำลองที่ปลอดภัยให้โดยอัตโนมัติเมื่อทำการส่งอีเมล
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Dynamic Variables Bar */}

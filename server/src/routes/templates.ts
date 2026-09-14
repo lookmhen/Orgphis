@@ -22,18 +22,28 @@ templatesRouter.get('/emails', async (_req: Request, res: Response) => {
 
 // CREATE custom email template
 templatesRouter.post('/emails', async (req: Request, res: Response) => {
-  const { name, subject, bodyHtml, bodyText } = req.body;
+  const { name, subject, bodyHtml, bodyText, hasAttachment, attachmentName, attachmentType, attachmentContent } = req.body;
   if (!name || !subject || !bodyHtml) {
     return res.status(400).json({ error: 'Name, subject, and bodyHtml are required' });
   }
 
   try {
     const template = await prisma.emailTemplate.create({
-      data: { name, subject, bodyHtml, bodyText, isPreset: false }
+      data: {
+        name,
+        subject,
+        bodyHtml,
+        bodyText,
+        hasAttachment: Boolean(hasAttachment),
+        attachmentName: hasAttachment ? attachmentName : null,
+        attachmentType: hasAttachment ? (attachmentType || 'application/pdf') : null,
+        attachmentContent: hasAttachment ? attachmentContent : null,
+        isPreset: false
+      }
     });
     return res.status(201).json(template);
-  } catch (err) {
-    return res.status(500).json({ error: 'Failed to create template' });
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Failed to create template: ' + err.message });
   }
 });
 
@@ -50,6 +60,10 @@ templatesRouter.post('/emails/:id/clone', async (req: Request, res: Response) =>
         subject: source.subject,
         bodyHtml: source.bodyHtml,
         bodyText: source.bodyText,
+        hasAttachment: source.hasAttachment,
+        attachmentName: source.attachmentName,
+        attachmentType: source.attachmentType,
+        attachmentContent: source.attachmentContent,
         isPreset: false
       }
     });
@@ -62,16 +76,25 @@ templatesRouter.post('/emails/:id/clone', async (req: Request, res: Response) =>
 // UPDATE email template
 templatesRouter.put('/emails/:id', async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { name, subject, bodyHtml, bodyText } = req.body;
+  const { name, subject, bodyHtml, bodyText, hasAttachment, attachmentName, attachmentType, attachmentContent } = req.body;
 
   try {
     const updated = await prisma.emailTemplate.update({
       where: { id },
-      data: { name, subject, bodyHtml, bodyText }
+      data: {
+        name,
+        subject,
+        bodyHtml,
+        bodyText,
+        hasAttachment: Boolean(hasAttachment),
+        attachmentName: hasAttachment ? attachmentName : null,
+        attachmentType: hasAttachment ? (attachmentType || 'application/pdf') : null,
+        attachmentContent: hasAttachment ? attachmentContent : null
+      }
     });
     return res.json(updated);
-  } catch (err) {
-    return res.status(500).json({ error: 'Failed to update email template' });
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Failed to update email template: ' + err.message });
   }
 });
 
@@ -111,7 +134,7 @@ templatesRouter.delete('/emails/:id', async (req: Request, res: Response) => {
 
 // TEST SEND email template
 templatesRouter.post('/emails/test-send', async (req: Request, res: Response) => {
-  const { smtpProfileId, recipientEmail, subject, bodyHtml } = req.body;
+  const { smtpProfileId, recipientEmail, subject, bodyHtml, hasAttachment, attachmentName, attachmentType, attachmentContent } = req.body;
 
   if (!smtpProfileId || !recipientEmail || !subject || !bodyHtml) {
     return res.status(400).json({ error: 'กรุณาระบุ SMTP Profile, อีเมลผู้รับ, หัวข้อ และเนื้อหาอีเมลให้ครบถ้วน' });
@@ -150,6 +173,22 @@ templatesRouter.post('/emails/test-send', async (req: Request, res: Response) =>
     const renderedSubject = renderTemplate(subject, variables);
     const renderedHtml = renderTemplate(bodyHtml, variables);
 
+    const attachments: any[] = [];
+    if (hasAttachment && attachmentName) {
+      // Default harmless simulated payload if empty
+      const content = attachmentContent || (
+        attachmentName.endsWith('.html') 
+          ? `<!DOCTYPE html><html><body style="font-family:sans-serif;text-align:center;padding:40px;"><h2>⚠️ Phishing Simulation Notice</h2><p>This is a simulated security exercise attachment.</p><p><a href="${variables.phishing_url}">Click here to verify your credentials</a></p></body></html>`
+          : `[Phishing Simulation Document: ${attachmentName}]\r\nThis document is part of a security drill.\r\nPlease visit: ${variables.phishing_url} to verify.`
+      );
+
+      attachments.push({
+        filename: attachmentName,
+        content: content,
+        contentType: attachmentType || 'application/pdf'
+      });
+    }
+
     await transporter.sendMail({
       from: `"${smtp.fromName}" <${smtp.fromEmail}>`,
       to: recipientEmail,
@@ -158,7 +197,8 @@ templatesRouter.post('/emails/test-send', async (req: Request, res: Response) =>
       headers: {
         'X-PhishCentral-Simulation': 'test-preview',
         'X-PhishCentral-Test': 'true'
-      }
+      },
+      attachments: attachments.length > 0 ? attachments : undefined
     });
 
     return res.json({

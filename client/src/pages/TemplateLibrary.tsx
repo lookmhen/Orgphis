@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Copy, Plus, Eye, Edit3, Trash2, CheckCircle2, Monitor, Smartphone, Tag, Send, RefreshCw, AlertCircle } from 'lucide-react';
+import { Copy, Plus, Eye, Edit3, Trash2, CheckCircle2, Monitor, Smartphone, Tag, Send, RefreshCw, AlertCircle, Paperclip } from 'lucide-react';
 import { EmailEditorWithTools } from '../components/EmailEditorWithTools';
 
 export const TemplateLibrary: React.FC = () => {
@@ -76,6 +76,9 @@ export const TemplateLibrary: React.FC = () => {
           recipientEmail: testRecipient,
           subject: testEmailModal.subject,
           bodyHtml: testEmailModal.bodyHtml,
+          hasAttachment: testEmailModal.hasAttachment,
+          attachmentName: testEmailModal.attachmentName,
+          attachmentType: testEmailModal.attachmentType,
           baseUrl: clientBaseUrl
         })
       });
@@ -281,11 +284,19 @@ export const TemplateLibrary: React.FC = () => {
             <div key={t.id} className="bg-white rounded-xl border border-stone-border shadow-soft p-5 flex flex-col justify-between hover:border-forest/40 transition-all">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
-                    t.isPreset ? 'bg-forest-light text-forest' : 'bg-amber-50 text-amber-terracotta'
-                  }`}>
-                    {t.isPreset ? 'Official Preset (ต้นแบบ)' : 'Custom Template (แก้ไขได้)'}
-                  </span>
+                  <div className="flex items-center space-x-1.5">
+                    <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
+                      t.isPreset ? 'bg-forest-light text-forest' : 'bg-amber-50 text-amber-terracotta'
+                    }`}>
+                      {t.isPreset ? 'Official Preset (ต้นแบบ)' : 'Custom Template (แก้ไขได้)'}
+                    </span>
+                    {t.hasAttachment && (
+                      <span className="flex items-center space-x-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200" title={`มีไฟล์แนบ: ${t.attachmentName}`}>
+                        <Paperclip className="w-3 h-3 text-purple-600" />
+                        <span>{t.attachmentName || 'Attachment'}</span>
+                      </span>
+                    )}
+                  </div>
                   {!t.isPreset && (
                     <button
                       onClick={() => handleDeleteEmail(t.id)}
@@ -429,9 +440,15 @@ export const TemplateLibrary: React.FC = () => {
                 name={editingEmail.name || ''}
                 subject={editingEmail.subject || ''}
                 bodyHtml={editingEmail.bodyHtml || ''}
+                hasAttachment={editingEmail.hasAttachment || false}
+                attachmentName={editingEmail.attachmentName || ''}
+                attachmentType={editingEmail.attachmentType || 'application/pdf'}
                 onChangeName={(val) => setEditingEmail({ ...editingEmail, name: val })}
                 onChangeSubject={(val) => setEditingEmail({ ...editingEmail, subject: val })}
                 onChangeBodyHtml={(val) => setEditingEmail({ ...editingEmail, bodyHtml: val })}
+                onChangeHasAttachment={(val) => setEditingEmail({ ...editingEmail, hasAttachment: val })}
+                onChangeAttachmentName={(val) => setEditingEmail({ ...editingEmail, attachmentName: val })}
+                onChangeAttachmentType={(val) => setEditingEmail({ ...editingEmail, attachmentType: val })}
               />
 
               <div className="flex justify-end space-x-2 pt-3 border-t border-stone-border">
@@ -615,7 +632,15 @@ export const TemplateLibrary: React.FC = () => {
           <div className="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl border border-stone-border max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between pb-4 border-b border-stone-border">
               <div>
-                <h3 className="font-bold text-deep-slate text-lg">{previewTemplate.name}</h3>
+                <div className="flex items-center space-x-2">
+                  <h3 className="font-bold text-deep-slate text-lg">{previewTemplate.name}</h3>
+                  {previewTemplate.hasAttachment && (
+                    <span className="flex items-center space-x-1 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+                      <Paperclip className="w-3.5 h-3.5 text-purple-600" />
+                      <span>{previewTemplate.attachmentName}</span>
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-gray-500">Iframe Sandboxed Preview (ตัดสิทธิ์เข้าถึง Admin Cookies/Tokens ป้องกัน XSS)</p>
               </div>
 
@@ -726,7 +751,15 @@ export const TemplateLibrary: React.FC = () => {
               <div>
                 <label className="block font-medium text-gray-700 mb-1">เทมเพลตที่เลือก</label>
                 <div className="p-2.5 bg-stone-muted/50 rounded-lg border border-stone-border">
-                  <p className="font-bold text-deep-slate text-xs line-clamp-1">{testEmailModal.name}</p>
+                  <div className="flex items-center justify-between">
+                    <p className="font-bold text-deep-slate text-xs line-clamp-1">{testEmailModal.name}</p>
+                    {testEmailModal.hasAttachment && (
+                      <span className="flex items-center space-x-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+                        <Paperclip className="w-3 h-3 text-purple-600" />
+                        <span>{testEmailModal.attachmentName}</span>
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[11px] text-gray-500 mt-0.5 line-clamp-1">หัวเรื่อง: {testEmailModal.subject}</p>
                 </div>
               </div>

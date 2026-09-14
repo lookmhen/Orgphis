@@ -57,15 +57,22 @@ model SmtpProfile {
 }
 
 model EmailTemplate {
-  id          String     @id @default(uuid())
-  name        String
-  subject     String
-  bodyHtml    String
-  bodyText    String?
-  isPreset    Boolean    @default(false)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  campaigns   Campaign[]
+  id                String     @id @default(uuid())
+  name              String
+  subject           String
+  bodyHtml          String
+  bodyText          String?
+  isPreset          Boolean    @default(false)
+  
+  // File Attachment Simulation
+  hasAttachment     Boolean    @default(false)
+  attachmentName    String?    // e.g. "Invoice_Tax_Document.pdf", "Salary_Slip.html"
+  attachmentType    String?    // e.g. "application/pdf", "text/html", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  attachmentContent String?    // Base64 or plain text/HTML string payload
+  
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  campaigns         Campaign[]
 }
 
 model LandingPageTemplate {
