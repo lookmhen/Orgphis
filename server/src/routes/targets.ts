@@ -167,6 +167,134 @@ targetsRouter.post('/groups/:id/targets', async (req: Request, res: Response) =>
   }
 });
 
+// IMPORT targets with auto-creation of groups based on department column
+targetsRouter.post('/import-auto-groups', async (req: Request, res: Response) => {
+  const { targets, defaultGroupName = 'General' } = req.body;
+
+  if (!Array.isArray(targets) || targets.length === 0) {
+    return res.status(400).json({ error: 'Targets array is required' });
+  }
+
+  try {
+    // 1. Group targets by department name
+    const deptMap = new Map<string, any[]>();
+
+    for (const t of targets) {
+      if (!t.email || !t.email.includes('@')) continue;
+      const deptName = (t.department?.trim()) || defaultGroupName;
+      if (!deptMap.has(deptName)) {
+        deptMap.set(deptName, []);
+      }
+      deptMap.get(deptName)!.push({
+        email: t.email.trim().toLowerCase(),
+        firstName: (t.name || t.firstName || '').trim(),
+        lastName: (t.lastName || '').trim(),
+        department: deptName,
+        position: (t.position || '').trim()
+      });
+    }
+
+    let totalImported = 0;
+    const createdGroups: string[] = [];
+
+    // 2. Ensure each group exists, then upsert targets into that group
+    for (const [deptName, targetList] of deptMap.entries()) {
+      let group = await prisma.targetGroup.findFirst({
+        where: { name: deptName }
+      });
+
+      if (!group) {
+        group = await prisma.targetGroup.create({
+          data: {
+            name: deptName,
+            description: `กลุ่มเป้าหมายแผนก ${deptName} (สร้างอัตโนมัติจากการนำเข้า CSV)`
+          }
+        });
+        createdGroups.push(deptName);
+      }
+
+      for (const t of targetList) {
+        await prisma.target.upsert({
+          where: {
+            email_targetGroupId: {
+              email: t.email,
+              targetGroupId: group.id
+            }
+          },
+          update: {
+            firstName: t.firstName,
+            lastName: t.lastName,
+            department: t.department,
+            position: t.position
+          },
+          create: {
+            email: t.email,
+            firstName: t.firstName,
+            lastName: t.lastName,
+            department: t.department,
+            position: t.position,
+            targetGroupId: group.id
+          }
+        });
+        totalImported++;
+      }
+    }
+
+    return res.json({
+      success: true,
+      totalImported,
+      groupCount: deptMap.size,
+      newGroupsCreated: createdGroups
+    });
+  } catch (err: any) {
+    console.error('[Targets] Import auto groups error:', err);
+    return res.status(500).json({ error: 'Failed to import and auto-create groups: ' + err.message });
+  }
+});
+
+// UPDATE target details (Edit email, name, department)
+targetsRouter.put('/groups/:id/targets/:targetId', async (req: Request, res: Response) => {
+  const { id: targetGroupId, targetId } = req.params;
+  const { email, firstName, lastName, department, position } = req.body;
+
+  if (!email || !email.includes('@')) {
+    return res.status(400).json({ error: 'Valid email is required' });
+  }
+
+  try {
+    const cleanEmail = email.trim().toLowerCase();
+
+    // Check if updating email conflicts with another target in the same group
+    const existing = await prisma.target.findFirst({
+      where: {
+        email: cleanEmail,
+        targetGroupId,
+        NOT: { id: targetId }
+      }
+    });
+
+    if (existing) {
+      return res.status(400).json({ error: `อีเมล ${cleanEmail} มีอยู่ในกลุ่มนี้แล้ว` });
+    }
+
+    const updated = await prisma.target.update({
+      where: { id: targetId },
+      data: {
+        email: cleanEmail,
+        firstName: firstName !== undefined ? firstName.trim() : undefined,
+        lastName: lastName !== undefined ? lastName.trim() : undefined,
+        department: department !== undefined ? department.trim() : undefined,
+        position: position !== undefined ? position.trim() : undefined
+      }
+    });
+
+    return res.json(updated);
+  } catch (err: any) {
+    console.error('[Targets] Update target error:', err);
+    return res.status(500).json({ error: 'Failed to update target: ' + err.message });
+  }
+});
+
 // DELETE target
 targetsRouter.delete('/groups/:id/targets/:targetId', async (req: Request, res: Response) => {
   const { targetId } = req.params;

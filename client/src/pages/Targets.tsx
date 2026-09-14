@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Upload, Users, Plus, Trash2, UserPlus, Download, FileSpreadsheet, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Upload, Users, Plus, Trash2, UserPlus, Download, FileSpreadsheet, CheckCircle2, AlertCircle, Edit, FolderPlus, Layers } from 'lucide-react';
 
 export const Targets: React.FC = () => {
   const [groups, setGroups] = useState<any[]>([]);
@@ -11,7 +11,19 @@ export const Targets: React.FC = () => {
   // Modals
   const [showImportModal, setShowImportModal] = useState(false);
   const [showAddSingleModal, setShowAddSingleModal] = useState(false);
+  const [showEditTargetModal, setShowEditTargetModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Import mode: 'CURRENT_GROUP' vs 'AUTO_GROUP_BY_DEPT'
+  const [importMode, setImportMode] = useState<'AUTO_GROUP_BY_DEPT' | 'CURRENT_GROUP'>('AUTO_GROUP_BY_DEPT');
+
+  // Edit target state
+  const [editingTarget, setEditingTarget] = useState<{
+    id: string;
+    email: string;
+    firstName: string;
+    department: string;
+  } | null>(null);
 
   // Single target form
   const [singleTarget, setSingleTarget] = useState({
@@ -158,7 +170,7 @@ export const Targets: React.FC = () => {
   };
 
   const handleImportCsv = async () => {
-    if (!selectedGroup || !csvText) return;
+    if (!csvText) return;
 
     // Parse simple CSV text
     const lines = csvText.trim().split(/\r?\n/);
@@ -175,7 +187,7 @@ export const Targets: React.FC = () => {
         parsed.push({
           email: parts[0],
           name: parts[1] || '',
-          department: parts[2] || 'General'
+          department: parts[2] || (selectedGroup ? selectedGroup.name : 'General')
         });
       }
     }
@@ -185,18 +197,86 @@ export const Targets: React.FC = () => {
       return;
     }
 
-    const res = await fetch(`/api/targets/groups/${selectedGroup.id}/import`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ targets: parsed })
-    });
+    if (importMode === 'AUTO_GROUP_BY_DEPT') {
+      const res = await fetch('/api/targets/import-auto-groups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targets: parsed })
+      });
 
-    if (res.ok) {
-      alert(`นำเข้ารายชื่อพนักงานสำเร็จ ${parsed.length} รายการ!`);
-      setShowImportModal(false);
-      setCsvText('');
-      fetchTargets(selectedGroup.id);
-      fetchGroups(selectedGroup.id);
+      if (res.ok) {
+        const data = await res.json();
+        const createdMsg = data.newGroupsCreated && data.newGroupsCreated.length > 0 
+          ? `\n✨ ระบบสร้างกลุ่มใหม่ให้อัตโนมัติ: ${data.newGroupsCreated.join(', ')}`
+          : '';
+        alert(`นำเข้ารายชื่อสำเร็จ ${data.totalImported} รายการ (จัดลง ${data.groupCount} กลุ่มตามแผนกเรียบร้อย)${createdMsg}`);
+        setShowImportModal(false);
+        setCsvText('');
+        fetchGroups();
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.error || 'นำเข้าไม่สำเร็จ');
+      }
+    } else {
+      if (!selectedGroup) {
+        alert('กรุณาเลือกกลุ่มเป้าหมายก่อน');
+        return;
+      }
+      const res = await fetch(`/api/targets/groups/${selectedGroup.id}/import`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targets: parsed })
+      });
+
+      if (res.ok) {
+        alert(`นำเข้ารายชื่อพนักงานเข้ากลุ่ม "${selectedGroup.name}" สำเร็จ ${parsed.length} รายการ!`);
+        setShowImportModal(false);
+        setCsvText('');
+        fetchTargets(selectedGroup.id);
+        fetchGroups(selectedGroup.id);
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.error || 'นำเข้าไม่สำเร็จ');
+      }
+    }
+  };
+
+  const handleOpenEditTarget = (target: any) => {
+    setEditingTarget({
+      id: target.id,
+      email: target.email,
+      firstName: target.firstName || '',
+      department: target.department || ''
+    });
+    setShowEditTargetModal(true);
+  };
+
+  const handleUpdateTarget = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedGroup || !editingTarget || !editingTarget.email) return;
+
+    try {
+      const res = await fetch(`/api/targets/groups/${selectedGroup.id}/targets/${editingTarget.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: editingTarget.email,
+          firstName: editingTarget.firstName,
+          department: editingTarget.department
+        })
+      });
+
+      if (res.ok) {
+        setShowEditTargetModal(false);
+        setEditingTarget(null);
+        fetchTargets(selectedGroup.id);
+        fetchGroups(selectedGroup.id);
+      } else {
+        const data = await res.json();
+        alert(data.error || 'แก้ไขข้อมูลไม่สำเร็จ');
+      }
+    } catch (err: any) {
+      alert('Error: ' + err.message);
     }
   };
 
@@ -207,14 +287,27 @@ export const Targets: React.FC = () => {
           <h2 className="text-2xl font-bold text-deep-slate tracking-tight">กลุ่มเป้าหมาย (Targets & Groups)</h2>
           <p className="text-sm text-gray-500 mt-1">จัดการรายชื่อพนักงานและกลุ่มที่จะส่งแบบทดสอบ Phishing จำลอง</p>
         </div>
-        <button
-          onClick={handleDownloadCsvTemplate}
-          className="flex items-center space-x-1.5 px-3.5 py-2 border border-stone-border text-gray-700 bg-white hover:bg-stone-muted rounded-xl text-xs font-semibold shadow-xs transition-all"
-          title="ดาวน์โหลดไฟล์ตัวอย่าง .CSV สำหรับเปิดใน Excel"
-        >
-          <FileSpreadsheet className="w-4 h-4 text-forest" />
-          <span>ดาวน์โหลดเทมเพลต CSV</span>
-        </button>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => {
+              setImportMode('AUTO_GROUP_BY_DEPT');
+              setShowImportModal(true);
+            }}
+            className="flex items-center space-x-1.5 px-3.5 py-2 bg-forest text-white hover:bg-forest-hover rounded-xl text-xs font-semibold shadow-soft transition-all"
+            title="นำเข้าไฟล์ CSV พร้อมสร้างกลุ่มแยกตามแผนกให้อัตโนมัติ"
+          >
+            <Upload className="w-4 h-4" />
+            <span>นำเข้า CSV (สร้างกลุ่มอัตโนมัติ)</span>
+          </button>
+          <button
+            onClick={handleDownloadCsvTemplate}
+            className="flex items-center space-x-1.5 px-3.5 py-2 border border-stone-border text-gray-700 bg-white hover:bg-stone-muted rounded-xl text-xs font-semibold shadow-xs transition-all"
+            title="ดาวน์โหลดไฟล์ตัวอย่าง .CSV สำหรับเปิดใน Excel"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-forest" />
+            <span>ดาวน์โหลดเทมเพลต CSV</span>
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -316,13 +409,22 @@ export const Targets: React.FC = () => {
                       <td className="p-2.5 text-gray-600">{t.firstName || '-'}</td>
                       <td className="p-2.5 text-gray-600">{t.department || '-'}</td>
                       <td className="p-2.5 text-right">
-                        <button
-                          onClick={() => handleDeleteTarget(t.id)}
-                          className="text-gray-400 hover:text-red-600 transition-all p-1"
-                          title="ลบรายชื่อ"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center justify-end space-x-1">
+                          <button
+                            onClick={() => handleOpenEditTarget(t)}
+                            className="text-gray-400 hover:text-forest transition-all p-1"
+                            title="แก้ไขข้อมูลพนักงาน (Edit)"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTarget(t.id)}
+                            className="text-gray-400 hover:text-red-600 transition-all p-1"
+                            title="ลบรายชื่อ"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -391,14 +493,125 @@ export const Targets: React.FC = () => {
         </div>
       )}
 
+      {/* MODAL 3: Edit Target Modal */}
+      {showEditTargetModal && editingTarget && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-stone-border space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-stone-border">
+              <h3 className="font-bold text-deep-slate text-base flex items-center space-x-2">
+                <Edit className="w-4 h-4 text-forest" />
+                <span>แก้ไขข้อมูลพนักงาน ({selectedGroup?.name})</span>
+              </h3>
+              <button onClick={() => setShowEditTargetModal(false)} className="text-gray-400 hover:text-deep-slate font-bold">✕</button>
+            </div>
+            <form onSubmit={handleUpdateTarget} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">อีเมลพนักงาน *</label>
+                <input
+                  type="email"
+                  required
+                  value={editingTarget.email}
+                  onChange={e => setEditingTarget({ ...editingTarget, email: e.target.value })}
+                  className="w-full p-2 border border-stone-border rounded-lg outline-none focus:border-forest"
+                />
+              </div>
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">ชื่อ-นามสกุล</label>
+                <input
+                  type="text"
+                  value={editingTarget.firstName}
+                  onChange={e => setEditingTarget({ ...editingTarget, firstName: e.target.value })}
+                  className="w-full p-2 border border-stone-border rounded-lg outline-none focus:border-forest"
+                />
+              </div>
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">แผนก (Department)</label>
+                <input
+                  type="text"
+                  value={editingTarget.department}
+                  onChange={e => setEditingTarget({ ...editingTarget, department: e.target.value })}
+                  className="w-full p-2 border border-stone-border rounded-lg outline-none focus:border-forest"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-3 border-t border-stone-border">
+                <button
+                  type="button"
+                  onClick={() => setShowEditTargetModal(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-stone-muted"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-forest text-white hover:bg-forest-hover shadow-soft"
+                >
+                  บันทึกการแก้ไข
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* MODAL 2: CSV Import Modal */}
       {showImportModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-stone-border space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-stone-border">
-              <h3 className="font-bold text-deep-slate text-base">นำเข้ารายชื่อพนักงานด้วย CSV ({selectedGroup?.name})</h3>
+              <div>
+                <h3 className="font-bold text-deep-slate text-base flex items-center space-x-2">
+                  <Upload className="w-4 h-4 text-forest" />
+                  <span>นำเข้ารายชื่อพนักงานด้วย CSV</span>
+                </h3>
+                <p className="text-[11px] text-gray-500 mt-0.5">นำเข้ารายชื่อพร้อมสร้างกลุ่มตามแผนกให้อัตโนมัติ</p>
+              </div>
               <button onClick={() => setShowImportModal(false)} className="text-gray-400 hover:text-deep-slate font-bold">✕ ปิด</button>
             </div>
+
+            {/* Mode Selection Tabs */}
+            <div className="grid grid-cols-2 gap-2 bg-stone-100 p-1 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setImportMode('AUTO_GROUP_BY_DEPT')}
+                className={`py-2 px-3 text-xs font-semibold rounded-lg transition-all flex items-center justify-center space-x-1.5 ${
+                  importMode === 'AUTO_GROUP_BY_DEPT'
+                    ? 'bg-white text-forest shadow-xs'
+                    : 'text-gray-500 hover:text-deep-slate'
+                }`}
+              >
+                <FolderPlus className="w-3.5 h-3.5" />
+                <span>สร้างกลุ่มตามแผนกอัตโนมัติ ⭐</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setImportMode('CURRENT_GROUP')}
+                className={`py-2 px-3 text-xs font-semibold rounded-lg transition-all flex items-center justify-center space-x-1.5 ${
+                  importMode === 'CURRENT_GROUP'
+                    ? 'bg-white text-forest shadow-xs'
+                    : 'text-gray-500 hover:text-deep-slate'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>ใส่กลุ่มปัจจุบัน ({selectedGroup?.name || 'เลือก'})</span>
+              </button>
+            </div>
+
+            {importMode === 'AUTO_GROUP_BY_DEPT' ? (
+              <div className="p-2.5 bg-blue-50/70 rounded-xl border border-blue-200 text-blue-900 text-[11px] space-y-0.5">
+                <p className="font-semibold flex items-center space-x-1">
+                  <FolderPlus className="w-3.5 h-3.5 text-blue-600" />
+                  <span>ระบบสร้างกลุ่มอัจฉริยะ (Auto Department Lookup):</span>
+                </p>
+                <p className="text-blue-800">
+                  ระบบจะอ่านชื่อแผนกในคอลัมน์ <code className="font-mono font-semibold bg-white/70 px-1 py-0.5 rounded">department</code> แล้วดึงมาสร้างเป็นกลุ่มเป้าหมายให้อัตโนมัติทันที โดยที่คุณไม่ต้องมาสร้างกลุ่มทีละกลุ่มล่วงหน้า
+                </p>
+              </div>
+            ) : (
+              <div className="p-2.5 bg-stone-50 rounded-xl border border-stone-border text-gray-700 text-[11px]">
+                พนักงานทั้งหมดในไฟล์จะถูกนำเข้าสู่กลุ่ม: <span className="font-bold text-forest">{selectedGroup?.name}</span>
+              </div>
+            )}
 
             {/* Quick Action: Download Template & Choose File */}
             <div className="flex items-center justify-between bg-stone-muted/50 p-3 rounded-xl border border-stone-border/60">
@@ -437,10 +650,10 @@ export const Targets: React.FC = () => {
               </div>
 
               <textarea
-                rows={6}
+                rows={5}
                 value={csvText}
                 onChange={e => setCsvText(e.target.value)}
-                placeholder="email,name,department&#10;somchai@company.com,สมชาย ใจดี,IT&#10;kanya@company.com,กัญญา ศรีสุข,HR"
+                placeholder="email,name,department&#10;somchai@company.com,สมชาย ใจดี,IT&#10;kanya@company.com,กัญญา ศรีสุข,HR&#10;vichai@company.com,วิชัย พัฒนาการ,Finance"
                 className="w-full p-3 border border-stone-border rounded-xl font-mono text-xs outline-none focus:border-forest"
               />
               <p className="text-[11px] text-gray-400 mt-1">
@@ -459,7 +672,7 @@ export const Targets: React.FC = () => {
                 onClick={handleImportCsv}
                 className="px-4 py-2 rounded-xl text-xs font-semibold bg-forest text-white hover:bg-forest-hover shadow-soft"
               >
-                ยืนยันการนำเข้า
+                {importMode === 'AUTO_GROUP_BY_DEPT' ? 'ยืนยันการนำเข้าและสร้างกลุ่มอัตโนมัติ' : 'ยืนยันการนำเข้า'}
               </button>
             </div>
           </div>
