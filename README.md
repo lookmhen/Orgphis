@@ -1,156 +1,159 @@
-# 🛡️ PhishCentral Enterprise
+﻿# 🛡️ PhishCentral Enterprise
 
 > **Centralized Phishing Simulation & Security Awareness Platform**  
-> แพลตฟอร์มจำลองการโจมตีแบบฟิชชิ่งและประเมินระดับความตระหนักรู้ด้านความปลอดภัยไซเบอร์ระดับองค์กร (PDPA & ISO 27001 Compliant)
+> แพลตฟอร์มจำลองสถานการณ์การโจมตีแบบฟิชชิ่งและการฝึกอบรมสร้างความตระหนักรู้ด้านความปลอดภัยไซเบอร์ระดับองค์กร (สอดคล้องตามมาตรฐาน PDPA & ISO 27001)
 
 ---
 
 ## 📌 สารบัญ (Table of Contents)
-- [1. ภาพรวมและจุดเด่นของระบบ (Key Features)](#1-ภาพรวมและจุดเด่นของระบบ-key-features)
+- [1. จุดเด่นและความสามารถหลักของระบบ (Key Features)](#1-จุดเด่นและความสามารถหลักของระบบ-key-features)
 - [2. โครงสร้างโปรเจกต์ (Project Structure)](#2-โครงสร้างโปรเจกต์-project-structure)
-- [3. สถาปัตยกรรมและส่วนประกอบสำคัญ (Architecture & Components)](#3-สถาปัตยกรรมและส่วนประกอบสำคัญ-architecture--components)
+- [3. สถาปัตยกรรมและกลไกความปลอดภัย (Architecture & Security Mechanisms)](#3-สถาปัตยกรรมและกลไกความปลอดภัย-architecture--security-mechanisms)
 - [4. วิธีการติดตั้งและเริ่มต้นใช้งาน (Getting Started)](#4-วิธีการติดตั้งและเริ่มต้นใช้งาน-getting-started)
-- [5. การนำไป Deploy ใช้งานจริง (Production Deployment)](#5-การนำไป-deploy-ใช้งานจริง-production-deployment)
-- [6. คู่มือการต่อยอดและเมนเทน (Developer & Maintenance Guide)](#6-คู่มือการต่อยอดและเมนเทน-developer--maintenance-guide)
-- [7. การทดสอบระบบ (Testing & Quality Assurance)](#7-การทดสอบระบบ-testing--quality-assurance)
-- [8. ความปลอดภัยและการ Whitelist เมลเซิร์ฟเวอร์](#8-ความปลอดภัยและการ-whitelist-เมลเซิร์ฟเวอร์)
+- [5. การนำไปใช้งานบนสภาพแวดล้อมจริง (Production Deployment)](#5-การนำไปใช้งานบนสภาพแวดล้อมจริง-production-deployment)
+- [6. คู่มือสำหรับนักพัฒนาและการดูแลระบบ (Developer & Maintenance Guide)](#6-คู่มือสำหรับนักพัฒนาและการดูแลระบบ-developer--maintenance-guide)
+- [7. การทดสอบระบบและการประกันคุณภาพ (Testing & QA)](#7-การทดสอบระบบและการประกันคุณภาพ-testing--qa)
+- [8. แนวทางการตั้งค่าระบบเมลองค์กร (Mail Server Whitelist Guide)](#8-แนวทางการตั้งค่าระบบเมลองค์กร-mail-server-whitelist-guide)
 
 ---
 
-## 1. ภาพรวมและจุดเด่นของระบบ (Key Features)
+## 1. จุดเด่นและความสามารถหลักของระบบ (Key Features)
 
-- 🔒 **Zero-Password Storage (มาตรฐาน PDPA & ISO 27001):** มีระบบ Top-level Express Middleware ดักจับและกรองรหัสผ่านจริง, OTP, และความลับทุกชนิดออกจาก Request Body ก่อนเข้าสู่ระบบ ไม่มีการบันทึกรหัสผ่านจริงของพนักงานลงฐานข้อมูลเด็ดขาด
-- 🌐 **100% Local Assets (Zero External CDN):** ไม่มีพึ่งพา CDN ภายนอกแม้แต่จุดเดียว รูปภาพ โลโก้ SVG และฟอนต์ถูกบรรจุอยู่ในโปรเจกต์ทั้งหมด สามารถทำงานได้สมบูรณ์แบบในเครือข่ายปิด (Air-gapped / Private LAN / Intranet)
-- 🤖 **Bot & Mail Security Scanner Detection:** มีระบบกรอง Traffic อัตโนมัติจากตัวตรวจจับอีเมล เช่น Microsoft Defender, Outlook SafeLinks, Barracuda, Google Image Proxy เพื่อป้องกัน False Positive
-- 📊 **Security Dashboard & Resilience Index:** ชาร์ตวิเคราะห์ Funnel 4 ลำดับขั้น (Sent ➔ Clicked ➔ Compromised ➔ Reported), การจัดเกรดความมั่นคงปลอดภัยองค์กร (A+ ถึง F), และการตรวจจับพนักงานที่ตกเป็นเหยื่อซ้ำซ้อน (Repeat Offenders)
-- ✉️ **Flexible SMTP Relay Profiles:** รองรับทั้ง Microsoft 365 (Port 587 STARTTLS), Google Workspace Relay, และ Internal Postfix/Exchange พร้อมการตั้งค่า Rate Limiting และ Delay ต่อเนื่อง
-- 🎨 **Earthtone Design System:** อินเทอร์เฟซสบายตา ใช้งานง่าย ออกแบบด้วยโทนสี Earthtone ธรรมชาติ (`forest`, `deep-slate`, `warm-sand`) โดยงดการใช้สี Gradient ม่วง/ชมพูที่ดูเป็นเชิงพาณิชย์เกินไป
+- 🔒 **Zero-Password Storage (มาตรฐาน PDPA & ISO 27001):**  
+  ระบบติดตั้ง Express Middleware ระดับบนสุด ทำหน้าที่ดักกรองและตัดข้อมูลความลับ เช่น รหัสผ่านจริง, OTP, PIN และ Security Tokens ออกจากทุก Request ก่อนเข้าสู่ระบบ ไม่มีการบันทึกรหัสผ่านของพนักงานลงในฐานข้อมูลหรือ System Logs อย่างเด็ดขาด
+- 📎 **Simulated Email Attachments (จำลองไฟล์แนบเสมือนจริง ปลอดภัย 100%):**  
+  เพิ่มความสมจริงในการทดสอบด้วยฟังก์ชันจำลองไฟล์แนบยอดนิยม (เช่น `.pdf`, `.docx`, `.xlsx`) พร้อม Quick Presets สำหรับสถานการณ์ทั่วไป (สลิปเงินเดือน, สิทธิประโยชน์โบนัส, ใบกำกับภาษี) โดยระบบจะสร้างไฟล์จำลองอัตโนมัติ ไม่จำเป็นต้องอัปโหลดไฟล์จริงขึ้นเซิร์ฟเวอร์ หมดกังวลเรื่องมัลแวร์ตกค้างหรือการถูกโปรแกรม Antivirus บล็อก
+- ⏱️ **Randomized Smear Scheduling (ระบบกระจายคิวส่งตามเวลาทำการ):**  
+  รองรับการตั้งเวลาส่งอีเมลแบบค่อยเป็นค่อยไป โดยสุ่มกระจายการส่งให้อยู่ในกรอบเวลาทำงานขององค์กร (เช่น 08:30 - 17:00 น.) พร้อมคัดกรองเฉพาะวันทำการ (จันทร์-ศุกร์) โดยอัตโนมัติ ช่วยลดความเสี่ยงที่อีเมลจะถูกตรวจจับโดยระบบ Email Gateway / Spam Filter และจำลองสถานการณ์เสมือนจริง
+- 👥 **Smart CSV Auto-Grouping & Target Editor (ระบบจัดกลุ่มพนักงานอัตโนมัติ):**  
+  นำเข้าไฟล์ CSV รายชื่อพนักงานเพียงครั้งเดียว ระบบจะอ่านชื่อแผนก (`department`) และสร้างกลุ่มเป้าหมายแยกแต่ละแผนกให้ทันทีโดยอัตโนมัติ ไม่ต้องเสียเวลาสร้างกลุ่มล่วงหน้า พร้อมรองรับการแก้ไขข้อมูลพนักงาน (ชื่อ, แผนก, อีเมล) ได้โดยตรงจากหน้าเว็บ
+- 🤖 **Bot & Security Scanner Detection (คัดกรองระบบตรวจจับความปลอดภัย):**  
+  มีกลไกตรวจสอบและคัดกรองการเปิดอ่านหรือคลิกลิงก์จากบอทอัตโนมัติ (เช่น Microsoft Defender Safe Links, Proofpoint, Google Image Proxy) ป้องกันไม่ให้เกิดตัวเลข False Positive ในรายงานผลการทดสอบ
+- 📊 **Security Dashboard & Resilience Index (แดชบอร์ดวิเคราะห์สถิติและภูมิคุ้มกันองค์กร):**  
+  วิเคราะห์พฤติกรรมผ่าน Compromise Funnel 4 ลำดับขั้น (`Sent` ➔ `Clicked` ➔ `Compromised` ➔ `Reported`), ประเมินดัชนีความตระหนักรู้พร้อมตัดเกรดความมั่นคงปลอดภัยองค์กร (A+ ถึง F), และแสดงรายชื่อพนักงานที่ตกเป็นเหยื่อซ้ำซ้อน (Repeat Offenders)
+- ✉️ **Flexible SMTP Relay Profiles (รองรับระบบเมลมาตรฐานองค์กร):**  
+  รองรับทั้ง Microsoft 365 (Port 587 STARTTLS), Google Workspace Relay และเซิร์ฟเวอร์อีเมลภายในองค์กร (เช่น Postfix หรือ Microsoft Exchange) พร้อมระบบควบคุมความเร็ว (Rate Limiting) และหน่วงเวลา (Delay) ต่อฉบับเพื่อความเสถียร
+- 🌐 **100% Local Assets (ทำงานได้ในระบบเครือข่ายปิด):**  
+  ไม่มีการพึ่งพา CDN ภายนอก รูปภาพ ไอคอน SVG และฟอนต์ถูกจัดเก็บและเสิร์ฟจากภายในระบบทั้งหมด สามารถติดตั้งใช้งานในระบบเครือข่ายปิด (Air-gapped / Private LAN / Intranet) ได้อย่างราบรื่น
+- 🎨 **Earthtone Design System (อินเทอร์เฟซสบายตา เป็นมิตรต่อผู้ใช้งาน):**  
+  ออกแบบด้วยชุดสีธรรมชาติ Earthtone (`forest`, `deep-slate`, `warm-sand`) หน้าต่างฟอร์มและ Modal ออกแบบด้วยโครงสร้าง Responsive มีแถบหัวข้อและปุ่มคำสั่งด้านล่างที่ตรึงไว้กับหน้าจอ (Sticky Header & Footer) ใช้งานสะดวกบนหน้าจอทุกขนาด
 
 ---
 
 ## 2. โครงสร้างโปรเจกต์ (Project Structure)
 
-โปรเจกต์ใช้รูปแบบ **Monorepo (Full-Stack TypeScript)** แยกฝั่ง Client และ Server ไว้อย่างชัดเจน:
+โปรเจกต์ได้รับการพัฒนาในรูปแบบ **Monorepo (Full-Stack TypeScript)** แยกส่วนการทำงานของ Client และ Server อย่างเป็นระเบียบ:
 
 ```plaintext
 Phishing-mail/
 ├── client/                     # Frontend Application (React + Vite)
-│   ├── public/                 # Static Assets สำหรับ Frontend
-│   │   ├── favicon.svg         # ไอคอนระบบ
-│   │   ├── vite.svg            # Favicon Fallback
+│   ├── public/                 # Static Assets สำหรับฝั่ง Frontend
+│   │   ├── favicon.svg         # ไอคอนประจำระบบ
 │   │   └── static/logos/       # โลโก้ SVG จำลอง (SSO, M365, AI Hub, e-Tax)
 │   ├── src/
-│   │   ├── components/         # คอมโพเนนต์ที่ใช้ซ้ำ (Navbar, Layout, Visual Editor)
-│   │   │   ├── EmailEditorWithTools.tsx  # เครื่องมือ Visual Editor เทมเพลตอีเมล
-│   │   │   └── Layout.tsx                # โครงสร้าง Layout หลัก + Navigation
-│   │   ├── pages/              # หน้าหลักของระบบ
-│   │   │   ├── Dashboard.tsx   # Dashboard สรุปสถิติ กราฟแนวโน้ม และ Resilience Score
-│   │   │   ├── Campaigns.tsx   # จัดการแคมเปญ ส่งคิว จำลองสถานะ และ Reset
-│   │   │   ├── Targets.tsx     # จัดการกลุ่มเป้าหมาย (Groups) และรายชื่อพนักงาน (CSV)
-│   │   │   ├── TemplateLibrary.tsx # คลังเทมเพลตอีเมล/Landing Page + ปุ่มทดสอบส่งจริง
-│   │   │   └── SmtpProfiles.tsx    # ตั้งค่าและทดสอบ Handshake ของโปรไฟล์ SMTP
-│   │   ├── App.tsx             # Route Configuration
-│   │   ├── index.css           # Tailwind Directives
-│   │   └── main.tsx            # React Bootstrap Entry
-│   ├── package.json            # Client Dependencies (React 18, Recharts, Lucide)
-│   ├── tailwind.config.js      # Palette สี Earthtone & Font Configurations
-│   └── vite.config.ts          # Vite Configuration พร้อม Proxy ไปยัง Backend (:3000)
+│   │   ├── components/         # คอมโพเนนต์ส่วนกลาง (Navbar, Layout, Visual Editor)
+│   │   │   ├── EmailEditorWithTools.tsx  # เครื่องมือ Visual Editor และจัดการไฟล์แนบ
+│   │   │   └── Layout.tsx                # โครงสร้าง Layout หลักของระบบ
+│   │   ├── pages/              # หน้าจอหลักของระบบ
+│   │   │   ├── Dashboard.tsx   # รายงานสถิติภาพรวม กราฟแนวโน้ม และ Resilience Score
+│   │   │   ├── Campaigns.tsx   # สร้างและจัดการแคมเปญ พร้อมระบบตั้งเวลาสุ่มส่ง
+│   │   │   ├── Targets.tsx     # จัดการกลุ่มเป้าหมาย และระบบนำเข้า CSV แบบ Auto-Group
+│   │   │   ├── TemplateLibrary.tsx # คลังเทมเพลตอีเมล/Landing Page พร้อมโหมด Sandbox Preview
+│   │   │   └── SmtpProfiles.tsx    # ตั้งค่าและทดสอบการเชื่อมต่อ SMTP
+│   │   ├── App.tsx             # การตั้งค่าเส้นทาง (Routes)
+│   │   └── tailwind.config.js  # การกำหนด Palette สี Earthtone
+│   └── vite.config.ts          # การตั้งค่า Vite และ Reverse Proxy ไปยัง Backend (:3000)
 │
 ├── server/                     # Backend Application (Express + Prisma)
 │   ├── prisma/
-│   │   ├── schema.prisma       # โครงสร้าง Database Schema (SQLite)
-│   │   └── dev.db              # ไฟล์ฐานข้อมูล SQLite ในเครื่องพัฒนา
-│   ├── public/
-│   │   └── logos/              # ไฟล์ Vector SVG โลโก้จำลอง (เสิร์ฟผ่าน /static/logos/)
+│   │   ├── schema.prisma       # โมเดลฐานข้อมูล SQLite
+│   │   └── dev.db              # ไฟล์ฐานข้อมูลในเครื่องพัฒนา
+│   ├── public/logos/           # ไฟล์ Vector SVG จำลอง
 │   ├── src/
 │   │   ├── middleware/
-│   │   │   └── sanitizer.ts    # Zero-Password Sanitizer (กรองรหัสผ่านก่อนเข้า DB)
-│   │   ├── routes/             # Express API Endpoints
-│   │   │   ├── campaigns.ts    # API แคมเปญ (Create, Launch, Kill, Reset, Export CSV)
-│   │   │   ├── dashboard.ts    # API ประมวลผลสถิติ กราฟแนวโน้ม และดัชนีชี้วัด
-│   │   │   ├── publicTracking.ts # Endpoint จำลองฟิชชิ่ง (/l/:token, /report/:token)
-│   │   │   ├── smtp.ts         # API จัดการโปรไฟล์ SMTP และทดสอบ Handshake
-│   │   │   ├── targets.ts      # API จัดการกลุ่มและนำเข้าพนักงาน (CSV Upload)
-│   │   │   └── templates.ts    # API คลังเทมเพลต โคลนเทมเพลต และส่งอีเมลทดสอบ
+│   │   │   └── sanitizer.ts    # Zero-Password Sanitizer ดักกรองข้อมูลรหัสผ่าน
+│   │   ├── routes/             # API Endpoints ของระบบ
+│   │   │   ├── campaigns.ts    # จัดการแคมเปญ (สร้าง, เริ่มส่ง, หยุดฉุกเฉิน, ส่งออก CSV)
+│   │   │   ├── dashboard.ts    # ประมวลผลข้อมูลสถิติและดัชนีชี้วัด
+│   │   │   ├── publicTracking.ts # จุดรับการคลิกและการกรอกข้อมูล (/l/:token, /report/:token)
+│   │   │   ├── smtp.ts         # จัดการโปรไฟล์เมลเซิร์ฟเวอร์ และทดสอบ Handshake
+│   │   │   ├── targets.ts      # จัดการรายชื่อพนักงาน และการนำเข้าแบบสร้างกลุ่มอัตโนมัติ
+│   │   │   └── templates.ts    # จัดการเทมเพลต โคลนเนื้อหา และทดสอบส่งอีเมล
 │   │   ├── services/
-│   │   │   ├── dispatchService.ts # คิวส่งอีเมลพร้อม Rate Limit & Delay
-│   │   │   ├── templateService.ts # จัดการ Handlebars Template & Presets
-│   │   │   └── trackingService.ts # In-memory Telemetry Buffer & Batch Writer
+│   │   │   ├── dispatchService.ts # คิวควบคุมการส่งอีเมลพร้อมรองรับไฟล์แนบจำลอง
+│   │   │   ├── templateService.ts # จัดการเทมเพลตอีเมลและหน้าเว็บมาตรฐาน
+│   │   │   └── trackingService.ts # บันทึกข้อมูล Telemetry แบบ Batch Buffer
 │   │   ├── utils/
-│   │   │   ├── network.ts      # ตรวจจับ Host IP อัตโนมัติ (Reachable Base URL)
-│   │   │   └── tokenAndBot.ts  # สุ่ม Tracking Token และตรวจจับ User-Agent บอท
-│   │   ├── __tests__/          # Vitest Automated Unit Tests
-│   │   ├── prisma.ts           # Prisma Client Instance & WAL Pragmas
-│   │   └── index.ts            # Server Entry Point, Middleware & Route Mounting
-│   ├── package.json            # Server Dependencies (Express, Prisma, Nodemailer)
-│   └── tsconfig.json           # TypeScript Compiler Options
+│   │   │   ├── network.ts      # ค้นหา Host IP สำหรับลิงก์จำลองอัตโนมัติ
+│   │   │   ├── scheduler.ts    # คำนวณคิวเวลาสุ่มส่งตามวันทำการและชั่วโมงทำงาน
+│   │   │   └── tokenAndBot.ts  # สุ่มโทเคนรายบุคคลและตรวจจับบอท
+│   │   ├── __tests__/          # ชุดการทดสอบระบบแบบอัตโนมัติ (Automated Tests)
+│   │   └── index.ts            # Entry Point ของเซิร์ฟเวอร์
+│   └── tsconfig.json           # การตั้งค่า TypeScript Compiler
 │
-├── data/                       # โฟลเดอร์เก็บ Persistent SQLite Database
-├── Dockerfile                  # Multi-stage Docker Build (Client + Server + Runner)
+├── data/                       # โฟลเดอร์สำหรับเก็บฐานข้อมูล SQLite ถาวร (Docker Volume)
+├── Dockerfile                  # Multi-stage Docker Build
 ├── docker-compose.yml          # การตั้งค่า Docker Compose สำหรับ Production
-├── .dockerignore               # กรองไฟล์ node_modules และ dist ไม่ให้ส่งเข้า Docker
-├── .env.example                # ตัวอย่างค่า Environment Variables
-├── package.json                # Root Scripts ควบคุมการ Build และ Dev ของทั้งระบบ
-├── USER_MANUAL.md              # คู่มือการใช้งานสำหรับผู้ใช้ทั่วไป (End-User Manual)
-└── Spec.md                     # เอกสารข้อกำหนดทางเทคนิค (Technical Specification)
+├── USER_MANUAL.md              # คู่มือการใช้งานสำหรับผู้ดูแลระบบ
+└── README.md                   # เอกสารภาพรวมและคู่มือเริ่มต้น
 ```
 
 ---
 
-## 3. สถาปัตยกรรมและส่วนประกอบสำคัญ (Architecture & Components)
+## 3. สถาปัตยกรรมและกลไกความปลอดภัย (Architecture & Security Mechanisms)
 
-### 3.1 การไหลของข้อมูล (Data & Event Flow)
+### 3.1 ขั้นตอนการทำงานของข้อมูลและเหตุการณ์ (Data Flow)
 ```
-[ ผู้ดูแลระบบสร้างแคมเปญ ]
+[ ผู้ดูแลระบบสั่งเริ่มแคมเปญ ]
         │
         ▼
-[ Dispatch Service ] ────(SMTP Relay)────► [ กล่องจดหมายพนักงาน ]
-        │                                         │
-        │ (สร้าง Tracking Token ประจำคน)            │ (พนักงานคลิกลิงก์)
-        ▼                                         ▼
-[ Tracking Service Buffer ] ◄───(HTTP)─── [ Landing Page (/l/:token) ]
-        │                                         │ (เผลอกรอกข้อมูล)
-        │ (เขียนลง DB แบบ Batch)                  ▼
-        ▼                                 [ Zero-Password Sanitizer ]
-[ SQLite (WAL Mode) ]                             │ (ลบรหัสผ่านทิ้งทันที)
-        │                                         ▼
-        └────────────────────────────────► [ Awareness Page / Red Flags ]
+[ Dispatch Queue ] ──(SMTP Relay)──► [ กล่องจดหมายพนักงาน ]
+        │                                    │
+        │ (สร้าง Tracking Token ประจำคน)       │ (พนักงานคลิกลิงก์ / เปิดไฟล์แนบ)
+        ▼                                    ▼
+[ Telemetry Buffer ] ◄──(HTTP Request)─── [ Landing Page (/l/:token) ]
+        │                                    │ (กรณีเผลอกรอกข้อมูล)
+        │ (บันทึกข้อมูลลงฐานข้อมูล)             ▼
+        ▼                            [ Zero-Password Sanitizer ]
+[ SQLite (WAL Mode) ]                        │ (ลบรหัสผ่านทิ้งทันที)
+        │                                    ▼
+        └───────────────────────────► [ Awareness Training Page ]
 ```
 
-### 3.2 ระบบความปลอดภัย Zero-Password Storage
-ฟังก์ชัน [`sanitizer.ts`](file:///d:/Nodejs/Phishing-mail/server/src/middleware/sanitizer.ts) จะทำหน้าที่สแกนทุก HTTP Request ก่อนเข้าสู่ Controller:
-- คำว่า `password`, `pass`, `pwd`, `secret`, `token`, `otp`, `pin` จะถูกแทนที่ด้วยข้อความ `[REDACTED_BY_POLICY]`
-- ทำให้ฐานข้อมูลและ Log ของระบบไม่มีรหัสผ่านจริงของผู้ใช้หลุดรอดไปเด็ดขาด
+### 3.2 กลไก Zero-Password Storage
+มิดเดิลแวร์ [`sanitizer.ts`](file:///d:/Nodejs/Phishing-mail/server/src/middleware/sanitizer.ts) จะสแกนทุกคำขอ HTTP ขาเข้าก่อนส่งต่อไปยัง Controller:
+- คำว่า `password`, `pass`, `pwd`, `secret`, `token`, `otp`, `pin` จะถูกแปลงค่าเป็น `[REDACTED_BY_POLICY]` ในทันที
+- ข้อมูลรหัสผ่านจริงจะไม่ถูกบันทึกหรือปรากฏในฐานข้อมูลและ System Logs ไม่ว่ากรณีใดทั้งสิ้น
 
-### 3.3 Dynamic Host URL Resolution
-ฟังก์ชัน [`network.ts`](file:///d:/Nodejs/Phishing-mail/server/src/utils/network.ts) ป้องกันบั๊ก "ลิงก์ในอีเมลเป็น localhost":
-1. ใช้ค่า Base URL ที่ส่งมาจากหน้าต่างเบราว์เซอร์ของ Admin ก่อนเป็นอันดับแรก
-2. หากไม่มี ให้ใช้ค่า `BASE_URL` จาก `.env`
-3. หากค่าเป็น `localhost` ระบบจะค้นหา IPv4 LAN จริงของเครื่องแม่ข่ายให้อัตโนมัติ(เช่น `http://192.168.xx.xx:3000`)
+### 3.3 การหา Host IP อัตโนมัติ (Dynamic Host URL Resolution)
+โมดูล [`network.ts`](file:///d:/Nodejs/Phishing-mail/server/src/utils/network.ts) ช่วยป้องกันปัญหาลิงก์ในอีเมลชี้ไปที่ `localhost`:
+1. ใช้ค่า URL ที่ผู้ดูแลระบบเข้าใช้งานในขณะนั้นเป็นลำดับแรก
+2. หากไม่มี ให้ใช้ค่า `BASE_URL` ที่ระบุไว้ใน `.env`
+3. หากค่าถูกตั้งเป็น `localhost` ระบบจะค้นหา IPv4 LAN ของเครื่องเซิร์ฟเวอร์ให้อัตโนมัติ (เช่น `http://192.168.x.x:3000`) เพื่อให้เครื่องผู้รับสามารถเข้าถึงหน้าทดสอบได้จริง
 
---- 
+---
 
 ## 4. วิธีการติดตั้งและเริ่มต้นใช้งาน (Getting Started)
 
-### ความต้องการของระบบ (Prerequisites)
+### ความต้องการเบื้องต้นของระบบ (Prerequisites)
 - **Node.js:** เวอร์ชั่น 20.x ขึ้นไป
 - **npm:** เวอร์ชั่น 10.x ขึ้นไป
 
-### การติดตั้งและเริ่มรันแบบ Development Mode
+### ขั้นตอนการรันในโหมดพัฒนา (Development Mode)
 ```bash
-# 1. Clone Repository
+# 1. Clone Repository เข้ามายังเครื่อง
 git clone <repository-url>
 cd Phishing-mail
 
-# 2. ติดตั้ง Dependencies ในทุกส่วน
+# 2. ติดตั้ง Dependencies ทั้งฝั่ง Server และ Client
 npm --prefix server install
 npm --prefix client install
 
-# 3. เตรียมฐานข้อมูล SQLite
+# 3. เตรียมโครงสร้างฐานข้อมูล SQLite
 npm --prefix server run prisma:push
 
-# 4. รันระบบ (เปิด 2 Terminal)
-# Terminal 1: Backend API (พอร์ต 3000)
+# 4. รันระบบ (แยกเปิด 2 Terminal)
+# Terminal 1: Backend Server (พอร์ต 3000)
 npm run dev:server
 
 # Terminal 2: Frontend Client (พอร์ต 5173)
@@ -160,105 +163,94 @@ npm run dev:client
 
 ---
 
-## 5. การนำไป Deploy ใช้งานจริง (Production Deployment)
+## 5. การนำไปใช้งานบนสภาพแวดล้อมจริง (Production Deployment)
 
-### วิธีที่ 1: Deploy ด้วย Docker Compose (แนะนำสูงสุด ⭐)
-
-ระบบมีไฟล์ [`Dockerfile`](file:///d:/Nodejs/Phishing-mail/Dockerfile) และ [`docker-compose.yml`](file:///d:/Nodejs/Phishing-mail/docker-compose.yml) ที่พร้อมทำงานแบบ Multi-stage Build ทันที:
+### รูปแบบที่ 1: ติดตั้งผ่าน Docker Compose (แนะนำสูงสุด ⭐)
+ระบบมีไฟล์ [`Dockerfile`](file:///d:/Nodejs/Phishing-mail/Dockerfile) และ [`docker-compose.yml`](file:///d:/Nodejs/Phishing-mail/docker-compose.yml) พร้อมใช้งาน:
 
 ```bash
-# 1. ตั้งค่า Environment Variable ในไฟล์ .env (ที่ Root Directory)
+# 1. สร้างและตั้งค่าไฟล์ .env ที่โฟลเดอร์หลัก (Root)
 PORT=3000
-BASE_URL=http://<IP-หรือ-Domain-ของเครื่องแม่ข่าย>:3000
+BASE_URL=http://<IP-หรือ-Domain-ของเซิร์ฟเวอร์>:3000
 ADMIN_API_KEY=your-secure-admin-secret
 
-# 2. สั่งรันด้วย Docker Compose
+# 2. สั่งรันระบบผ่าน Docker Compose
 docker compose up -d --build
 
-# 3. ตรวจสอบสถานะและ Logs
+# 3. ตรวจสอบสถานะการทำงานและ Logs
 docker compose ps
 docker compose logs -f
 ```
-> ฐานข้อมูลจะถูก Mount และบันทึกไว้ที่โฟลเดอร์ `./data/phishcentral.db` บน Host โดยอัตโนมัติ
+> ข้อมูลฐานข้อมูลจะถูกจัดเก็บไว้ที่โฟลเดอร์ `./data/phishcentral.db` บนโฮสต์โดยอัตโนมัติ มั่นใจได้ว่าข้อมูลจะไม่สูญหายเมื่อรีสตาร์ตคอนเทนเนอร์
 
-### วิธีที่ 2: รันแบบ Production Node.js Process (PM2 / Systemd)
+### รูปแบบที่ 2: รันด้วย Node.js Process (PM2 / Systemd)
 ```bash
-# 1. Build โค้ดทั้ง Client และ Server
+# 1. Build โค้ดทั้งระบบ
 npm run build
 
-# 2. เริ่มต้นรันเซิร์ฟเวอร์
+# 2. เริ่มต้นรันเซิร์ฟเวอร์ (จะให้บริการทั้ง API และหน้าเว็บผ่านพอร์ต 3000)
 npm start
 ```
 
 ---
 
-## 6. คู่มือการต่อยอดและเมนเทน (Developer & Maintenance Guide)
+## 6. คู่มือสำหรับนักพัฒนาและการดูแลระบบ (Developer & Maintenance Guide)
 
-### 6.1 การเพิ่ม Email หรือ Landing Page Template ใหม่
+### 6.1 การเพิ่มหรือปรับแต่งเทมเพลตมาตรฐาน
 เปิดไฟล์ [`server/src/services/templateService.ts`](file:///d:/Nodejs/Phishing-mail/server/src/services/templateService.ts):
-- **เพิ่มเทมเพลตอีเมล:** เพิ่มข้อมูลลงในอาร์เรย์ `OFFICIAL_EMAIL_PRESETS`
-- **เพิ่มหน้า Landing Page:** เพิ่มข้อมูลลงในอาร์เรย์ `OFFICIAL_LANDING_PRESETS`
-- **การอัปเดต:** เมื่อรีสตาร์ตเซิร์ฟเวอร์ ฟังก์ชัน `seedOfficialPresets()` จะทำการ Upsert เทมเพลตใหม่ลงในฐานข้อมูลให้อัตโนมัติ
+- **เทมเพลตอีเมล:** เพิ่มข้อมูลลงในอาร์เรย์ `OFFICIAL_EMAIL_PRESETS`
+- **หน้าเว็บ Landing Page:** เพิ่มข้อมูลลงในอาร์เรย์ `OFFICIAL_LANDING_PRESETS`
+- ระบบมีฟังก์ชัน `seedOfficialPresets()` ที่จะตรวจสอบและ Upsert ข้อมูลมาตรฐานลงฐานข้อมูลให้อัตโนมัติเมื่อเริ่มต้นระบบ
 
-**ตัวแปรที่ใช้ในเทมเพลต (Handlebars):**
-- `{{name}}` : ชื่อ-นามสกุลของพนักงาน
-- `{{email}}` : อีเมลผู้รับ
+**ตัวแปร Dynamic Tags ที่รองรับ:**
+- `{{name}}` : ชื่อ-นามสกุลของพนักงานเป้าหมาย
+- `{{email}}` : ที่อยู่อีเมลของพนักงาน
 - `{{department}}` : แผนกของพนักงาน
-- `{{phishing_url}}` : ลิงก์จำลองฟิชชิ่งแบบเจาะจงบุคคล (`/l/<token>`)
-- `{{report_url}}` : ลิงก์สำหรับกดแจ้งเบาะแสความปลอดภัย (`/report/<token>`)
-- `{{current_date}}` : วันที่ปัจจุบันภาษาไทย
+- `{{phishing_url}}` : ลิงก์จำลองฟิชชิ่งเฉพาะบุคคล (`/l/<token>`)
+- `{{report_url}}` : ลิงก์สำหรับกดรายงานอีเมลน่าสงสัย (`/report/<token>`)
+- `{{current_date}}` : วันที่ปัจจุบันรูปแบบภาษาไทย
 
-### 6.2 การเพิ่ม API Endpoint ใหม่
-1. สร้าง Route ใหม่ในโฟลเดอร์ `server/src/routes/` เช่น `server/src/routes/reports.ts`
-2. นำไปลงทะเบียนใน [`server/src/index.ts`](file:///d:/Nodejs/Phishing-mail/server/src/index.ts):
-   ```typescript
-   import { reportsRouter } from './routes/reports.js';
-   app.use('/api/reports', reportsRouter);
-   ```
-
-### 6.3 การแก้ไขหรือเพิ่มตารางในฐานข้อมูล (Prisma)
-1. แก้ไขไฟล์ [`server/prisma/schema.prisma`](file:///d:/Nodejs/Phishing-mail/server/prisma/schema.prisma)
-2. สั่ง Sync โครงสร้างไปยัง SQLite:
+### 6.2 การปรับปรุงฐานข้อมูล (Prisma Migration)
+1. ปรับปรุงไฟล์ [`server/prisma/schema.prisma`](file:///d:/Nodejs/Phishing-mail/server/prisma/schema.prisma)
+2. อัปเดตโครงสร้างฐานข้อมูลและสร้าง Prisma Client:
    ```bash
    npm --prefix server run prisma:push
    npm --prefix server run prisma:generate
    ```
 
-### 6.4 การเพิ่มหน้าใหม่ใน Frontend
-1. สร้าง Page Component ใน `client/src/pages/`
-2. ลงทะเบียน Route ใน [`client/src/App.tsx`](file:///d:/Nodejs/Phishing-mail/client/src/App.tsx)
-3. เพิ่มเมนูบนแถบ Navigation ใน [`client/src/components/Layout.tsx`](file:///d:/Nodejs/Phishing-mail/client/src/components/Layout.tsx)
-
 ---
 
-## 7. การทดสอบระบบ (Testing & Quality Assurance)
+## 7. การทดสอบระบบและการประกันคุณภาพ (Testing & QA)
 
-ระบบใช้ **Vitest** ในการทดสอบ Unit Tests และ Security Assertions:
+ระบบใช้ **Vitest** ในการทดสอบแบบอัตโนมัติ ครอบคลุมทั้ง Security Assertions, Logic การคำนวณ และ API Endpoints:
+
 ```bash
 # รันชุดการทดสอบทั้งหมด
 npm test
 ```
 
-**ขอบเขตของแบบทดสอบในปัจจุบัน:**
-- `sanitizer.test.ts`: ตรวจสอบการล้างรหัสผ่านและ Sensitive Keys ทุกรูปแบบ
-- `tokenAndBot.test.ts`: ตรวจสอบความยาวโทเคน และการดักจับบอท Scanner
-- `templateEngine.test.ts`: ตรวจสอบ Handlebars Template Rendering และ XSS Protection
+### ชุดการทดสอบทั้งหมด (5 Test Suites - ผ่าน 100%):
+1. **`sanitizer.test.ts`**: ทดสอบกลไก Zero-Password ป้องกันรหัสผ่านรั่วไหล
+2. **`tokenAndBot.test.ts`**: ทดสอบการสุ่ม Token และการคัดกรอง Bot / Security Scanners
+3. **`templateEngine.test.ts`**: ทดสอบการเรนเดอร์ Dynamic Tags และความปลอดภัยของโค้ด HTML
+4. **`scheduler.test.ts`**: ทดสอบระบบสุ่มคิวส่ง (Smear Scheduling), การตัดวันหยุดสุดสัปดาห์, และการกระจายเวลางาน
+5. **`features.test.ts`**: ทดสอบ API การนำเข้าพนักงานแบบ Auto-Group, การแก้ไขข้อมูล Target, และระบบจำลองไฟล์แนบ (Attachments)
 
 ---
 
-## 8. ความปลอดภัยและการ Whitelist เมลเซิร์ฟเวอร์
+## 8. แนวทางการตั้งค่าระบบเมลองค์กร (Mail Server Whitelist Guide)
 
-### การตั้งค่า Bypass Spam Filtering บน Microsoft 365 / Mail Gateway
-ในการจำลอง Phishing การทดสอบอาจล้มเหลวหากเมลตกโฟลเดอร์ Junk/Quarantine ให้ผู้ดูแลระบบสร้าง **Mail Flow Rule** ใน Exchange Admin Center:
-1. ไปที่ **Exchange admin center** ➔ **Mail flow** ➔ **Rules**
+เพื่อป้องกันไม่ให้อีเมลทดสอบถูกคัดกรองลงในโฟลเดอร์ Junk หรือ Quarantine ผู้ดูแลระบบควรตั้งค่า **Mail Flow Rule** ใน Exchange Admin Center หรือระบบ Mail Gateway ขององค์กร:
+
+1. เข้าสู่ **Exchange admin center** ➔ **Mail flow** ➔ **Rules**
 2. สร้างกฎใหม่: **"Bypass Spam Filtering for Phishing Simulation"**
-3. กำหนดเงื่อนไข:
+3. กำหนดเงื่อนไข (Conditions):
    - ตรวจสอบ Custom Header: `X-PhishCentral-Simulation` มีค่าใดๆ
-   - หรือตรวจสอบ Sender IP: IP เครื่อง PhishCentral Server
-4. กำหนด Action:
+   - หรือตรวจสอบ Sender IP: ระบุหมายเลข IP ของเครื่อง PhishCentral Server
+4. กำหนดการดำเนินการ (Action):
    - **Set the spam confidence level (SCL) to:** `Bypass spam filtering (-1)`
 
 ---
 
-## 📄 ลิขสิทธิ์และการใช้งาน (License)
-PhishCentral พัฒนาขึ้นเพื่อการฝึกอบรมและยกระดับความปลอดภัยไซเบอร์ภายในองค์กรเท่านั้น ห้ามนำไปใช้ในการโจมตีหรือกระทำการใดๆ ที่ขัดต่อกฎหมายและจริยธรรมไซเบอร์
+## 📄 ลิขสิทธิ์และการนำไปใช้งาน (License & Ethics)
+PhishCentral พัฒนาขึ้นสำหรับใช้ในการฝึกอบรมและยกระดับความตระหนักรู้ด้านความปลอดภัยไซเบอร์ภายในองค์กรอย่างถูกต้องตามกฎหมาย ห้ามนำไปใช้ในการโจมตีหรือกระทำการใดๆ ที่ละเมิดสิทธิและขัดต่อจริยธรรมไซเบอร์
