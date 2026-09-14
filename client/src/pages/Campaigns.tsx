@@ -386,37 +386,49 @@ export const Campaigns: React.FC = () => {
       {/* CREATE CAMPAIGN MODAL */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-stone-border space-y-4">
-            <h3 className="font-bold text-deep-slate text-base">➕ สร้างแคมเปญทดสอบ Phishing</h3>
+          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl border border-stone-border overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-5 pb-4 border-b border-stone-border bg-white flex-shrink-0">
+              <h3 className="font-bold text-deep-slate text-base">➕ สร้างแคมเปญทดสอบ Phishing</h3>
+              <button 
+                type="button" 
+                onClick={() => setShowCreateModal(false)}
+                className="text-gray-400 hover:text-deep-slate font-bold p-1 rounded-lg hover:bg-stone-muted transition-all"
+              >
+                ✕
+              </button>
+            </div>
             
-            {/* Warning if no targets or smtps */}
-            {(targetGroups.length === 0 || smtpProfiles.length === 0) && (
-              <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-xs space-y-1">
-                <p className="font-semibold flex items-center space-x-1">
-                  <AlertCircle className="w-4 h-4 text-amber-terracotta" />
-                  <span>ข้อมูลที่จำเป็นยังไม่ครบ:</span>
-                </p>
-                {targetGroups.length === 0 && (
-                  <p>&bull; ยังไม่มีกลุ่มเป้าหมาย (กรุณาไปสร้างที่เมนู <Link to="/targets" className="underline font-semibold">Targets</Link>)</p>
+            <form onSubmit={handleCreate} className="flex flex-col flex-1 overflow-hidden text-xs">
+              {/* Scrollable Form Body */}
+              <div className="p-5 overflow-y-auto space-y-3.5 flex-1">
+                {/* Warning if no targets or smtps */}
+                {(targetGroups.length === 0 || smtpProfiles.length === 0) && (
+                  <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-xs space-y-1">
+                    <p className="font-semibold flex items-center space-x-1">
+                      <AlertCircle className="w-4 h-4 text-amber-terracotta" />
+                      <span>ข้อมูลที่จำเป็นยังไม่ครบ:</span>
+                    </p>
+                    {targetGroups.length === 0 && (
+                      <p>&bull; ยังไม่มีกลุ่มเป้าหมาย (กรุณาไปสร้างที่เมนู <Link to="/targets" className="underline font-semibold">Targets</Link>)</p>
+                    )}
+                    {smtpProfiles.length === 0 && (
+                      <p>&bull; ยังไม่มีโปรไฟล์การส่งอีเมล (กรุณาไปสร้างที่เมนู <Link to="/smtp" className="underline font-semibold">SMTP Profiles</Link>)</p>
+                    )}
+                  </div>
                 )}
-                {smtpProfiles.length === 0 && (
-                  <p>&bull; ยังไม่มีโปรไฟล์การส่งอีเมล (กรุณาไปสร้างที่เมนู <Link to="/smtp" className="underline font-semibold">SMTP Profiles</Link>)</p>
-                )}
-              </div>
-            )}
 
-            <form onSubmit={handleCreate} className="space-y-3 text-xs">
-              <div>
-                <label className="block font-medium text-gray-700 mb-1">ชื่อแคมเปญ</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="เช่น Q3 Phishing Test - IT & HR"
-                  value={form.name}
-                  onChange={e => setForm({ ...form, name: e.target.value })}
-                  className="w-full p-2 border border-stone-border rounded-lg outline-none focus:border-forest"
-                />
-              </div>
+                <div>
+                  <label className="block font-medium text-gray-700 mb-1">ชื่อแคมเปญ *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="เช่น Q3 Phishing Test - IT & HR"
+                    value={form.name}
+                    onChange={e => setForm({ ...form, name: e.target.value })}
+                    className="w-full p-2 border border-stone-border rounded-lg outline-none focus:border-forest"
+                  />
+                </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
@@ -660,28 +672,30 @@ export const Campaigns: React.FC = () => {
                   </div>
                 )}
               </div>
+            </div>
 
-              <div className="flex justify-end space-x-2 pt-3 border-t border-stone-border">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-stone-muted"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  disabled={targetGroups.length === 0 || smtpProfiles.length === 0 || form.targetGroupIds.length === 0}
-                  className={`px-4 py-2 rounded-xl text-xs font-semibold shadow-soft ${
-                    targetGroups.length === 0 || smtpProfiles.length === 0 || form.targetGroupIds.length === 0
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-forest text-white hover:bg-forest-hover'
-                  }`}
-                >
-                  สร้างแคมเปญ
-                </button>
-              </div>
-            </form>
+            {/* Sticky Modal Footer */}
+            <div className="flex justify-end space-x-2 p-4 border-t border-stone-border bg-stone-50/70 flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(false)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-stone-muted transition-all"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="submit"
+                disabled={targetGroups.length === 0 || smtpProfiles.length === 0 || form.targetGroupIds.length === 0}
+                className={`px-5 py-2 rounded-xl text-xs font-semibold shadow-soft transition-all ${
+                  targetGroups.length === 0 || smtpProfiles.length === 0 || form.targetGroupIds.length === 0
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-forest text-white hover:bg-forest-hover'
+                }`}
+              >
+                สร้างแคมเปญ
+              </button>
+            </div>
+          </form>
           </div>
         </div>
       )}
