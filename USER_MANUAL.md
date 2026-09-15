@@ -1,4 +1,4 @@
-﻿# คู่มือการใช้งานระบบ PhishCentral Enterprise (User Manual)
+# คู่มือการใช้งานระบบ PhishCentral Enterprise (User Manual)
 **Version:** 2.2.0  
 **ระบบ:** Centralized Phishing Simulation & Security Awareness Platform
 
@@ -171,9 +171,16 @@ docker compose up -d --build
 - **Resilience Grade:** ประเมินเกรดความมั่นคงปลอดภัยขององค์กร (ตั้งแต่ระดับ A+ ถึง F)
 - **Repeat Offenders:** รายชื่อพนักงานที่ตกเป็นเหยื่อซ้ำ เพื่อให้ฝ่าย HR/IT จัดคอร์สฝึกอบรมเฉพาะบุคคล
 
-#### 2. การดาวน์โหลดรายงานผล (CSV Export):
-- ในหน้ารายการแคมเปญ คลิกปุ่ม **"Export CSV"**
-- ระบบจะสร้างไฟล์รายงานผลลัพธ์ (`report.csv`) แบบ Real-time พร้อม UTF-8 BOM สำหรับเปิดใน Microsoft Excel ได้ภาษาไทยชัดเจน ไม่เกิดปัญหาตัวอักษรเพี้ยน
+#### 2. การดาวน์โหลดรายงานสรุปภาพรวมระดับองค์กร (Executive Summary CSV Export) ⭐:
+- ที่มุมขวาบนของหน้า **Dashboard** คลิกปุ่ม **"ดาวน์โหลดสรุปภาพรวม (Export CSV)"** (หรือกดปุ่ม **"สรุปภาพรวม (Summary CSV)"** ในหน้า Campaigns)
+- ระบบจะสร้างไฟล์รายงานสรุปภาพรวมระดับองค์กร (`phishcentral-summary-YYYY-MM-DD.csv`) แบบ Multi-Section ในไฟล์เดียว พร้อม UTF-8 BOM สำหรับเปิดใน Microsoft Excel ได้ภาษาไทยไม่เพี้ยน:
+  - **ส่วนที่ 1 (Executive Summary):** คะแนนความพร้อมรับมือ (Resilience Score), เกรดองค์กร (Grade A-D), สถิติจำนวนแคมเปญ, จำนวนอีเมลที่ส่ง, อัตราคลิก (%), อัตราเผลอกรอกข้อมูล (%), อัตราแจ้งเตือน (%), และเวลาเฉลี่ยก่อนคลิกลิงก์
+  - **ส่วนที่ 2 (Department Benchmarks):** ตารางเปรียบเทียบสถิติของทุกแผนก (Sent, Clicked, Compromised, Reported, อัตราเฉลี่ย)
+  - **ส่วนที่ 3 (Repeat Offenders & High Risk):** รายชื่อพนักงานกลุ่มเสี่ยงสูงที่ตกเป็นเหยื่อซ้ำ (ชื่อ, อีเมล, แผนก, จำนวนครั้งที่เผลอกรอกข้อมูล, จำนวนครั้งที่คลิกลิงก์)
+
+#### 3. การดาวน์โหลดรายงานผลเฉพาะแคมเปญ (Campaign Detail CSV Export):
+- ในหน้ารายการแคมเปญ คลิกปุ่ม **"Export CSV"** ประจำแคมเปญนั้นๆ
+- ระบบจะสร้างไฟล์รายงานผลลัพธ์รายบุคคล (`campaign-[id]-report.csv`) แบบ Real-time พร้อมระบุเวลา Sent, Clicked, Submitted, Reported รายคน
 
 ---
 

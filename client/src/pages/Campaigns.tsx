@@ -256,6 +256,17 @@ export const Campaigns: React.FC = () => {
             <span>รีเฟรช (Refresh)</span>
           </button>
           {campaigns.length > 0 && (
+            <a
+              href="/api/dashboard/export"
+              download={`phishcentral-summary-${new Date().toISOString().split('T')[0]}.csv`}
+              className="flex items-center space-x-1.5 px-3.5 py-2 border border-forest/30 text-forest bg-forest-light/60 hover:bg-forest-light rounded-xl text-xs font-semibold shadow-xs transition-all"
+              title="ดาวน์โหลดรายงานสรุปภาพรวมระดับองค์กรเป็นไฟล์ CSV"
+            >
+              <Download className="w-3.5 h-3.5 text-forest" />
+              <span>สรุปภาพรวม (Summary CSV)</span>
+            </a>
+          )}
+          {campaigns.length > 0 && (
             <button
               onClick={handleResetAllCampaigns}
               className="flex items-center space-x-1.5 px-3.5 py-2 border border-red-200 text-red-600 bg-red-50/50 hover:bg-red-50 rounded-xl text-xs font-semibold shadow-xs transition-all"

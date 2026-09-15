@@ -24,7 +24,9 @@ import {
   Layers,
   Award,
   UsersRound,
-  CheckCircle2
+  CheckCircle2,
+  Download,
+  RefreshCw
 } from 'lucide-react';
 
 interface DepartmentStat {
@@ -133,6 +135,20 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportSummary = () => {
+    setIsExporting(true);
+    const dateStr = new Date().toISOString().split('T')[0];
+    const link = document.createElement('a');
+    link.href = '/api/dashboard/export';
+    link.setAttribute('download', `phishcentral-summary-${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => setIsExporting(false), 800);
+  };
+
   // Aggregate global metrics from campaigns
   let totalSent = 0;
   let totalClicked = 0;
@@ -168,16 +184,37 @@ export const Dashboard: React.FC = () => {
             สรุปผลการทดสอบ Phishing Simulation และวิเคราะห์ระดับความตระหนักรู้ขององค์กรแบบรอบด้าน
           </p>
         </div>
-        {campaigns.length > 0 && (
+        <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
           <button
-            onClick={handleResetAll}
-            className="self-start sm:self-auto flex items-center space-x-1.5 px-3.5 py-2 border border-red-200 text-red-600 bg-red-50/50 hover:bg-red-50 rounded-xl text-xs font-semibold shadow-xs transition-all"
-            title="ล้างแคมเปญและประวัติการทดสอบทั้งหมดเพื่อเริ่มใช้งานจริง"
+            onClick={handleExportSummary}
+            disabled={isExporting}
+            className="flex items-center space-x-1.5 px-3.5 py-2 border border-forest/30 text-forest bg-forest-light/60 hover:bg-forest-light rounded-xl text-xs font-semibold shadow-xs transition-all disabled:opacity-50"
+            title="ดาวน์โหลดรายงานสรุปภาพรวมระดับองค์กรเป็นไฟล์ CSV (UTF-8 BOM สำหรับ Excel)"
           >
-            <RotateCcw className="w-3.5 h-3.5 text-red-600" />
-            <span>ล้างประวัติทดสอบทั้งหมด (Reset All)</span>
+            {isExporting ? (
+              <>
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-forest" />
+                <span>กำลังดาวน์โหลด...</span>
+              </>
+            ) : (
+              <>
+                <Download className="w-3.5 h-3.5 text-forest" />
+                <span>ดาวน์โหลดสรุปภาพรวม (Export CSV)</span>
+              </>
+            )}
           </button>
-        )}
+
+          {campaigns.length > 0 && (
+            <button
+              onClick={handleResetAll}
+              className="flex items-center space-x-1.5 px-3.5 py-2 border border-red-200 text-red-600 bg-red-50/50 hover:bg-red-50 rounded-xl text-xs font-semibold shadow-xs transition-all"
+              title="ล้างแคมเปญและประวัติการทดสอบทั้งหมดเพื่อเริ่มใช้งานจริง"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-red-600" />
+              <span>ล้างประวัติทดสอบทั้งหมด (Reset All)</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* KPI & Organizational Resilience Section */}

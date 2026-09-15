@@ -1,4 +1,4 @@
-﻿import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import app from '../index.js';
 import { prisma } from '../prisma.js';
@@ -131,4 +131,28 @@ describe('Feature Endpoints: Email Attachments & Auto-Group Import', () => {
     await prisma.emailTemplate.delete({ where: { id: cloneRes.body.id } });
     await prisma.emailTemplate.delete({ where: { id: createdTemplateId } });
   });
+
+  it('GET /api/dashboard/export should stream multi-section Executive Summary CSV with UTF-8 BOM', async () => {
+    const res = await request(app)
+      .get('/api/dashboard/export');
+
+    expect(res.status).toBe(200);
+    expect(res.header['content-type']).toContain('text/csv');
+    expect(res.header['content-disposition']).toContain('attachment; filename="phishcentral-summary-');
+
+    const csvText = res.text;
+    // Check for UTF-8 BOM (\ufeff)
+    expect(csvText.startsWith('\ufeff')).toBe(true);
+
+    // Verify all 3 required sections exist
+    expect(csvText).toContain('=== สรุปภาพรวมระดับองค์กร (EXECUTIVE SUMMARY) ===');
+    expect(csvText).toContain('=== สถิติเปรียบเทียบตามแผนก (DEPARTMENT BENCHMARKS) ===');
+    expect(csvText).toContain('=== รายชื่อพนักงานกลุ่มเสี่ยงสูง (REPEAT OFFENDERS & HIGH RISK) ===');
+
+    // Verify key metric labels exist
+    expect(csvText).toContain('ดัชนีความพร้อมรับมือ (Resilience Score)');
+    expect(csvText).toContain('เกรดความมั่นคงปลอดภัย (Resilience Grade)');
+    expect(csvText).toContain('จำนวนอีเมลจำลองที่ส่ง (Total Emails Sent)');
+  });
 });
+

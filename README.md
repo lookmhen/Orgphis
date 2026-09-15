@@ -1,4 +1,4 @@
-﻿# 🛡️ PhishCentral Enterprise
+# 🛡️ PhishCentral Enterprise
 
 > **Centralized Phishing Simulation & Security Awareness Platform**  
 > แพลตฟอร์มจำลองสถานการณ์การโจมตีแบบฟิชชิ่งและการฝึกอบรมสร้างความตระหนักรู้ด้านความปลอดภัยไซเบอร์ระดับองค์กร (สอดคล้องตามมาตรฐาน PDPA & ISO 27001)
@@ -29,8 +29,8 @@
   นำเข้าไฟล์ CSV รายชื่อพนักงานเพียงครั้งเดียว ระบบจะอ่านชื่อแผนก (`department`) และสร้างกลุ่มเป้าหมายแยกแต่ละแผนกให้ทันทีโดยอัตโนมัติ ไม่ต้องเสียเวลาสร้างกลุ่มล่วงหน้า พร้อมรองรับการแก้ไขข้อมูลพนักงาน (ชื่อ, แผนก, อีเมล) ได้โดยตรงจากหน้าเว็บ
 - 🤖 **Bot & Security Scanner Detection (คัดกรองระบบตรวจจับความปลอดภัย):**  
   มีกลไกตรวจสอบและคัดกรองการเปิดอ่านหรือคลิกลิงก์จากบอทอัตโนมัติ (เช่น Microsoft Defender Safe Links, Proofpoint, Google Image Proxy) ป้องกันไม่ให้เกิดตัวเลข False Positive ในรายงานผลการทดสอบ
-- 📊 **Security Dashboard & Resilience Index (แดชบอร์ดวิเคราะห์สถิติและภูมิคุ้มกันองค์กร):**  
-  วิเคราะห์พฤติกรรมผ่าน Compromise Funnel 4 ลำดับขั้น (`Sent` ➔ `Clicked` ➔ `Compromised` ➔ `Reported`), ประเมินดัชนีความตระหนักรู้พร้อมตัดเกรดความมั่นคงปลอดภัยองค์กร (A+ ถึง F), และแสดงรายชื่อพนักงานที่ตกเป็นเหยื่อซ้ำซ้อน (Repeat Offenders)
+- 📊 **Security Dashboard & Executive Export (แดชบอร์ดสถิติและรายงานสรุปผู้บริหาร):**  
+  วิเคราะห์พฤติกรรมผ่าน Compromise Funnel 4 ลำดับขั้น (`Sent` ➔ `Clicked` ➔ `Compromised` ➔ `Reported`), ประเมินดัชนีความตระหนักรู้พร้อมตัดเกรดความมั่นคงปลอดภัยองค์กร (A+ ถึง F), แสดงรายชื่อพนักงานที่ตกเป็นเหยื่อซ้ำซ้อน (Repeat Offenders), และรองรับการส่งออกรายงานสรุปภาพรวมระดับองค์กรเป็นไฟล์ CSV (UTF-8 BOM รองรับภาษาไทยใน Microsoft Excel) ครอบคลุมทั้งสถิติภาพรวม, ผลลัพธ์แยกตามแผนก, และกลุ่มพนักงานเสี่ยงสูง
 - ✉️ **Flexible SMTP Relay Profiles (รองรับระบบเมลมาตรฐานองค์กร):**  
   รองรับทั้ง Microsoft 365 (Port 587 STARTTLS), Google Workspace Relay และเซิร์ฟเวอร์อีเมลภายในองค์กร (เช่น Postfix หรือ Microsoft Exchange) พร้อมระบบควบคุมความเร็ว (Rate Limiting) และหน่วงเวลา (Delay) ต่อฉบับเพื่อความเสถียร
 - 🌐 **100% Local Assets (ทำงานได้ในระบบเครือข่ายปิด):**  
@@ -234,7 +234,7 @@ npm test
 2. **`tokenAndBot.test.ts`**: ทดสอบการสุ่ม Token และการคัดกรอง Bot / Security Scanners
 3. **`templateEngine.test.ts`**: ทดสอบการเรนเดอร์ Dynamic Tags และความปลอดภัยของโค้ด HTML
 4. **`scheduler.test.ts`**: ทดสอบระบบสุ่มคิวส่ง (Smear Scheduling), การตัดวันหยุดสุดสัปดาห์, และการกระจายเวลางาน
-5. **`features.test.ts`**: ทดสอบ API การนำเข้าพนักงานแบบ Auto-Group, การแก้ไขข้อมูล Target, และระบบจำลองไฟล์แนบ (Attachments)
+5. **`features.test.ts`**: ทดสอบ API การนำเข้าพนักงานแบบ Auto-Group, การแก้ไขข้อมูล Target, ระบบจำลองไฟล์แนบ (Attachments), และการสตรีมรายงานสรุปภาพรวมระดับองค์กร (Executive Summary CSV)
 
 ---
 
