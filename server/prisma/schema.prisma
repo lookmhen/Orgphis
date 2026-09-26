@@ -73,6 +73,8 @@ model EmailTemplate {
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
   campaigns         Campaign[]
+  campaignEmailTemplates CampaignEmailTemplate[]
+  campaignTargets   CampaignTarget[]
 }
 
 model LandingPageTemplate {
@@ -106,6 +108,7 @@ model Campaign {
   targetGroups          CampaignTargetGroup[]
   emailTemplateId       String
   emailTemplate         EmailTemplate       @relation(fields: [emailTemplateId], references: [id], onDelete: Restrict)
+  campaignEmailTemplates CampaignEmailTemplate[]
   landingPageTemplateId String
   landingPageTemplate   LandingPageTemplate @relation(fields: [landingPageTemplateId], references: [id], onDelete: Restrict)
   smtpProfileId         String
@@ -142,15 +145,27 @@ model CampaignTargetGroup {
   @@unique([campaignId, targetGroupId])
 }
 
+model CampaignEmailTemplate {
+  id              String        @id @default(uuid())
+  campaignId      String
+  campaign        Campaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  emailTemplateId String
+  emailTemplate   EmailTemplate @relation(fields: [emailTemplateId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, emailTemplateId])
+}
+
 model CampaignTarget {
-  id             String     @id @default(uuid())
-  campaignId     String
-  campaign       Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  targetId       String
-  target         Target     @relation(fields: [targetId], references: [id], onDelete: Restrict)
-  token          String     @unique // High-entropy URL-safe token
-  expiresAt      DateTime?
-  scheduledAt    DateTime?  // Planned randomized send time
+  id              String         @id @default(uuid())
+  campaignId      String
+  campaign        Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  targetId        String
+  target          Target         @relation(fields: [targetId], references: [id], onDelete: Restrict)
+  token           String         @unique // High-entropy URL-safe token
+  emailTemplateId String?
+  emailTemplate   EmailTemplate? @relation(fields: [emailTemplateId], references: [id], onDelete: SetNull)
+  expiresAt       DateTime?
+  scheduledAt     DateTime?      // Planned randomized send time
   
   // Dispatch queue status
   dispatchStatus String     @default("PENDING") // PENDING, QUEUED, SENDING, SENT, FAILED

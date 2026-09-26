@@ -16,6 +16,8 @@ export const Campaigns: React.FC = () => {
     description: string;
     targetGroupIds: string[];
     emailTemplateId: string;
+    isMultiTemplate: boolean;
+    emailTemplateIds: string[];
     landingPageTemplateId: string;
     smtpProfileId: string;
     scheduleType: 'IMMEDIATE' | 'RANDOMIZED';
@@ -30,6 +32,8 @@ export const Campaigns: React.FC = () => {
     description: '',
     targetGroupIds: [],
     emailTemplateId: '',
+    isMultiTemplate: false,
+    emailTemplateIds: [],
     landingPageTemplateId: '',
     smtpProfileId: '',
     scheduleType: 'IMMEDIATE',
@@ -101,6 +105,17 @@ export const Campaigns: React.FC = () => {
     });
   };
 
+  const handleToggleEmailTemplate = (templateId: string) => {
+    setForm(prev => {
+      const exists = prev.emailTemplateIds.includes(templateId);
+      if (exists) {
+        return { ...prev, emailTemplateIds: prev.emailTemplateIds.filter(id => id !== templateId) };
+      } else {
+        return { ...prev, emailTemplateIds: [...prev.emailTemplateIds, templateId] };
+      }
+    });
+  };
+
   const handleSelectAllGroups = () => {
     if (form.targetGroupIds.length === targetGroups.length) {
       setForm(prev => ({ ...prev, targetGroupIds: [] }));
@@ -123,13 +138,26 @@ export const Campaigns: React.FC = () => {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (form.targetGroupIds.length === 0 || !form.emailTemplateId || !form.landingPageTemplateId || !form.smtpProfileId) {
-      alert('กรุณาเลือกกลุ่มเป้าหมายอย่างน้อย 1 กลุ่ม, เทมเพลตอีเมล, Landing Page, และ SMTP Profile ให้ครบถ้วน');
+    if (form.targetGroupIds.length === 0 || !form.landingPageTemplateId || !form.smtpProfileId) {
+      alert('กรุณาเลือกกลุ่มเป้าหมายอย่างน้อย 1 กลุ่ม, Landing Page, และ SMTP Profile ให้ครบถ้วน');
       return;
+    }
+
+    if (form.isMultiTemplate) {
+      if (form.emailTemplateIds.length < 2) {
+        alert('กรุณาเลือกอย่างน้อย 2 เทมเพลตสำหรับโหมดสุ่มหลายเทมเพลต (Multi-Vector)');
+        return;
+      }
+    } else {
+      if (!form.emailTemplateId) {
+        alert('กรุณาเลือกเทมเพลตอีเมล');
+        return;
+      }
     }
 
     const payload = {
       ...form,
+      emailTemplateIds: form.isMultiTemplate ? form.emailTemplateIds : [form.emailTemplateId],
       allowedDays: form.allowedDays.join(',')
     };
 
@@ -146,6 +174,8 @@ export const Campaigns: React.FC = () => {
         description: '',
         targetGroupIds: targetGroups.length > 0 ? [targetGroups[0].id] : [],
         emailTemplateId: emailTemplates[0]?.id || '',
+        isMultiTemplate: false,
+        emailTemplateIds: [],
         landingPageTemplateId: landingTemplates[0]?.id || '',
         smtpProfileId: smtpProfiles[0]?.id || '',
         scheduleType: 'IMMEDIATE',
@@ -320,6 +350,12 @@ export const Campaigns: React.FC = () => {
                         <span>Randomized Schedule ({c.startDate ? new Date(c.startDate).toLocaleDateString() : ''} - {c.endDate ? new Date(c.endDate).toLocaleDateString() : ''})</span>
                       </span>
                     )}
+                    {c.campaignEmailTemplates && c.campaignEmailTemplates.length > 1 && (
+                      <span className="flex items-center space-x-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+                        <Sliders className="w-3 h-3 text-purple-600" />
+                        <span>สุ่ม {c.campaignEmailTemplates.length} เทมเพลต (Multi-Vector)</span>
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
                     กลุ่มผู้รับ: <span className="font-semibold text-deep-slate">
@@ -327,7 +363,11 @@ export const Campaigns: React.FC = () => {
                         ? c.targetGroupNames.join(', ')
                         : c.targetGroup?.name || 'ไม่มีกลุ่ม'}
                     </span> &bull;
-                    เทมเพลต: <span className="font-semibold text-deep-slate">{c.emailTemplate?.name}</span> &bull;
+                    เทมเพลต: <span className="font-semibold text-deep-slate">
+                      {c.campaignEmailTemplates && c.campaignEmailTemplates.length > 1
+                        ? `สุ่ม ${c.campaignEmailTemplates.length} เทมเพลต (${c.campaignEmailTemplates.map((cet: any) => cet.emailTemplate?.name).join(', ')})`
+                        : c.emailTemplate?.name}
+                    </span> &bull;
                     SMTP Profile: <span className="font-semibold text-deep-slate">{c.smtpProfile?.name}</span>
                   </p>
                 </div>
@@ -503,17 +543,93 @@ export const Campaigns: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-medium text-gray-700 mb-1">Email Template</label>
-                <select
-                  required
-                  value={form.emailTemplateId}
-                  onChange={e => setForm({ ...form, emailTemplateId: e.target.value })}
-                  className="w-full p-2 border border-stone-border rounded-lg outline-none focus:border-forest"
-                >
-                  {emailTemplates.map(t => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </select>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block font-medium text-gray-700">Email Template</label>
+                  <div className="flex items-center space-x-1 bg-stone-muted p-0.5 rounded-lg border border-stone-border/60 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, isMultiTemplate: false })}
+                      className={`px-2.5 py-1 rounded-md transition-all font-medium ${
+                        !form.isMultiTemplate
+                          ? 'bg-white text-forest shadow-xs font-semibold'
+                          : 'text-gray-500 hover:text-gray-800'
+                      }`}
+                    >
+                      แบบเดี่ยว (Single)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const defaultIds = form.emailTemplateIds.length > 0
+                          ? form.emailTemplateIds
+                          : emailTemplates.slice(0, 2).map(t => t.id);
+                        setForm({ ...form, isMultiTemplate: true, emailTemplateIds: defaultIds });
+                      }}
+                      className={`px-2.5 py-1 rounded-md transition-all font-medium flex items-center space-x-1 ${
+                        form.isMultiTemplate
+                          ? 'bg-forest text-white shadow-xs font-semibold'
+                          : 'text-gray-500 hover:text-gray-800'
+                      }`}
+                    >
+                      <span>สุ่มหลายแบบ (Multi-Vector)</span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-sand-accent text-sand-dark font-mono">
+                        สุ่มกระจาย
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {!form.isMultiTemplate ? (
+                  <select
+                    required
+                    value={form.emailTemplateId}
+                    onChange={e => setForm({ ...form, emailTemplateId: e.target.value })}
+                    className="w-full p-2 border border-stone-border rounded-lg outline-none focus:border-forest"
+                  >
+                    {emailTemplates.map(t => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="border border-stone-border rounded-lg p-2.5 max-h-48 overflow-y-auto space-y-1.5 bg-stone-light/50">
+                      {emailTemplates.length === 0 ? (
+                        <p className="text-xs text-gray-500 italic p-2">ไม่มีเทมเพลตอีเมลในระบบ</p>
+                      ) : (
+                        emailTemplates.map(t => {
+                          const isSelected = form.emailTemplateIds.includes(t.id);
+                          return (
+                            <label
+                              key={t.id}
+                              className={`flex items-center justify-between p-2 rounded-md border text-xs cursor-pointer transition-colors ${
+                                isSelected
+                                  ? 'bg-forest-light border-forest text-forest font-medium'
+                                  : 'bg-white border-stone-border/70 text-gray-700 hover:bg-stone-muted'
+                              }`}
+                            >
+                              <div className="flex items-center space-x-2 truncate pr-2">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => handleToggleEmailTemplate(t.id)}
+                                  className="rounded text-forest focus:ring-forest cursor-pointer"
+                                />
+                                <span className="truncate">{t.name}</span>
+                              </div>
+                              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/80 border border-stone-border/40 text-gray-500 flex-shrink-0">
+                                {t.category || 'General'}
+                              </span>
+                            </label>
+                          );
+                        })
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] text-gray-500 px-1">
+                      <span>เลือกแล้ว <strong className="text-forest font-semibold">{form.emailTemplateIds.length}</strong> / {emailTemplates.length} แบบ</span>
+                      <span className="text-[10px] text-amber-700 font-medium">สุ่มกระจาย 1 คนต่อ 1 รูปแบบ ไม่ซ้ำกัน</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>

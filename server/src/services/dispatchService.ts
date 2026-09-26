@@ -102,7 +102,7 @@ class DispatchService {
 
       const pendingTargets = await prisma.campaignTarget.findMany({
         where: targetQueryCondition,
-        include: { target: true },
+        include: { target: true, emailTemplate: true },
         take: batchSize,
         orderBy: isRandomized ? { scheduledAt: 'asc' } : { id: 'asc' }
       });
@@ -161,9 +161,12 @@ class DispatchService {
               report_url: reportUrl
             };
 
-            const htmlBody = renderTemplate(campaign.emailTemplate.bodyHtml, variables);
-            const textBody = campaign.emailTemplate.bodyText
-              ? renderTemplate(campaign.emailTemplate.bodyText, variables)
+            // Use target-specific assigned template if multi-template campaign, else fallback to campaign template
+            const tmpl = ct.emailTemplate || campaign.emailTemplate;
+
+            const htmlBody = renderTemplate(tmpl.bodyHtml, variables);
+            const textBody = tmpl.bodyText
+              ? renderTemplate(tmpl.bodyText, variables)
               : undefined;
 
             // Simulation headers
@@ -174,7 +177,6 @@ class DispatchService {
 
             // Attachment Simulation
             const attachments: any[] = [];
-            const tmpl = campaign.emailTemplate;
             if (tmpl.hasAttachment && tmpl.attachmentName) {
               const content = tmpl.attachmentContent || (
                 tmpl.attachmentName.endsWith('.html')
@@ -192,7 +194,7 @@ class DispatchService {
             await transporter.sendMail({
               from: `"${campaign.smtpProfile.fromName}" <${campaign.smtpProfile.fromEmail}>`,
               to: ct.target.email,
-              subject: renderTemplate(campaign.emailTemplate.subject, variables),
+              subject: renderTemplate(tmpl.subject, variables),
               html: htmlBody,
               text: textBody,
               headers,

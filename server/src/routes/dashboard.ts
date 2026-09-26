@@ -17,6 +17,13 @@ async function computeDashboardMetrics() {
           department: true
         }
       },
+      emailTemplate: {
+        select: {
+          id: true,
+          name: true,
+          subject: true
+        }
+      },
       campaign: {
         select: {
           id: true,
@@ -173,7 +180,7 @@ async function computeDashboardMetrics() {
   }>();
 
   for (const ct of campaignTargets) {
-    const templateName = ct.campaign?.emailTemplate?.name || 'Unknown Template';
+    const templateName = ct.emailTemplate?.name || ct.campaign?.emailTemplate?.name || 'Unknown Template';
     if (!templateMap.has(templateName)) {
       templateMap.set(templateName, {
         name: templateName,

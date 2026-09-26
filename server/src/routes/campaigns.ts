@@ -18,7 +18,12 @@ campaignsRouter.get('/', async (_req: Request, res: Response) => {
             targetGroup: { select: { name: true } }
           }
         },
-        emailTemplate: { select: { name: true, subject: true } },
+        emailTemplate: { select: { id: true, name: true, subject: true } },
+        campaignEmailTemplates: {
+          include: {
+            emailTemplate: { select: { id: true, name: true, subject: true } }
+          }
+        },
         landingPageTemplate: { select: { name: true } },
         smtpProfile: { select: { name: true, fromEmail: true } },
         _count: {
@@ -98,10 +103,13 @@ campaignsRouter.get('/:id', async (req: Request, res: Response) => {
           include: { targetGroup: true }
         },
         emailTemplate: true,
+        campaignEmailTemplates: {
+          include: { emailTemplate: true }
+        },
         landingPageTemplate: true,
         smtpProfile: true,
         campaignTargets: {
-          include: { target: true }
+          include: { target: true, emailTemplate: true }
         },
         events: {
           orderBy: { createdAt: 'desc' },
@@ -124,22 +132,48 @@ campaignsRouter.get('/:id', async (req: Request, res: Response) => {
       if (ct.isReported) departmentStats[dept].reported++;
     }
 
+    // Per-template breakdown (Multi-vector template analytics)
+    const templateStatsMap: Record<string, { id: string; name: string; subject: string; sent: number; clicked: number; compromised: number; reported: number }> = {};
+    for (const ct of campaign.campaignTargets) {
+      const tmpl = ct.emailTemplate || campaign.emailTemplate;
+      const tid = tmpl.id;
+      if (!templateStatsMap[tid]) {
+        templateStatsMap[tid] = {
+          id: tmpl.id,
+          name: tmpl.name,
+          subject: tmpl.subject,
+          sent: 0,
+          clicked: 0,
+          compromised: 0,
+          reported: 0
+        };
+      }
+      if (ct.isSent) templateStatsMap[tid].sent++;
+      if (ct.isClicked) templateStatsMap[tid].clicked++;
+      if (ct.isSubmitted) templateStatsMap[tid].compromised++;
+      if (ct.isReported) templateStatsMap[tid].reported++;
+    }
+
     let groupNames = campaign.targetGroups.map(tg => tg.targetGroup.name);
     if (groupNames.length === 0 && campaign.targetGroup?.name) {
       groupNames = [campaign.targetGroup.name];
     }
 
+    const assignedTemplates = campaign.campaignEmailTemplates?.map(cet => cet.emailTemplate) || [campaign.emailTemplate];
+
     return res.json({
       ...campaign,
       targetGroupNames: groupNames,
-      departmentStats
+      departmentStats,
+      templateStats: Object.values(templateStatsMap),
+      assignedTemplates
     });
   } catch (err) {
     return res.status(500).json({ error: 'Failed to fetch campaign details' });
   }
 });
 
-// CREATE campaign (Supports single targetGroupId or array of targetGroupIds + Randomized Scheduling)
+// CREATE campaign (Supports single targetGroupId or array of targetGroupIds + Multi-Template Randomization + Scheduling)
 campaignsRouter.post('/', async (req: Request, res: Response) => {
   const {
     name,
@@ -147,6 +181,7 @@ campaignsRouter.post('/', async (req: Request, res: Response) => {
     targetGroupId,
     targetGroupIds,
     emailTemplateId,
+    emailTemplateIds,
     landingPageTemplateId,
     smtpProfileId,
     scheduleType = 'IMMEDIATE',
@@ -165,7 +200,14 @@ campaignsRouter.post('/', async (req: Request, res: Response) => {
     ? [targetGroupId]
     : [];
 
-  if (!name || groupIds.length === 0 || !emailTemplateId || !landingPageTemplateId || !smtpProfileId) {
+  // Accept emailTemplateIds array or single emailTemplateId
+  const templateIds: string[] = Array.isArray(emailTemplateIds) && emailTemplateIds.length > 0
+    ? emailTemplateIds
+    : emailTemplateId
+    ? [emailTemplateId]
+    : [];
+
+  if (!name || groupIds.length === 0 || templateIds.length === 0 || !landingPageTemplateId || !smtpProfileId) {
     return res.status(400).json({ error: 'Missing required campaign setup fields (name, target groups, templates, or smtp profile)' });
   }
 
@@ -180,7 +222,7 @@ campaignsRouter.post('/', async (req: Request, res: Response) => {
         name,
         description,
         targetGroupId: groupIds[0], // fallback for backward compatibility
-        emailTemplateId,
+        emailTemplateId: templateIds[0], // primary / fallback
         landingPageTemplateId,
         smtpProfileId,
         status: isRandomized ? 'SCHEDULED' : 'DRAFT',
@@ -194,6 +236,11 @@ campaignsRouter.post('/', async (req: Request, res: Response) => {
         targetGroups: {
           create: groupIds.map(gid => ({
             targetGroupId: gid
+          }))
+        },
+        campaignEmailTemplates: {
+          create: templateIds.map(tid => ({
+            emailTemplateId: tid
           }))
         }
       }
@@ -230,10 +277,17 @@ campaignsRouter.post('/', async (req: Request, res: Response) => {
     }
 
     if (uniqueTargets.length > 0) {
+      // If multiple templates selected, shuffle targets so distribution is randomly and evenly balanced
+      const shuffledTargets = templateIds.length > 1
+        ? [...uniqueTargets].sort(() => Math.random() - 0.5)
+        : uniqueTargets;
+      const numTemplates = templateIds.length;
+
       await prisma.campaignTarget.createMany({
-        data: uniqueTargets.map((t, idx) => ({
+        data: shuffledTargets.map((t, idx) => ({
           campaignId: campaign.id,
           targetId: t.id,
+          emailTemplateId: templateIds[idx % numTemplates],
           token: generateTrackingToken(),
           dispatchStatus: 'PENDING',
           scheduledAt: isRandomized && scheduledDates[idx] ? scheduledDates[idx] : null
@@ -336,6 +390,8 @@ campaignsRouter.delete('/:id', async (req: Request, res: Response) => {
     await prisma.$transaction([
       prisma.eventLog.deleteMany({ where: { campaignId: id } }),
       prisma.campaignTarget.deleteMany({ where: { campaignId: id } }),
+      prisma.campaignEmailTemplate.deleteMany({ where: { campaignId: id } }),
+      prisma.campaignTargetGroup.deleteMany({ where: { campaignId: id } }),
       prisma.campaign.delete({ where: { id } })
     ]);
 
@@ -352,6 +408,8 @@ campaignsRouter.post('/reset-all', async (_req: Request, res: Response) => {
     await prisma.$transaction([
       prisma.eventLog.deleteMany({}),
       prisma.campaignTarget.deleteMany({}),
+      prisma.campaignEmailTemplate.deleteMany({}),
+      prisma.campaignTargetGroup.deleteMany({}),
       prisma.campaign.deleteMany({})
     ]);
 
@@ -373,8 +431,9 @@ campaignsRouter.get('/:id/export', async (req: Request, res: Response) => {
     const campaign = await prisma.campaign.findUnique({
       where: { id },
       include: {
+        emailTemplate: true,
         campaignTargets: {
-          include: { target: true }
+          include: { target: true, emailTemplate: true }
         }
       }
     });
@@ -385,19 +444,20 @@ campaignsRouter.get('/:id/export', async (req: Request, res: Response) => {
     res.setHeader('Content-Disposition', `attachment; filename="campaign-${id}-report.csv"`);
 
     // UTF-8 BOM for Excel compatibility
-    res.write('\ufeffEmail,Name,Department,Status,SentAt,ClickedAt,SubmittedAt,ReportedAt\n');
+    res.write('\ufeffEmail,Name,Department,Template,Status,SentAt,ClickedAt,SubmittedAt,ReportedAt\n');
 
     for (const ct of campaign.campaignTargets) {
       const name = `"${(`${ct.target.firstName || ''} ${ct.target.lastName || ''}`).trim()}"`;
       const email = `"${ct.target.email}"`;
       const dept = `"${ct.target.department || ''}"`;
+      const tmplName = `"${(ct.emailTemplate?.name || campaign.emailTemplate?.name || 'General').replace(/"/g, '""')}"`;
       const status = ct.isSubmitted ? 'COMPROMISED' : ct.isReported ? 'REPORTED' : ct.isClicked ? 'CLICKED' : ct.isSent ? 'SENT' : 'PENDING';
       const sent = ct.sentAt ? `"${ct.sentAt.toISOString()}"` : '""';
       const clicked = ct.clickedAt ? `"${ct.clickedAt.toISOString()}"` : '""';
       const submitted = ct.submittedAt ? `"${ct.submittedAt.toISOString()}"` : '""';
       const reported = ct.reportedAt ? `"${ct.reportedAt.toISOString()}"` : '""';
 
-      res.write(`${email},${name},${dept},${status},${sent},${clicked},${submitted},${reported}\n`);
+      res.write(`${email},${name},${dept},${tmplName},${status},${sent},${clicked},${submitted},${reported}\n`);
     }
 
     res.end();
