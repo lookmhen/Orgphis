@@ -1,5 +1,6 @@
 import Handlebars from 'handlebars';
 import { prisma } from '../prisma.js';
+import { getRandomAnomalyLocation } from '../utils/anomalyLocations.js';
 
 export interface TemplateVariables {
   name?: string;
@@ -8,6 +9,10 @@ export interface TemplateVariables {
   phishing_url?: string;
   report_url?: string;
   current_date?: string;
+  signin_location?: string;
+  signin_ip?: string;
+  signin_device?: string;
+  signin_time?: string;
   [key: string]: any;
 }
 
@@ -17,7 +22,12 @@ export interface TemplateVariables {
  */
 export function renderTemplate(templateString: string, variables: TemplateVariables): string {
   const template = Handlebars.compile(templateString);
+  const anomaly = getRandomAnomalyLocation();
   const enrichedVariables: TemplateVariables = {
+    signin_location: variables.signin_location || anomaly.location,
+    signin_ip: variables.signin_ip || anomaly.ip,
+    signin_device: variables.signin_device || anomaly.device,
+    signin_time: variables.signin_time || anomaly.time,
     ...variables,
     current_date: variables.current_date || new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })
   };
@@ -155,9 +165,9 @@ export const OFFICIAL_EMAIL_PRESETS = [
   </p>
 
   <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; color: #374151; background: #F9FAFB; border-radius: 6px; border: 1px solid #E5E7EB;">
-    <tr><td style="padding: 10px 14px; border-bottom: 1px solid #E5E7EB; width: 120px;"><strong>วันและเวลา:</strong></td><td style="padding: 10px 14px; border-bottom: 1px solid #E5E7EB;">{{current_date}} เวลา 03:42 น. (UTC+7)</td></tr>
-    <tr><td style="padding: 10px 14px; border-bottom: 1px solid #E5E7EB;"><strong>ตำแหน่งที่ตั้ง:</strong></td><td style="padding: 10px 14px; border-bottom: 1px solid #E5E7EB; color: #DC2626; font-weight: 600;">Hanoi, Vietnam (IP: 14.162.180.95)</td></tr>
-    <tr><td style="padding: 10px 14px;"><strong>อุปกรณ์ / เบราว์เซอร์:</strong></td><td style="padding: 10px 14px;">Windows 10 &bull; Chrome Browser</td></tr>
+    <tr><td style="padding: 10px 14px; border-bottom: 1px solid #E5E7EB; width: 120px;"><strong>วันและเวลา:</strong></td><td style="padding: 10px 14px; border-bottom: 1px solid #E5E7EB;">{{current_date}} เวลา {{signin_time}} น. (UTC+7)</td></tr>
+    <tr><td style="padding: 10px 14px; border-bottom: 1px solid #E5E7EB;"><strong>ตำแหน่งที่ตั้ง:</strong></td><td style="padding: 10px 14px; border-bottom: 1px solid #E5E7EB; color: #DC2626; font-weight: 600;">{{signin_location}} (IP: {{signin_ip}})</td></tr>
+    <tr><td style="padding: 10px 14px;"><strong>อุปกรณ์ / เบราว์เซอร์:</strong></td><td style="padding: 10px 14px;">{{signin_device}}</td></tr>
   </table>
 
   <p style="color: #374151; font-size: 13px; line-height: 1.5; margin: 0 0 18px 0;">

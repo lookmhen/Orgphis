@@ -234,7 +234,12 @@ ${subHtml}
     .replace(/\{\{email\}\}/g, 'somchai.j@company.com')
     .replace(/\{\{department\}\}/g, 'IT & Information Security')
     .replace(/\{\{current_date\}\}/g, new Date().toLocaleDateString('th-TH'))
-    .replace(/\{\{phishing_url\}\}/g, '#sample-phish-click');
+    .replace(/\{\{phishing_url\}\}/g, '#sample-phish-click')
+    .replace(/\{\{report_url\}\}/g, '#sample-report-click')
+    .replace(/\{\{signin_location\}\}/g, 'Hanoi, Vietnam')
+    .replace(/\{\{signin_ip\}\}/g, '14.162.180.95')
+    .replace(/\{\{signin_device\}\}/g, 'Windows 10 • Chrome Browser')
+    .replace(/\{\{signin_time\}\}/g, '03:42');
 
   return (
     <div className="space-y-4">
@@ -355,7 +360,9 @@ ${subHtml}
               { tag: '{{email}}', label: 'อีเมล' },
               { tag: '{{department}}', label: 'แผนก' },
               { tag: '{{phishing_url}}', label: 'ลิงก์เป้าหมาย' },
-              { tag: '{{current_date}}', label: 'วันที่ปัจจุบัน' }
+              { tag: '{{current_date}}', label: 'วันที่ปัจจุบัน' },
+              { tag: '{{signin_location}}', label: 'ตำแหน่งสุ่ม (เช่น Hanoi, Vietnam)' },
+              { tag: '{{signin_ip}}', label: 'IP สุ่ม (เช่น 14.162.180.95)' }
             ].map(v => (
               <button
                 key={v.tag}

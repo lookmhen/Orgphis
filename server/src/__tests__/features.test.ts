@@ -236,6 +236,59 @@ describe('Feature Endpoints: Email Attachments & Auto-Group Import', () => {
     await prisma.smtpProfile.delete({ where: { id: smtp.id } });
     await prisma.targetGroup.delete({ where: { id: group.id } });
   });
+
+  it('ANOMALY_LOCATIONS should have exactly 30 diverse sets and randomize M365 Unusual Sign-in template', async () => {
+    const { ANOMALY_LOCATIONS, getRandomAnomalyLocation } = await import('../utils/anomalyLocations.js');
+    const { renderTemplate, seedOfficialPresets } = await import('../services/templateService.js');
+
+    // 1. Verify pool size
+    expect(ANOMALY_LOCATIONS.length).toBe(30);
+
+    // 2. Verify all entries have complete, non-empty fields
+    for (const item of ANOMALY_LOCATIONS) {
+      expect(item.city).toBeTruthy();
+      expect(item.country).toBeTruthy();
+      expect(item.location).toBeTruthy();
+      expect(item.ip).toMatch(/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/);
+      expect(item.device).toBeTruthy();
+      expect(item.time).toBeTruthy();
+    }
+
+    // 3. Verify seedOfficialPresets updates preset in database
+    await seedOfficialPresets();
+    const m365Tmpl = await prisma.emailTemplate.findFirst({
+      where: { name: 'Microsoft 365 Unusual Sign-in Activity' }
+    });
+    expect(m365Tmpl).toBeDefined();
+    expect(m365Tmpl?.bodyHtml).toContain('{{signin_location}}');
+    expect(m365Tmpl?.bodyHtml).toContain('{{signin_ip}}');
+    expect(m365Tmpl?.bodyHtml).toContain('{{signin_device}}');
+
+    // 4. Verify renderTemplate dynamically substitutes anomaly fields
+    const rendered = renderTemplate(m365Tmpl!.bodyHtml, {
+      email: 'victim@company.com',
+      phishing_url: 'https://test.corp/l/token123'
+    });
+
+    expect(rendered).not.toContain('{{signin_location}}');
+    expect(rendered).not.toContain('{{signin_ip}}');
+    expect(rendered).not.toContain('{{signin_device}}');
+    expect(rendered).not.toContain('{{signin_time}}');
+    expect(rendered).toContain('victim@company.com');
+    expect(rendered).toContain('https://test.corp/l/token123');
+
+    // 5. Test rendering multiple times yields random locations
+    const locations = new Set<string>();
+    for (let i = 0; i < 25; i++) {
+      const r = renderTemplate(m365Tmpl!.bodyHtml, { email: `user${i}@corp.test` });
+      // Find which anomaly location was picked
+      const matched = ANOMALY_LOCATIONS.find(loc => r.includes(loc.location));
+      if (matched) locations.add(matched.location);
+    }
+    // Across 25 renders, we should see multiple distinct locations picked (statistical diversity)
+    expect(locations.size).toBeGreaterThan(1);
+  });
 });
+
 
 

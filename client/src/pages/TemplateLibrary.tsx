@@ -22,6 +22,20 @@ export const TemplateLibrary: React.FC = () => {
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [testSendResult, setTestSendResult] = useState<{ success: boolean; msg: string } | null>(null);
 
+  const renderEmailPreviewHtml = (html: string) => {
+    return (html || '')
+      .replace(/\{\{name\}\}/g, 'สมชาย ใจมั่นคง')
+      .replace(/\{\{email\}\}/g, 'somchai.j@company.com')
+      .replace(/\{\{department\}\}/g, 'IT & Information Security')
+      .replace(/\{\{current_date\}\}/g, new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' }))
+      .replace(/\{\{phishing_url\}\}/g, '#')
+      .replace(/\{\{report_url\}\}/g, '#')
+      .replace(/\{\{signin_location\}\}/g, 'Hanoi, Vietnam')
+      .replace(/\{\{signin_ip\}\}/g, '14.162.180.95')
+      .replace(/\{\{signin_device\}\}/g, 'Windows 10 • Chrome Browser')
+      .replace(/\{\{signin_time\}\}/g, '03:42');
+  };
+
   const fetchData = () => {
     setLoading(true);
     Promise.all([
@@ -705,7 +719,7 @@ export const TemplateLibrary: React.FC = () => {
                   title="Preview"
                   sandbox="allow-scripts allow-forms"
                   className="w-full h-full min-h-[420px] bg-white"
-                  srcDoc={previewTemplate.bodyHtml || `
+                  srcDoc={previewTemplate.bodyHtml ? renderEmailPreviewHtml(previewTemplate.bodyHtml) : `
                     <!DOCTYPE html>
                     <html>
                     <head>
