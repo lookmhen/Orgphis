@@ -61,6 +61,82 @@ targetsRouter.post('/groups', async (req: Request, res: Response) => {
   }
 });
 
+// DELETE target group (with active campaign safety check and clean cascade)
+targetsRouter.delete('/groups/:id', async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const group = await prisma.targetGroup.findUnique({
+      where: { id },
+      include: { _count: { select: { targets: true } } }
+    });
+
+    if (!group) {
+      return res.status(404).json({ error: 'ไม่พบกลุ่มเป้าหมายที่ระบุ' });
+    }
+
+    // Safety check: Prevent deleting group if actively referenced in RUNNING or SCHEDULED campaigns
+    const activeCampaigns = await prisma.campaign.findMany({
+      where: {
+        status: { in: ['RUNNING', 'SCHEDULED'] },
+        OR: [
+          { targetGroupId: id },
+          { targetGroups: { some: { targetGroupId: id } } }
+        ]
+      },
+      select: { name: true, status: true }
+    });
+
+    if (activeCampaigns.length > 0) {
+      const names = activeCampaigns.map(c => `"${c.name}"`).join(', ');
+      return res.status(400).json({
+        error: `ไม่สามารถลบกลุ่มเป้าหมายนี้ได้ เนื่องจากกำลังถูกใช้งานอยู่ในแคมเปญที่กำลังดำเนินการ (${names}) กรุณาหยุดหรือยกเลิกแคมเปญก่อนลบกลุ่ม`
+      });
+    }
+
+    // Perform cascade deletion cleanly in a transaction
+    await prisma.$transaction(async (tx) => {
+      // 1. Find all targets belonging to this group
+      const targets = await tx.target.findMany({
+        where: { targetGroupId: id },
+        select: { id: true }
+      });
+      const targetIds = targets.map(t => t.id);
+
+      // 2. Delete any campaign targets pointing to these targets
+      if (targetIds.length > 0) {
+        await tx.campaignTarget.deleteMany({
+          where: { targetId: { in: targetIds } }
+        });
+        await tx.target.deleteMany({
+          where: { id: { in: targetIds } }
+        });
+      }
+
+      // 3. Remove many-to-many references in CampaignTargetGroup
+      await tx.campaignTargetGroup.deleteMany({
+        where: { targetGroupId: id }
+      });
+
+      // 4. Nullify single-group references in Campaign if any
+      await tx.campaign.updateMany({
+        where: { targetGroupId: id },
+        data: { targetGroupId: null }
+      });
+
+      // 5. Delete the target group itself
+      await tx.targetGroup.delete({
+        where: { id }
+      });
+    });
+
+    return res.json({ success: true, message: `ลบกลุ่มเป้าหมาย "${group.name}" เรียบร้อยแล้ว` });
+  } catch (err: any) {
+    console.error('[Targets] Delete target group error:', err);
+    return res.status(500).json({ error: 'ลบกลุ่มเป้าหมายไม่สำเร็จ: ' + err.message });
+  }
+});
+
 // GET targets in group
 targetsRouter.get('/groups/:id/targets', async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -299,9 +375,13 @@ targetsRouter.put('/groups/:id/targets/:targetId', async (req: Request, res: Res
 targetsRouter.delete('/groups/:id/targets/:targetId', async (req: Request, res: Response) => {
   const { targetId } = req.params;
   try {
-    await prisma.target.delete({ where: { id: targetId } });
+    await prisma.$transaction(async (tx) => {
+      await tx.campaignTarget.deleteMany({ where: { targetId } });
+      await tx.target.delete({ where: { id: targetId } });
+    });
     return res.json({ success: true });
   } catch (err: any) {
-    return res.status(500).json({ error: 'Failed to delete target' });
+    console.error('[Targets] Delete target error:', err);
+    return res.status(500).json({ error: 'Failed to delete target: ' + err.message });
   }
 });

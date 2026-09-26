@@ -154,5 +154,88 @@ describe('Feature Endpoints: Email Attachments & Auto-Group Import', () => {
     expect(csvText).toContain('เกรดความมั่นคงปลอดภัย (Resilience Grade)');
     expect(csvText).toContain('จำนวนอีเมลจำลองที่ส่ง (Total Emails Sent)');
   });
+
+  it('DELETE /api/targets/groups/:id should delete target group and cascade delete its targets', async () => {
+    // 1. Create a group with targets
+    const group = await prisma.targetGroup.create({
+      data: {
+        name: `DeleteGroup_${Date.now()}`,
+        description: 'Test Group to be deleted'
+      }
+    });
+
+    const target = await prisma.target.create({
+      data: {
+        email: `deluser_${Date.now()}@corp.test`,
+        firstName: 'Delete User',
+        targetGroupId: group.id
+      }
+    });
+
+    // 2. Perform delete
+    const res = await request(app)
+      .delete(`/api/targets/groups/${group.id}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    // 3. Verify group is removed from DB
+    const checkGroup = await prisma.targetGroup.findUnique({
+      where: { id: group.id }
+    });
+    expect(checkGroup).toBeNull();
+
+    // 4. Verify target is also removed from DB
+    const checkTarget = await prisma.target.findUnique({
+      where: { id: target.id }
+    });
+    expect(checkTarget).toBeNull();
+  });
+
+  it('DELETE /api/targets/groups/:id should reject deletion when used in a RUNNING or SCHEDULED campaign', async () => {
+    // 1. Create group
+    const group = await prisma.targetGroup.create({
+      data: { name: `ActiveCampaignGroup_${Date.now()}` }
+    });
+
+    // 2. Need minimal template, landing page, smtp profile to create campaign
+    const emailTemplate = await prisma.emailTemplate.create({
+      data: { name: `TempTmpl_${Date.now()}`, subject: 'Sub', bodyHtml: '<p>Hi</p>' }
+    });
+    const lpTemplate = await prisma.landingPageTemplate.create({
+      data: { name: `TempLP_${Date.now()}`, pageTitle: 'Login' }
+    });
+    const smtp = await prisma.smtpProfile.create({
+      data: { name: `TempSmtp_${Date.now()}`, host: 'localhost', port: 25, fromEmail: 'test@corp.test', fromName: 'Test' }
+    });
+
+    // 3. Create RUNNING campaign using this targetGroupId
+    const campaign = await prisma.campaign.create({
+      data: {
+        name: `ActiveRunningCampaign_${Date.now()}`,
+        status: 'RUNNING',
+        targetGroupId: group.id,
+        emailTemplateId: emailTemplate.id,
+        landingPageTemplateId: lpTemplate.id,
+        smtpProfileId: smtp.id
+      }
+    });
+
+    // 4. Attempt delete should return 400 Bad Request
+    const res = await request(app)
+      .delete(`/api/targets/groups/${group.id}`);
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('ไม่สามารถลบกลุ่มเป้าหมายนี้ได้');
+    expect(res.body.error).toContain(campaign.name);
+
+    // 5. Clean up campaign, then delete group
+    await prisma.campaign.delete({ where: { id: campaign.id } });
+    await prisma.emailTemplate.delete({ where: { id: emailTemplate.id } });
+    await prisma.landingPageTemplate.delete({ where: { id: lpTemplate.id } });
+    await prisma.smtpProfile.delete({ where: { id: smtp.id } });
+    await prisma.targetGroup.delete({ where: { id: group.id } });
+  });
 });
+
 

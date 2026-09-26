@@ -134,6 +134,37 @@ export const Targets: React.FC = () => {
     }
   };
 
+  const handleDeleteGroup = async (group: any, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!group) return;
+
+    const targetCount = group._count?.targets ?? targets.length ?? 0;
+    const confirmMsg = targetCount > 0
+      ? `ยืนยันการลบกลุ่ม "${group.name}"?\n(รายชื่อพนักงานทั้งหมด ${targetCount} คนในกลุ่มนี้จะถูกลบไปด้วย)`
+      : `ยืนยันการลบกลุ่ม "${group.name}"?`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      const res = await fetch(`/api/targets/groups/${group.id}`, {
+        method: 'DELETE'
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        if (selectedGroup?.id === group.id) {
+          const remaining = groups.filter(g => g.id !== group.id);
+          setSelectedGroup(remaining.length > 0 ? remaining[0] : null);
+        }
+        fetchGroups();
+      } else {
+        alert(data.error || 'ไม่สามารถลบกลุ่มเป้าหมายได้');
+      }
+    } catch (err: any) {
+      alert('Error: ' + err.message);
+    }
+  };
+
   // Download Sample CSV Template with UTF-8 BOM (Opens correctly in Microsoft Excel Thai/English)
   const handleDownloadCsvTemplate = () => {
     const csvContent = 
@@ -338,17 +369,27 @@ export const Targets: React.FC = () => {
                 <div
                   key={g.id}
                   onClick={() => setSelectedGroup(g)}
-                  className={`p-3 rounded-xl cursor-pointer transition-all border ${
+                  className={`group relative p-3 rounded-xl cursor-pointer transition-all border ${
                     selectedGroup?.id === g.id
                       ? 'bg-forest-light border-forest text-forest font-semibold shadow-soft'
                       : 'bg-white border-stone-border text-gray-700 hover:bg-stone-muted'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-sm">{g.name}</span>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-white/80 border border-stone-border/40 font-mono">
-                      {g._count?.targets || 0} คน
-                    </span>
+                    <span className="text-sm truncate mr-2">{g.name}</span>
+                    <div className="flex items-center space-x-1.5 shrink-0">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-white/80 border border-stone-border/40 font-mono">
+                        {g._count?.targets || 0} คน
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeleteGroup(g, e)}
+                        className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-600 transition-all rounded"
+                        title={`ลบกลุ่ม "${g.name}"`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))
@@ -366,7 +407,7 @@ export const Targets: React.FC = () => {
               <p className="text-xs text-gray-500">รายชื่อพนักงานทั้งหมดที่จะได้รับอีเมลจำลองในกลุ่มนี้</p>
             </div>
             {selectedGroup && (
-              <div className="flex space-x-2">
+              <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setShowAddSingleModal(true)}
                   className="flex items-center space-x-1 px-3 py-1.5 bg-forest text-white rounded-lg text-xs font-semibold hover:bg-forest-hover shadow-soft"
@@ -380,6 +421,15 @@ export const Targets: React.FC = () => {
                 >
                   <Upload className="w-3.5 h-3.5" />
                   <span>นำเข้า CSV</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteGroup(selectedGroup)}
+                  className="flex items-center space-x-1 px-3 py-1.5 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-xs font-semibold shadow-xs transition-colors"
+                  title={`ลบกลุ่ม "${selectedGroup.name}"`}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>ลบกลุ่ม</span>
                 </button>
               </div>
             )}

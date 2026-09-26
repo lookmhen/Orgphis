@@ -101,8 +101,10 @@ async function bootstrap() {
   });
 }
 
-bootstrap().catch(err => {
-  console.error('Bootstrap failed:', err);
-});
+if (process.env.NODE_ENV !== 'test') {
+  bootstrap().catch(err => {
+    console.error('Bootstrap failed:', err);
+  });
+}
 
 export default app;
