@@ -287,6 +287,22 @@ describe('Feature Endpoints: Email Attachments & Auto-Group Import', () => {
     }
     // Across 25 renders, we should see multiple distinct locations picked (statistical diversity)
     expect(locations.size).toBeGreaterThan(1);
+
+    // 6. Verify newly added Microsoft Teams & Exchange templates exist and are seeded
+    const teamsTmpl = await prisma.emailTemplate.findFirst({
+      where: { name: 'Microsoft Teams Unread Activity & Voice Message' }
+    });
+    expect(teamsTmpl).toBeDefined();
+    expect(teamsTmpl?.subject).toContain('Teams Alert');
+    expect(teamsTmpl?.bodyHtml).toContain('ข้อความเสียง (Voice Message)');
+
+    const exchangeTmpl = await prisma.emailTemplate.findFirst({
+      where: { name: 'Exchange Online Mailbox Storage Quota Warning' }
+    });
+    expect(exchangeTmpl).toBeDefined();
+    expect(exchangeTmpl?.subject).toContain('พื้นที่กล่องจดหมายของคุณเต็ม');
+    expect(exchangeTmpl?.bodyHtml).toContain('STORAGE ALERT');
+    expect(exchangeTmpl?.bodyHtml).toContain('99.4%');
   });
 });
 

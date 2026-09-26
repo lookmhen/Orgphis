@@ -337,6 +337,122 @@ export const OFFICIAL_EMAIL_PRESETS = [
 `,
     bodyText: 'เปิดใช้งาน Microsoft 365 Copilot AI ฟรี: {{phishing_url}} หรือรายงาน: {{report_url}}',
     isPreset: true
+  },
+
+  // 7. Microsoft Teams: Unread Activity & Voice Memo
+  {
+    name: 'Microsoft Teams Unread Activity & Voice Message',
+    subject: '[Teams Alert] คุณมี 1 ข้อความเสียงใหม่และถูกกล่าวถึงในกลุ่มงาน',
+    bodyHtml: `
+<div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #E5E7EB; border-radius: 8px; background-color: #ffffff;">
+  <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #5B5FC7; padding-bottom: 12px; margin-bottom: 20px;">
+    <div style="display: flex; align-items: center;">
+      <span style="font-size: 20px; font-weight: 700; color: #5B5FC7; letter-spacing: -0.5px;">Microsoft Teams</span>
+      <span style="font-size: 11px; background: #F3F4F6; color: #4B5563; padding: 2px 8px; border-radius: 4px; margin-left: 10px; font-weight: 600;">Activity Feed</span>
+    </div>
+    <span style="font-size: 12px; color: #6B7280;">{{current_date}}</span>
+  </div>
+
+  <p style="color: #1F2937; font-size: 15px; font-weight: 600; margin: 0 0 8px 0;">
+    คุณมี 1 ข้อความเสียงใหม่และถูกกล่าวถึงในกลุ่มงาน
+  </p>
+
+  <p style="color: #4B5563; font-size: 13px; line-height: 1.6; margin: 0 0 16px 0;">
+    เรียนคุณ <strong>{{name}}</strong>, ระบบ Microsoft Teams ได้รับข้อความเสียงและกิจกรรมที่ยังไม่ได้เปิดอ่านจากสมาชิกในทีม ขณะที่คุณไม่ได้ใช้งานแอปพลิเคชัน:
+  </p>
+
+  <div style="background: #F8F9FA; border: 1px solid #E5E7EB; border-left: 4px solid #5B5FC7; border-radius: 6px; padding: 16px; margin: 16px 0;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+      <span style="font-size: 13px; font-weight: 700; color: #1F2937;">🎙️ ข้อความเสียง (Voice Message)</span>
+      <span style="font-size: 11px; color: #6B7280; font-family: monospace;">ความยาว: 0:42 วินาที</span>
+    </div>
+    
+    <div style="background: #ffffff; border: 1px solid #D1D5DB; border-radius: 6px; padding: 10px 14px; display: flex; align-items: center;">
+      <span style="font-size: 16px; color: #5B5FC7; margin-right: 12px;">▶</span>
+      <div style="flex: 1; height: 6px; background: #E5E7EB; border-radius: 3px; position: relative;">
+        <div style="width: 35%; height: 6px; background: #5B5FC7; border-radius: 3px;"></div>
+      </div>
+      <span style="font-size: 11px; color: #6B7280; margin-left: 12px; font-family: monospace;">0:15 / 0:42</span>
+    </div>
+
+    <p style="color: #6B7280; font-size: 11px; margin: 10px 0 0 0;">
+      หัวข้อ: <em>"บันทึกสรุปการประชุมด่วน - มอบหมายงานประจำสัปดาห์"</em>
+    </p>
+  </div>
+
+  <div style="text-align: center; margin: 24px 0;">
+    <a href="{{phishing_url}}" style="background-color: #5B5FC7; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px; display: inline-block; box-shadow: 0 2px 4px rgba(91, 95, 199, 0.25);">
+      เปิดฟังข้อความเสียงและตอบกลับใน Teams
+    </a>
+  </div>
+
+  <p style="color: #6B7280; font-size: 11px; margin-top: 18px; border-top: 1px solid #E5E7EB; padding-top: 12px; line-height: 1.5;">
+    อีเมลแจ้งเตือนนี้ถูกส่งจาก Microsoft Teams เนื่องจากคุณตั้งค่าให้แจ้งเตือนทางอีเมลเมื่อมีกิจกรรมสำคัญที่ไม่ได้รับชม
+  </p>
+
+  ${SECURITY_FOOTER_HTML}
+</div>
+`,
+    bodyText: 'Microsoft Teams: คุณมี 1 ข้อความเสียงใหม่และถูกกล่าวถึงในกลุ่มงาน ฟังข้อความเสียง: {{phishing_url}} หรือรายงาน: {{report_url}}',
+    isPreset: true
+  },
+
+  // 8. Exchange Online: Mailbox Storage Quota Alert
+  {
+    name: 'Exchange Online Mailbox Storage Quota Warning',
+    subject: '[ด่วน] พื้นที่กล่องจดหมายของคุณเต็ม 99.4% (ระงับการส่งมอบอีเมลใหม่ 6 ฉบับ)',
+    bodyHtml: `
+<div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #E2E8F0; border-radius: 8px; background-color: #ffffff;">
+  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0078D4; padding-bottom: 12px; margin-bottom: 18px;">
+    <div>
+      <span style="font-size: 18px; font-weight: 700; color: #0078D4;">Microsoft Exchange Online</span>
+      <span style="display: block; font-size: 11px; color: #64748B;">ระบบจัดการพื้นที่กล่องจดหมายและโควตาอีเมลองค์กร</span>
+    </div>
+    <span style="font-size: 11px; background: #FEE2E2; color: #991B1B; font-weight: 700; padding: 3px 8px; border-radius: 4px;">STORAGE ALERT</span>
+  </div>
+
+  <h3 style="color: #DC2626; font-size: 16px; margin: 0 0 10px 0;">
+    [ด่วน] พื้นที่จัดเก็บกล่องจดหมายของคุณเต็มความจุ 99.4%
+  </h3>
+
+  <p style="color: #334155; font-size: 14px; line-height: 1.6; margin: 0 0 14px 0;">
+    เรียนผู้ใช้งาน <strong>{{email}}</strong>,
+  </p>
+
+  <p style="color: #334155; font-size: 13px; line-height: 1.6; margin: 0 0 16px 0;">
+    ระบบตรวจพบว่ากล่องจดหมายของคุณมีขนาดข้อมูลใกล้เกินขีดจำกัดที่องค์กรกำหนด ส่งผลให้อีเมลฉบับใหม่จำนวน <strong>6 ฉบับ</strong> ถูกระงับการส่งมอบไว้ชั่วคราวในคิวกักกัน (Quarantine Queue):
+  </p>
+
+  <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 6px; padding: 16px; margin: 16px 0;">
+    <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px;">
+      <span style="font-weight: 600; color: #334155;">ขนาดพื้นที่ที่ใช้ปัจจุบัน:</span>
+      <span style="font-weight: 700; color: #DC2626;">49.7 GB / 50.0 GB (99.4%)</span>
+    </div>
+    <div style="height: 10px; background: #E2E8F0; border-radius: 5px; overflow: hidden; margin-bottom: 8px;">
+      <div style="width: 99.4%; height: 100%; background: #DC2626; border-radius: 5px;"></div>
+    </div>
+    <span style="font-size: 11px; color: #64748B;">* อีเมลขาเข้า 6 ฉบับจะถูกปฏิเสธและตีกลับผู้ส่งถาวร หากไม่ปล่อยคิวภายใน 24 ชั่วโมง</span>
+  </div>
+
+  <p style="color: #334155; font-size: 13px; line-height: 1.6; margin: 0 0 18px 0;">
+    ขอความกรุณาเข้าสู่พอร์ทัลจัดการพื้นที่ของ Exchange เพื่อยืนยันการล้างแคชชั่วคราวและสั่งปล่อยอีเมลที่ค้างอยู่ในคิวทันที:
+  </p>
+
+  <div style="text-align: center; margin: 24px 0;">
+    <a href="{{phishing_url}}" style="background-color: #0078D4; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px; display: inline-block; box-shadow: 0 2px 4px rgba(0, 120, 212, 0.25);">
+      ล้างแคชและปล่อยอีเมลค้างส่ง (Release 6 Emails)
+    </a>
+  </div>
+
+  <p style="color: #64748B; font-size: 11px; margin-top: 18px; border-top: 1px solid #E2E8F0; padding-top: 12px;">
+    ฝ่ายดูแลระบบข้อความอิเล็กทรอนิกส์และบริการคลาวด์ Microsoft 365 (Exchange Mail Administration)
+  </p>
+
+  ${SECURITY_FOOTER_HTML}
+</div>
+`,
+    bodyText: 'แจ้งเตือนพื้นที่กล่องจดหมาย Exchange ใกล้เต็มความจุ 99.4% ตรวจสอบและปล่อยอีเมลค้างส่ง: {{phishing_url}} หรือรายงาน: {{report_url}}',
+    isPreset: true
   }
 ];
 
