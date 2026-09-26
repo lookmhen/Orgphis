@@ -119,15 +119,23 @@ export const Dashboard: React.FC = () => {
   }, []);
 
   const handleResetAll = async () => {
-    const confirmation = prompt('⚠️ คำเตือน: คุณต้องการล้างประวัติการทดสอบและแคมเปญทั้งหมดออกจากระบบเพื่อเริ่มใช้งานจริงใช่หรือไม่?\n\n(กลุ่มเป้าหมาย, เทมเพลต, และ SMTP Profile จะยังคงอยู่ครบถ้วน)\n\nพิมพ์คำว่า "RESET" เพื่อยืนยัน:');
-    if (confirmation !== 'RESET') {
-      if (confirmation !== null) alert('คำยืนยันไม่ถูกต้อง ยกเลิกการล้างข้อมูล');
+    const confirmation = prompt(
+      '⚠️ คำเตือนระดับสูงสุด: คุณต้องการล้างประวัติการทดสอบและแคมเปญทั้งหมดออกจากระบบใช่หรือไม่?\n\n' +
+      '• ประวัติแคมเปญ, สถิติการส่ง, ผลการคลิก และ Event Logs ทั้งหมดจะถูกลบเป็น 0\n' +
+      '• กลุ่มเป้าหมาย (Targets), เทมเพลต (Templates), และโปรไฟล์ SMTP จะยังคงอยู่ครบถ้วน\n\n' +
+      '👉 กรุณาพิมพ์คำว่า: RESET (ตัวพิมพ์ใหญ่ภาษาอังกฤษ) เพื่อยืนยัน:'
+    );
+
+    if (confirmation === null) return; // User clicked Cancel
+
+    if (confirmation.trim().toUpperCase() !== 'RESET') {
+      alert('❌ คำยืนยันไม่ถูกต้อง! ยกเลิกการล้างข้อมูล\n(คุณต้องพิมพ์คำว่า "RESET" ตัวพิมพ์ใหญ่ภาษาอังกฤษ)');
       return;
     }
 
     const res = await fetch('/api/campaigns/reset-all', { method: 'POST' });
     if (res.ok) {
-      alert('ล้างประวัติการทดสอบทั้งหมดเรียบร้อยแล้ว สถิติบน Dashboard ถูกรีเซ็ตเป็น 0');
+      alert('✅ ล้างประวัติการทดสอบทั้งหมดเรียบร้อยแล้ว สถิติบน Dashboard ถูกรีเซ็ตเป็น 0');
       fetchDashboardData();
     } else {
       const data = await res.json();
@@ -208,7 +216,7 @@ export const Dashboard: React.FC = () => {
             <button
               onClick={handleResetAll}
               className="flex items-center space-x-1.5 px-3.5 py-2 border border-red-200 text-red-600 bg-red-50/50 hover:bg-red-50 rounded-xl text-xs font-semibold shadow-xs transition-all"
-              title="ล้างแคมเปญและประวัติการทดสอบทั้งหมดเพื่อเริ่มใช้งานจริง"
+              title="ล้างแคมเปญและประวัติการทดสอบทั้งหมด (ต้องพิมพ์ RESET เพื่อยืนยัน)"
             >
               <RotateCcw className="w-3.5 h-3.5 text-red-600" />
               <span>ล้างประวัติทดสอบทั้งหมด (Reset All)</span>
