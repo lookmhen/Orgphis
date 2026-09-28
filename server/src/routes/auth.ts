@@ -191,7 +191,7 @@ authRouter.post('/change-password', async (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/auth/sessions — returns active session info and recent login audit logs
+ * GET /api/auth/sessions — returns active session info and recent login audit logs (ADMIN only)
  */
 authRouter.get('/sessions', async (req: Request, res: Response) => {
   const token = extractTokenFromRequest(req);
@@ -201,6 +201,9 @@ authRouter.get('/sessions', async (req: Request, res: Response) => {
 
   try {
     const payload = verifyToken(token);
+    if (payload.role === 'VIEWER') {
+      return res.status(403).json({ error: 'บัญชีประเภทผู้ดูรายงาน (Viewer) ไม่ได้รับอนุญาตให้ดูข้อมูล Session และประวัติความปลอดภัย' });
+    }
     const data = await authService.getSessionsInfo(payload.userId);
     return res.json(data);
   } catch {
@@ -209,7 +212,7 @@ authRouter.get('/sessions', async (req: Request, res: Response) => {
 });
 
 /**
- * POST /api/auth/revoke-sessions — revokes all refresh tokens
+ * POST /api/auth/revoke-sessions — revokes all refresh tokens (ADMIN only)
  */
 authRouter.post('/revoke-sessions', async (req: Request, res: Response) => {
   const token = extractTokenFromRequest(req);
@@ -219,6 +222,9 @@ authRouter.post('/revoke-sessions', async (req: Request, res: Response) => {
 
   try {
     const payload = verifyToken(token);
+    if (payload.role === 'VIEWER') {
+      return res.status(403).json({ error: 'บัญชีประเภทผู้ดูรายงาน (Viewer) ไม่ได้รับอนุญาตให้จัดการ Session' });
+    }
     const ipAddress = req.ip || req.socket.remoteAddress;
     await authService.revokeAllSessions(payload.userId, ipAddress);
     res.clearCookie('phishcentral_token', { path: '/' });
@@ -229,14 +235,17 @@ authRouter.post('/revoke-sessions', async (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/auth/users — list all admin/viewer accounts
+ * GET /api/auth/users — list all admin/viewer accounts (ADMIN only)
  */
 authRouter.get('/users', async (req: Request, res: Response) => {
   const token = extractTokenFromRequest(req);
   if (!token) return res.status(401).json({ error: 'Not authenticated' });
 
   try {
-    verifyToken(token);
+    const payload = verifyToken(token);
+    if (payload.role === 'VIEWER') {
+      return res.status(403).json({ error: 'บัญชีประเภทผู้ดูรายงาน (Viewer) ไม่ได้รับอนุญาตให้ดูรายชื่อผู้ดูแลระบบ' });
+    }
     const users = await authService.listUsers();
     return res.json(users);
   } catch {

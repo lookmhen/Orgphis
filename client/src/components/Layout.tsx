@@ -92,9 +92,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
+    setActiveTab('PASSWORD');
     setShowSecurityModal(true);
-    loadSessions();
-    loadAdminUsers();
+    if (user?.role !== 'VIEWER') {
+      loadSessions();
+      loadAdminUsers();
+    }
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
@@ -262,7 +265,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <div className="truncate pr-2">
                   <div className="flex items-center space-x-1.5">
                     <p className="text-xs font-bold text-deep-slate truncate">{user.displayName}</p>
-                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-forest/10 text-forest font-semibold">
+                    <span
+                      className={`text-[9px] font-mono px-1.5 py-0.2 rounded font-semibold ${
+                        user.role === 'VIEWER'
+                          ? 'bg-amber-100 text-amber-800'
+                          : 'bg-forest/10 text-forest'
+                      }`}
+                    >
                       {user.role || 'ADMIN'}
                     </span>
                   </div>
@@ -272,7 +281,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <button
                     type="button"
                     onClick={handleOpenSecurityModal}
-                    title="จัดการผู้ดูแลระบบ รหัสผ่าน และ Session"
+                    title={user.role === 'VIEWER' ? 'เปลี่ยนรหัสผ่าน (Change Password)' : 'จัดการผู้ดูแลระบบ รหัสผ่าน และ Session'}
                     className="p-1.5 text-gray-600 hover:text-forest hover:bg-white rounded-lg transition-all cursor-pointer"
                   >
                     <KeyRound className="w-4 h-4" />
@@ -315,7 +324,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div className="flex items-center justify-between p-5 border-b border-stone-border">
               <div className="flex items-center space-x-2">
                 <KeyRound className="w-5 h-5 text-forest" />
-                <h3 className="font-bold text-deep-slate text-base">ตั้งค่าความปลอดภัย &amp; จัดการผู้ดูแลระบบ</h3>
+                <h3 className="font-bold text-deep-slate text-base">
+                  {user?.role === 'VIEWER'
+                    ? 'เปลี่ยนรหัสผ่านบัญชีผู้ใช้งาน (Change Password)'
+                    : 'ตั้งค่าความปลอดภัย & จัดการผู้ดูแลระบบ'}
+                </h3>
               </div>
               <button
                 type="button"
@@ -326,51 +339,53 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </button>
             </div>
 
-            {/* Tabs */}
-            <div className="flex border-b border-stone-border bg-stone-muted/40 px-5 pt-2 space-x-1.5 overflow-x-auto">
-              <button
-                type="button"
-                onClick={() => setActiveTab('PASSWORD')}
-                className={`px-3.5 py-2 text-xs font-semibold rounded-t-lg border-b-2 transition-all whitespace-nowrap ${
-                  activeTab === 'PASSWORD'
-                    ? 'border-forest text-forest bg-white'
-                    : 'border-transparent text-gray-500 hover:text-deep-slate'
-                }`}
-              >
-                🔑 เปลี่ยนรหัสผ่าน
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('ADMINS');
-                  loadAdminUsers();
-                }}
-                className={`px-3.5 py-2 text-xs font-semibold rounded-t-lg border-b-2 transition-all whitespace-nowrap ${
-                  activeTab === 'ADMINS'
-                    ? 'border-forest text-forest bg-white'
-                    : 'border-transparent text-gray-500 hover:text-deep-slate'
-                }`}
-              >
-                👥 จัดการผู้ดูแล ({adminUsers.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('SESSIONS');
-                  loadSessions();
-                }}
-                className={`px-3.5 py-2 text-xs font-semibold rounded-t-lg border-b-2 transition-all whitespace-nowrap ${
-                  activeTab === 'SESSIONS'
-                    ? 'border-forest text-forest bg-white'
-                    : 'border-transparent text-gray-500 hover:text-deep-slate'
-                }`}
-              >
-                🛡️ Session &amp; ประวัติเข้าใช้งาน
-              </button>
-            </div>
+            {/* Tabs (Only shown for ADMIN; VIEWER only sees Change Password) */}
+            {user?.role !== 'VIEWER' && (
+              <div className="flex border-b border-stone-border bg-stone-muted/40 px-5 pt-2 space-x-1.5 overflow-x-auto">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('PASSWORD')}
+                  className={`px-3.5 py-2 text-xs font-semibold rounded-t-lg border-b-2 transition-all whitespace-nowrap ${
+                    activeTab === 'PASSWORD'
+                      ? 'border-forest text-forest bg-white'
+                      : 'border-transparent text-gray-500 hover:text-deep-slate'
+                  }`}
+                >
+                  🔑 เปลี่ยนรหัสผ่าน
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('ADMINS');
+                    loadAdminUsers();
+                  }}
+                  className={`px-3.5 py-2 text-xs font-semibold rounded-t-lg border-b-2 transition-all whitespace-nowrap ${
+                    activeTab === 'ADMINS'
+                      ? 'border-forest text-forest bg-white'
+                      : 'border-transparent text-gray-500 hover:text-deep-slate'
+                  }`}
+                >
+                  👥 จัดการผู้ดูแล ({adminUsers.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('SESSIONS');
+                    loadSessions();
+                  }}
+                  className={`px-3.5 py-2 text-xs font-semibold rounded-t-lg border-b-2 transition-all whitespace-nowrap ${
+                    activeTab === 'SESSIONS'
+                      ? 'border-forest text-forest bg-white'
+                      : 'border-transparent text-gray-500 hover:text-deep-slate'
+                  }`}
+                >
+                  🛡️ Session &amp; ประวัติเข้าใช้งาน
+                </button>
+              </div>
+            )}
 
             <div className="p-5 overflow-y-auto space-y-4 text-sm">
-              {activeTab === 'PASSWORD' && (
+              {(activeTab === 'PASSWORD' || user?.role === 'VIEWER') && (
                 <form onSubmit={handleChangePassword} className="space-y-4">
                   {pwdMessage && (
                     <div
@@ -449,7 +464,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </form>
               )}
 
-              {activeTab === 'ADMINS' && (
+              {activeTab === 'ADMINS' && user?.role !== 'VIEWER' && (
                 <div className="space-y-5">
                   {adminMsg && (
                     <div
@@ -609,7 +624,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </div>
               )}
 
-              {activeTab === 'SESSIONS' && (
+              {activeTab === 'SESSIONS' && user?.role !== 'VIEWER' && (
                 <div className="space-y-4">
                   {isLoadingSessions ? (
                     <p className="text-xs text-gray-500 py-4 text-center">กำลังโหลดข้อมูล Session...</p>

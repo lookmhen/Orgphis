@@ -246,6 +246,17 @@ describe('Authentication & Authorization Suite', () => {
       .send({ username: 'hacker', password: 'Password1234' });
     expect(viewerCreateUserRes.status).toBe(403);
 
+    // VIEWER must NOT be allowed to see admin list or session/security audit logs
+    const viewerListUsersRes = await request(app)
+      .get('/api/auth/users')
+      .set('Authorization', `Bearer ${viewerToken}`);
+    expect(viewerListUsersRes.status).toBe(403);
+
+    const viewerSessionsRes = await request(app)
+      .get('/api/auth/sessions')
+      .set('Authorization', `Bearer ${viewerToken}`);
+    expect(viewerSessionsRes.status).toBe(403);
+
     // 5. Suspend second admin
     const suspendRes = await request(app)
       .patch(`/api/auth/users/${secondAdminId}/status`)

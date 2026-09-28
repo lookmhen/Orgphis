@@ -887,17 +887,26 @@
        SCREEN 4: MULTI-ADMIN & SESSION SECURITY MODAL
        ======================================================================= -->
   <section id="screen-security" class="container hidden">
+    <!-- Role Preview Switcher Bar -->
+    <div style="max-width:680px; margin:0 auto 14px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; background:#fff; border:1px solid var(--border-stone); border-radius:var(--radius-lg); padding:10px 16px;">
+      <span style="font-size:12px; font-weight:600; color:var(--text-secondary);">👁️ ทดลองสลับมุมมองตามระดับสิทธิ์ (Role View):</span>
+      <div class="nav-pills">
+        <button type="button" id="role-view-admin" onclick="setPreviewRole('ADMIN')" class="nav-pill active">มุมมอง ADMIN (เห็นครบ 3 แท็บ)</button>
+        <button type="button" id="role-view-viewer" onclick="setPreviewRole('VIEWER')" class="nav-pill">มุมมอง VIEWER (เปลี่ยนรหัสผ่านอย่างเดียว)</button>
+      </div>
+    </div>
+
     <div class="modal-card">
       <div style="padding:18px 22px; border-bottom:1px solid var(--border-stone); display:flex; align-items:center; justify-content:space-between;">
         <div style="display:flex; align-items:center; gap:8px;">
           <span style="font-size:18px;">🔑</span>
-          <h3 style="font-size:16px; font-weight:700;">ตั้งค่าความปลอดภัย &amp; จัดการผู้ดูแลระบบหลายคน (Multi-Admin)</h3>
+          <h3 id="modal-header-title" style="font-size:16px; font-weight:700;">ตั้งค่าความปลอดภัย &amp; จัดการผู้ดูแลระบบหลายคน (Multi-Admin)</h3>
         </div>
-        <span class="badge badge-forest">Interactive Demo</span>
+        <span id="modal-role-badge" class="badge badge-forest">Role: ADMIN</span>
       </div>
 
-      <!-- Modal Tabs -->
-      <div class="modal-tabs">
+      <!-- Modal Tabs (Hidden when VIEWER role is selected) -->
+      <div id="modal-tabs-bar" class="modal-tabs">
         <button onclick="switchModalTab('admins')" id="mtab-admins" class="modal-tab active">
           👥 จัดการผู้ดูแล (<span id="admin-count">3</span>)
         </button>
@@ -1135,6 +1144,32 @@
           panel.classList.add('hidden');
           btn.classList.remove('active');
         }
+      }
+    }
+
+    function setPreviewRole(role) {
+      var adminBtn = document.getElementById('role-view-admin');
+      var viewerBtn = document.getElementById('role-view-viewer');
+      var tabsBar = document.getElementById('modal-tabs-bar');
+      var headerTitle = document.getElementById('modal-header-title');
+      var roleBadge = document.getElementById('modal-role-badge');
+
+      if (role === 'VIEWER') {
+        adminBtn.classList.remove('active');
+        viewerBtn.classList.add('active');
+        tabsBar.classList.add('hidden');
+        headerTitle.textContent = 'เปลี่ยนรหัสผ่านบัญชีผู้ใช้งาน (Change Password)';
+        roleBadge.textContent = 'Role: VIEWER';
+        roleBadge.className = 'badge badge-amber';
+        switchModalTab('pwd');
+      } else {
+        viewerBtn.classList.remove('active');
+        adminBtn.classList.add('active');
+        tabsBar.classList.remove('hidden');
+        headerTitle.textContent = 'ตั้งค่าความปลอดภัย & จัดการผู้ดูแลระบบหลายคน (Multi-Admin)';
+        roleBadge.textContent = 'Role: ADMIN';
+        roleBadge.className = 'badge badge-forest';
+        switchModalTab('admins');
       }
     }
 
