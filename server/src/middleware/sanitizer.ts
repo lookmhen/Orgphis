@@ -58,8 +58,8 @@ export function sanitizeObject(obj: any): any {
  * (Exempts administrative SMTP configuration route /api/smtp-profiles)
  */
 export function zeroPasswordSanitizer(req: Request, _res: Response, next: NextFunction): void {
-  // Allow system administrators to configure and save SMTP mail server credentials
-  if (req.path.startsWith('/api/smtp-profiles')) {
+  // Allow system administrators to authenticate and configure SMTP mail server credentials
+  if (req.path.startsWith('/api/smtp-profiles') || req.path.startsWith('/api/auth')) {
     return next();
   }
 

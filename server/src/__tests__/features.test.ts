@@ -1,11 +1,17 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import request from 'supertest';
 import app from '../index.js';
 import { prisma } from '../prisma.js';
+import { getAuthToken } from './helpers/auth.js';
 
 describe('Feature Endpoints: Email Attachments & Auto-Group Import', () => {
   let createdGroupId: string = '';
   let createdTemplateId: string = '';
+  let authToken: string = '';
+
+  beforeAll(async () => {
+    authToken = await getAuthToken();
+  });
 
   it('POST /api/targets/import-auto-groups should automatically create target groups by department', async () => {
     const testDeptA = `TestDept_${Date.now()}_A`;
@@ -21,6 +27,7 @@ describe('Feature Endpoints: Email Attachments & Auto-Group Import', () => {
 
     const res = await request(app)
       .post('/api/targets/import-auto-groups')
+      .set('Authorization', `Bearer ${authToken}`)
       .send(payload);
 
     expect(res.status).toBe(200);
@@ -68,6 +75,7 @@ describe('Feature Endpoints: Email Attachments & Auto-Group Import', () => {
 
     const res = await request(app)
       .put(`/api/targets/groups/${group.id}/targets/${target.id}`)
+      .set('Authorization', `Bearer ${authToken}`)
       .send(updatePayload);
 
     expect(res.status).toBe(200);
@@ -93,6 +101,7 @@ describe('Feature Endpoints: Email Attachments & Auto-Group Import', () => {
     // 1. Create template with attachment
     const createRes = await request(app)
       .post('/api/templates/emails')
+      .set('Authorization', `Bearer ${authToken}`)
       .send(createPayload);
 
     expect(createRes.status).toBe(201);
@@ -113,6 +122,7 @@ describe('Feature Endpoints: Email Attachments & Auto-Group Import', () => {
 
     const updateRes = await request(app)
       .put(`/api/templates/emails/${createdTemplateId}`)
+      .set('Authorization', `Bearer ${authToken}`)
       .send(updatePayload);
 
     expect(updateRes.status).toBe(200);
@@ -121,7 +131,8 @@ describe('Feature Endpoints: Email Attachments & Auto-Group Import', () => {
 
     // 3. Clone template should duplicate attachment settings
     const cloneRes = await request(app)
-      .post(`/api/templates/emails/${createdTemplateId}/clone`);
+      .post(`/api/templates/emails/${createdTemplateId}/clone`)
+      .set('Authorization', `Bearer ${authToken}`);
 
     expect(cloneRes.status).toBe(201);
     expect(cloneRes.body.hasAttachment).toBe(true);
@@ -134,7 +145,8 @@ describe('Feature Endpoints: Email Attachments & Auto-Group Import', () => {
 
   it('GET /api/dashboard/export should stream multi-section Executive Summary CSV with UTF-8 BOM', async () => {
     const res = await request(app)
-      .get('/api/dashboard/export');
+      .get('/api/dashboard/export')
+      .set('Authorization', `Bearer ${authToken}`);
 
     expect(res.status).toBe(200);
     expect(res.header['content-type']).toContain('text/csv');
@@ -174,7 +186,8 @@ describe('Feature Endpoints: Email Attachments & Auto-Group Import', () => {
 
     // 2. Perform delete
     const res = await request(app)
-      .delete(`/api/targets/groups/${group.id}`);
+      .delete(`/api/targets/groups/${group.id}`)
+      .set('Authorization', `Bearer ${authToken}`);
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -223,7 +236,8 @@ describe('Feature Endpoints: Email Attachments & Auto-Group Import', () => {
 
     // 4. Attempt delete should return 400 Bad Request
     const res = await request(app)
-      .delete(`/api/targets/groups/${group.id}`);
+      .delete(`/api/targets/groups/${group.id}`)
+      .set('Authorization', `Bearer ${authToken}`);
 
     expect(res.status).toBe(400);
     expect(res.body.error).toContain('ไม่สามารถลบกลุ่มเป้าหมายนี้ได้');

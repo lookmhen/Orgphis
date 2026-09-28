@@ -221,3 +221,16 @@ model AuditLog {
   @@index([action])
   @@index([createdAt])
 }
+
+model AdminUser {
+  id            String    @id @default(uuid())
+  username      String    @unique
+  displayName   String
+  passwordHash  String
+  isActive      Boolean   @default(true)
+  lastLoginAt   DateTime?
+  lastLoginIp   String?
+  refreshToken  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}

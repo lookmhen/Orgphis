@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import app from '../index.js';
 import { prisma } from '../prisma.js';
+import { getAuthToken } from './helpers/auth.js';
 
 describe('Multi-Template Campaign Randomization & Deduplication Suite', () => {
   let createdLandingPageId: string = '';
@@ -15,8 +16,10 @@ describe('Multi-Template Campaign Randomization & Deduplication Suite', () => {
   let groupOverlapId: string = '';
 
   let createdCampaignIds: string[] = [];
+  let authToken: string = '';
 
   beforeAll(async () => {
+    authToken = await getAuthToken();
     // 1. Setup Landing Page
     const lp = await prisma.landingPageTemplate.create({
       data: {
@@ -157,6 +160,7 @@ describe('Multi-Template Campaign Randomization & Deduplication Suite', () => {
 
     const res = await request(app)
       .post('/api/campaigns')
+      .set('Authorization', `Bearer ${authToken}`)
       .send(payload);
 
     expect(res.status).toBe(201);
@@ -213,6 +217,7 @@ describe('Multi-Template Campaign Randomization & Deduplication Suite', () => {
 
     const res = await request(app)
       .post('/api/campaigns')
+      .set('Authorization', `Bearer ${authToken}`)
       .send(payload);
 
     expect(res.status).toBe(201);
@@ -270,7 +275,9 @@ describe('Multi-Template Campaign Randomization & Deduplication Suite', () => {
       }
     });
 
-    const res = await request(app).get(`/api/campaigns/${campaignId}`);
+    const res = await request(app)
+      .get(`/api/campaigns/${campaignId}`)
+      .set('Authorization', `Bearer ${authToken}`);
     expect(res.status).toBe(200);
     expect(res.body.templateStats).toBeDefined();
     expect(Array.isArray(res.body.templateStats)).toBe(true);
@@ -302,6 +309,7 @@ describe('Multi-Template Campaign Randomization & Deduplication Suite', () => {
 
     const res = await request(app)
       .post('/api/campaigns')
+      .set('Authorization', `Bearer ${authToken}`)
       .send(payload);
 
     expect(res.status).toBe(201);
