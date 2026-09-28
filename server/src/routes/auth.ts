@@ -227,3 +227,102 @@ authRouter.post('/revoke-sessions', async (req: Request, res: Response) => {
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
 });
+
+/**
+ * GET /api/auth/users — list all admin/viewer accounts
+ */
+authRouter.get('/users', async (req: Request, res: Response) => {
+  const token = extractTokenFromRequest(req);
+  if (!token) return res.status(401).json({ error: 'Not authenticated' });
+
+  try {
+    verifyToken(token);
+    const users = await authService.listUsers();
+    return res.json(users);
+  } catch {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+});
+
+/**
+ * POST /api/auth/users — create a new admin or viewer account (requires ADMIN role)
+ */
+authRouter.post('/users', async (req: Request, res: Response) => {
+  const token = extractTokenFromRequest(req);
+  if (!token) return res.status(401).json({ error: 'Not authenticated' });
+
+  try {
+    const payload = verifyToken(token);
+    if (payload.role === 'VIEWER') {
+      return res.status(403).json({ error: 'บัญชีประเภทผู้ดูรายงาน (Viewer) ไม่สามารถเพิ่มผู้ดูแลระบบได้' });
+    }
+
+    const { username, displayName, password, role } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ error: 'กรุณากรอก Username และรหัสผ่านให้ครบถ้วน' });
+    }
+
+    const result = await authService.createUser(payload.userId, {
+      username,
+      displayName: displayName || username,
+      password,
+      role
+    });
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    return res.status(201).json(result.user);
+  } catch {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+});
+
+/**
+ * PATCH /api/auth/users/:id/status — toggle active/suspended status (requires ADMIN role)
+ */
+authRouter.patch('/users/:id/status', async (req: Request, res: Response) => {
+  const token = extractTokenFromRequest(req);
+  if (!token) return res.status(401).json({ error: 'Not authenticated' });
+
+  try {
+    const payload = verifyToken(token);
+    if (payload.role === 'VIEWER') {
+      return res.status(403).json({ error: 'บัญชีประเภทผู้ดูรายงาน (Viewer) ไม่ได้รับอนุญาต' });
+    }
+
+    const result = await authService.toggleUserStatus(payload.userId, req.params.id);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    return res.json(result.user);
+  } catch {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+});
+
+/**
+ * DELETE /api/auth/users/:id — delete an admin/viewer account (requires ADMIN role)
+ */
+authRouter.delete('/users/:id', async (req: Request, res: Response) => {
+  const token = extractTokenFromRequest(req);
+  if (!token) return res.status(401).json({ error: 'Not authenticated' });
+
+  try {
+    const payload = verifyToken(token);
+    if (payload.role === 'VIEWER') {
+      return res.status(403).json({ error: 'บัญชีประเภทผู้ดูรายงาน (Viewer) ไม่ได้รับอนุญาต' });
+    }
+
+    const result = await authService.deleteUser(payload.userId, req.params.id);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    return res.json({ success: true });
+  } catch {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+});

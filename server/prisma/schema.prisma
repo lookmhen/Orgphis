@@ -227,6 +227,7 @@ model AdminUser {
   username      String    @unique
   displayName   String
   passwordHash  String
+  role          String    @default("ADMIN") // ADMIN, VIEWER
   isActive      Boolean   @default(true)
   lastLoginAt   DateTime?
   lastLoginIp   String?

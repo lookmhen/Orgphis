@@ -11,7 +11,10 @@ import {
   KeyRound,
   ShieldAlert,
   CheckCircle2,
-  Clock
+  Clock,
+  UserPlus,
+  Trash2,
+  Power
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -22,7 +25,7 @@ interface LayoutProps {
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, logout } = useAuth();
   const [showSecurityModal, setShowSecurityModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'PASSWORD' | 'SESSIONS'>('PASSWORD');
+  const [activeTab, setActiveTab] = useState<'PASSWORD' | 'SESSIONS' | 'ADMINS'>('PASSWORD');
 
   // Password Change state
   const [currentPassword, setCurrentPassword] = useState('');
@@ -34,6 +37,16 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   // Session Management state
   const [sessionData, setSessionData] = useState<any>(null);
   const [isLoadingSessions, setIsLoadingSessions] = useState(false);
+
+  // Multi-Admin Management state
+  const [adminUsers, setAdminUsers] = useState<any[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [newAdminUsername, setNewAdminUsername] = useState('');
+  const [newAdminDisplayName, setNewAdminDisplayName] = useState('');
+  const [newAdminPassword, setNewAdminPassword] = useState('');
+  const [newAdminRole, setNewAdminRole] = useState<'ADMIN' | 'VIEWER'>('ADMIN');
+  const [adminMsg, setAdminMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+  const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
 
   const navItems = [
     { to: '/', label: 'ภาพรวมระบบ (Dashboard)', icon: LayoutDashboard },
@@ -58,13 +71,30 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     }
   };
 
+  const loadAdminUsers = async () => {
+    setIsLoadingUsers(true);
+    try {
+      const res = await fetch('/api/auth/users');
+      if (res.ok) {
+        const data = await res.json();
+        setAdminUsers(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error('Failed to load admin users:', err);
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  };
+
   const handleOpenSecurityModal = () => {
     setPwdMessage(null);
+    setAdminMsg(null);
     setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
     setShowSecurityModal(true);
     loadSessions();
+    loadAdminUsers();
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
@@ -118,6 +148,72 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     }
   };
 
+  const handleCreateAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAdminMsg(null);
+    setIsCreatingAdmin(true);
+
+    try {
+      const res = await fetch('/api/auth/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: newAdminUsername.trim(),
+          displayName: newAdminDisplayName.trim() || newAdminUsername.trim(),
+          password: newAdminPassword,
+          role: newAdminRole
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAdminMsg({ type: 'ok', text: `เพิ่มบัญชี @${data.username} (${data.role}) เรียบร้อยแล้ว` });
+        setNewAdminUsername('');
+        setNewAdminDisplayName('');
+        setNewAdminPassword('');
+        setNewAdminRole('ADMIN');
+        loadAdminUsers();
+      } else {
+        setAdminMsg({ type: 'err', text: data.error || 'ไม่สามารถสร้างบัญชีได้' });
+      }
+    } catch {
+      setAdminMsg({ type: 'err', text: 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์' });
+    } finally {
+      setIsCreatingAdmin(false);
+    }
+  };
+
+  const handleToggleAdminStatus = async (targetUser: any) => {
+    setAdminMsg(null);
+    try {
+      const res = await fetch(`/api/auth/users/${targetUser.id}/status`, { method: 'PATCH' });
+      const data = await res.json();
+      if (res.ok) {
+        loadAdminUsers();
+      } else {
+        setAdminMsg({ type: 'err', text: data.error || 'ไม่สามารถเปลี่ยนสถานะได้' });
+      }
+    } catch {
+      setAdminMsg({ type: 'err', text: 'เกิดข้อผิดพลาดในการเชื่อมต่อ' });
+    }
+  };
+
+  const handleDeleteAdmin = async (targetUser: any) => {
+    if (!confirm(`ยืนยันการลบบัญชีผู้ดูแล "@${targetUser.username}" (${targetUser.displayName}) ถาวรใช่หรือไม่?`)) return;
+    setAdminMsg(null);
+    try {
+      const res = await fetch(`/api/auth/users/${targetUser.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (res.ok) {
+        setAdminMsg({ type: 'ok', text: `ลบบัญชี @${targetUser.username} เรียบร้อยแล้ว` });
+        loadAdminUsers();
+      } else {
+        setAdminMsg({ type: 'err', text: data.error || 'ไม่สามารถลบบัญชีได้' });
+      }
+    } catch {
+      setAdminMsg({ type: 'err', text: 'เกิดข้อผิดพลาดในการเชื่อมต่อ' });
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-warm-sand">
       {/* Sidebar Navigation */}
@@ -164,14 +260,19 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div className="p-3 rounded-xl bg-stone-muted/70 border border-stone-border/60">
               <div className="flex items-center justify-between">
                 <div className="truncate pr-2">
-                  <p className="text-xs font-bold text-deep-slate truncate">{user.displayName}</p>
+                  <div className="flex items-center space-x-1.5">
+                    <p className="text-xs font-bold text-deep-slate truncate">{user.displayName}</p>
+                    <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-forest/10 text-forest font-semibold">
+                      {user.role || 'ADMIN'}
+                    </span>
+                  </div>
                   <p className="text-[11px] text-gray-500 font-mono truncate">@{user.username}</p>
                 </div>
                 <div className="flex items-center space-x-1 shrink-0">
                   <button
                     type="button"
                     onClick={handleOpenSecurityModal}
-                    title="เปลี่ยนรหัสผ่านและจัดการ Session"
+                    title="จัดการผู้ดูแลระบบ รหัสผ่าน และ Session"
                     className="p-1.5 text-gray-600 hover:text-forest hover:bg-white rounded-lg transition-all cursor-pointer"
                   >
                     <KeyRound className="w-4 h-4" />
@@ -207,14 +308,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
       </main>
 
-      {/* Security & Session Management Modal */}
+      {/* Security, Multi-Admin & Session Management Modal */}
       {showSecurityModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl border border-stone-border overflow-hidden">
+          <div className="bg-white rounded-2xl max-w-xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-stone-border overflow-hidden">
             <div className="flex items-center justify-between p-5 border-b border-stone-border">
               <div className="flex items-center space-x-2">
                 <KeyRound className="w-5 h-5 text-forest" />
-                <h3 className="font-bold text-deep-slate text-base">ตั้งค่าความปลอดภัยบัญชีผู้ดูแล</h3>
+                <h3 className="font-bold text-deep-slate text-base">ตั้งค่าความปลอดภัย &amp; จัดการผู้ดูแลระบบ</h3>
               </div>
               <button
                 type="button"
@@ -226,17 +327,31 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-stone-border bg-stone-muted/40 px-5 pt-2 space-x-2">
+            <div className="flex border-b border-stone-border bg-stone-muted/40 px-5 pt-2 space-x-1.5 overflow-x-auto">
               <button
                 type="button"
                 onClick={() => setActiveTab('PASSWORD')}
-                className={`px-4 py-2 text-xs font-semibold rounded-t-lg border-b-2 transition-all ${
+                className={`px-3.5 py-2 text-xs font-semibold rounded-t-lg border-b-2 transition-all whitespace-nowrap ${
                   activeTab === 'PASSWORD'
                     ? 'border-forest text-forest bg-white'
                     : 'border-transparent text-gray-500 hover:text-deep-slate'
                 }`}
               >
-                🔑 เปลี่ยนรหัสผ่าน (Change Password)
+                🔑 เปลี่ยนรหัสผ่าน
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('ADMINS');
+                  loadAdminUsers();
+                }}
+                className={`px-3.5 py-2 text-xs font-semibold rounded-t-lg border-b-2 transition-all whitespace-nowrap ${
+                  activeTab === 'ADMINS'
+                    ? 'border-forest text-forest bg-white'
+                    : 'border-transparent text-gray-500 hover:text-deep-slate'
+                }`}
+              >
+                👥 จัดการผู้ดูแล ({adminUsers.length})
               </button>
               <button
                 type="button"
@@ -244,18 +359,18 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   setActiveTab('SESSIONS');
                   loadSessions();
                 }}
-                className={`px-4 py-2 text-xs font-semibold rounded-t-lg border-b-2 transition-all ${
+                className={`px-3.5 py-2 text-xs font-semibold rounded-t-lg border-b-2 transition-all whitespace-nowrap ${
                   activeTab === 'SESSIONS'
                     ? 'border-forest text-forest bg-white'
                     : 'border-transparent text-gray-500 hover:text-deep-slate'
                 }`}
               >
-                🛡️ จัดการ Session &amp; ประวัติเข้าใช้งาน
+                🛡️ Session &amp; ประวัติเข้าใช้งาน
               </button>
             </div>
 
             <div className="p-5 overflow-y-auto space-y-4 text-sm">
-              {activeTab === 'PASSWORD' ? (
+              {activeTab === 'PASSWORD' && (
                 <form onSubmit={handleChangePassword} className="space-y-4">
                   {pwdMessage && (
                     <div
@@ -332,7 +447,169 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     </button>
                   </div>
                 </form>
-              ) : (
+              )}
+
+              {activeTab === 'ADMINS' && (
+                <div className="space-y-5">
+                  {adminMsg && (
+                    <div
+                      className={`p-3 rounded-xl text-xs font-medium flex items-center space-x-2 ${
+                        adminMsg.type === 'ok'
+                          ? 'bg-green-50 text-green-800 border border-green-200'
+                          : 'bg-red-50 text-red-700 border border-red-200'
+                      }`}
+                    >
+                      {adminMsg.type === 'ok' ? (
+                        <CheckCircle2 className="w-4 h-4 shrink-0 text-green-600" />
+                      ) : (
+                        <ShieldAlert className="w-4 h-4 shrink-0 text-red-600" />
+                      )}
+                      <span>{adminMsg.text}</span>
+                    </div>
+                  )}
+
+                  {/* Add Admin Form (Only visible for ADMIN role) */}
+                  {user?.role !== 'VIEWER' && (
+                    <form onSubmit={handleCreateAdmin} className="p-4 rounded-xl bg-stone-muted/50 border border-stone-border space-y-3">
+                      <h4 className="text-xs font-bold text-deep-slate flex items-center space-x-1.5">
+                        <UserPlus className="w-4 h-4 text-forest" />
+                        <span>เพิ่มบัญชีผู้ดูแลระบบใหม่ (Add Administrator)</span>
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[11px] font-semibold text-gray-600 mb-1">Username *</label>
+                          <input
+                            type="text"
+                            required
+                            minLength={3}
+                            placeholder="เช่น soc_admin2"
+                            value={newAdminUsername}
+                            onChange={(e) => setNewAdminUsername(e.target.value)}
+                            className="w-full p-2 border border-stone-border rounded-lg text-xs bg-white outline-none focus:border-forest"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-gray-600 mb-1">ชื่อที่แสดงผล (Display Name)</label>
+                          <input
+                            type="text"
+                            placeholder="เช่น สมชาย (SOC Lead)"
+                            value={newAdminDisplayName}
+                            onChange={(e) => setNewAdminDisplayName(e.target.value)}
+                            className="w-full p-2 border border-stone-border rounded-lg text-xs bg-white outline-none focus:border-forest"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-gray-600 mb-1">รหัสผ่านเริ่มต้น (อย่างน้อย 8 ตัวอักษร) *</label>
+                          <input
+                            type="password"
+                            required
+                            minLength={8}
+                            placeholder="••••••••"
+                            value={newAdminPassword}
+                            onChange={(e) => setNewAdminPassword(e.target.value)}
+                            className="w-full p-2 border border-stone-border rounded-lg text-xs bg-white outline-none focus:border-forest"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-gray-600 mb-1">ระดับสิทธิ์ (Role)</label>
+                          <select
+                            value={newAdminRole}
+                            onChange={(e) => setNewAdminRole(e.target.value as 'ADMIN' | 'VIEWER')}
+                            className="w-full p-2 border border-stone-border rounded-lg text-xs bg-white outline-none focus:border-forest"
+                          >
+                            <option value="ADMIN">ADMIN — ผู้ดูแลระบบเต็มสิทธิ์</option>
+                            <option value="VIEWER">VIEWER — ดูรายงานอย่างเดียว (Read-Only)</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="flex justify-end pt-1">
+                        <button
+                          type="submit"
+                          disabled={isCreatingAdmin}
+                          className="px-4 py-2 bg-forest hover:bg-forest-hover text-white rounded-lg text-xs font-semibold disabled:opacity-50 cursor-pointer"
+                        >
+                          {isCreatingAdmin ? 'กำลังสร้างบัญชี...' : '+ เพิ่มผู้ดูแลระบบ'}
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
+                  {/* Admin List */}
+                  <div>
+                    <h4 className="text-xs font-bold text-gray-700 mb-2">
+                      รายชื่อบัญชีผู้ดูแลทั้งหมด ({adminUsers.length} บัญชี)
+                    </h4>
+                    {isLoadingUsers ? (
+                      <p className="text-xs text-gray-400 py-4 text-center">กำลังโหลดรายชื่อ...</p>
+                    ) : (
+                      <div className="border border-stone-border rounded-xl divide-y divide-stone-border/60 max-h-60 overflow-y-auto">
+                        {adminUsers.map((adm) => {
+                          const isSelf = adm.id === user?.id;
+                          return (
+                            <div key={adm.id} className="p-3 flex items-center justify-between hover:bg-stone-muted/30">
+                              <div className="min-w-0 pr-3">
+                                <div className="flex items-center space-x-2">
+                                  <span className="font-bold text-xs text-deep-slate truncate">{adm.displayName}</span>
+                                  <span className="text-[11px] font-mono text-gray-500">@{adm.username}</span>
+                                  {isSelf && (
+                                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-forest-light text-forest font-semibold">
+                                      คุณ (You)
+                                    </span>
+                                  )}
+                                  <span
+                                    className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-semibold ${
+                                      adm.role === 'VIEWER'
+                                        ? 'bg-amber-100 text-amber-800'
+                                        : 'bg-forest/10 text-forest'
+                                    }`}
+                                  >
+                                    {adm.role || 'ADMIN'}
+                                  </span>
+                                  {!adm.isActive && (
+                                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-red-100 text-red-700 font-semibold">
+                                      ถูกระงับ (Suspended)
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[10px] text-gray-400 mt-0.5">
+                                  เข้าสู่ระบบล่าสุด: {adm.lastLoginAt ? new Date(adm.lastLoginAt).toLocaleString('th-TH') : 'ยังไม่เคยเข้าสู่ระบบ'}
+                                </p>
+                              </div>
+
+                              {user?.role !== 'VIEWER' && !isSelf && (
+                                <div className="flex items-center space-x-1 shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleAdminStatus(adm)}
+                                    title={adm.isActive ? 'ระงับการใช้งานชั่วคราว' : 'เปิดใช้งานบัญชี'}
+                                    className={`p-1.5 rounded-lg text-xs transition-all cursor-pointer ${
+                                      adm.isActive
+                                        ? 'text-amber-600 hover:bg-amber-50'
+                                        : 'text-green-600 hover:bg-green-50'
+                                    }`}
+                                  >
+                                    <Power className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteAdmin(adm)}
+                                    title="ลบบัญชีนี้ถาวร"
+                                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'SESSIONS' && (
                 <div className="space-y-4">
                   {isLoadingSessions ? (
                     <p className="text-xs text-gray-500 py-4 text-center">กำลังโหลดข้อมูล Session...</p>

@@ -19,6 +19,7 @@ export interface JwtPayload {
   userId: string;
   username: string;
   displayName: string;
+  role?: string;
 }
 
 export function signAccessToken(payload: JwtPayload): string {
@@ -40,7 +41,8 @@ export function verifyToken(token: string): JwtPayload {
   return {
     userId: decoded.userId,
     username: decoded.username,
-    displayName: decoded.displayName
+    displayName: decoded.displayName,
+    role: decoded.role || 'ADMIN'
   };
 }
 

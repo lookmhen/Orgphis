@@ -33,7 +33,8 @@ export const authService = {
     const payload = {
       userId: user.id,
       username: user.username,
-      displayName: user.displayName
+      displayName: user.displayName,
+      role: user.role || 'ADMIN'
     };
 
     const accessToken = signAccessToken(payload);
@@ -57,7 +58,7 @@ export const authService = {
         action: 'LOGIN_SUCCESS',
         resource: 'auth',
         ipAddress: ipAddress || null,
-        details: `User "${user.username}" logged in successfully`
+        details: `User "${user.username}" (${user.role}) logged in successfully`
       }
     });
 
@@ -68,7 +69,8 @@ export const authService = {
       user: {
         id: user.id,
         username: user.username,
-        displayName: user.displayName
+        displayName: user.displayName,
+        role: user.role || 'ADMIN'
       }
     };
   },
@@ -102,7 +104,8 @@ export const authService = {
     const newPayload = {
       userId: user.id,
       username: user.username,
-      displayName: user.displayName
+      displayName: user.displayName,
+      role: user.role || 'ADMIN'
     };
 
     const newAccessToken = signAccessToken(newPayload);
@@ -129,7 +132,7 @@ export const authService = {
     await prisma.adminUser.update({
       where: { id: userId },
       data: { refreshToken: null }
-    });
+    }).catch(() => {});
   },
 
   /**
@@ -142,11 +145,14 @@ export const authService = {
         id: true,
         username: true,
         displayName: true,
+        role: true,
+        isActive: true,
         lastLoginAt: true,
         lastLoginIp: true,
         createdAt: true
       }
     });
+    if (!user || !user.isActive) return null;
     return user;
   },
 
@@ -183,7 +189,7 @@ export const authService = {
         userId,
         action: 'PASSWORD_CHANGED',
         resource: 'auth',
-        details: `Admin user changed password and invalidated sessions`
+        details: `Admin user "${user.username}" changed password and invalidated sessions`
       }
     });
 
@@ -200,6 +206,7 @@ export const authService = {
         id: true,
         username: true,
         displayName: true,
+        role: true,
         lastLoginAt: true,
         lastLoginIp: true,
         refreshToken: true
@@ -216,6 +223,7 @@ export const authService = {
       activeSession: user ? {
         username: user.username,
         displayName: user.displayName,
+        role: user.role,
         lastLoginAt: user.lastLoginAt,
         lastLoginIp: user.lastLoginIp,
         hasActiveRefreshToken: Boolean(user.refreshToken)
@@ -247,6 +255,149 @@ export const authService = {
   },
 
   /**
+   * List all administrator accounts (Multi-Admin Management)
+   */
+  async listUsers() {
+    return prisma.adminUser.findMany({
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        role: true,
+        isActive: true,
+        lastLoginAt: true,
+        lastLoginIp: true,
+        createdAt: true
+      },
+      orderBy: { createdAt: 'asc' }
+    });
+  },
+
+  /**
+   * Create a new administrator or viewer account
+   */
+  async createUser(actorUserId: string, data: { username: string; displayName: string; password: string; role?: string }) {
+    const cleanUsername = data.username.toLowerCase().trim();
+    if (!cleanUsername || cleanUsername.length < 3) {
+      return { success: false, error: 'ชื่อผู้ใช้ (Username) ต้องมีอย่างน้อย 3 ตัวอักษร' };
+    }
+    if (!data.password || data.password.length < 8) {
+      return { success: false, error: 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร' };
+    }
+
+    const existing = await prisma.adminUser.findUnique({ where: { username: cleanUsername } });
+    if (existing) {
+      return { success: false, error: `ชื่อผู้ใช้ "${cleanUsername}" มีอยู่ในระบบแล้ว` };
+    }
+
+    const role = data.role === 'VIEWER' ? 'VIEWER' : 'ADMIN';
+    const passwordHash = await bcrypt.hash(data.password, BCRYPT_ROUNDS);
+
+    const created = await prisma.adminUser.create({
+      data: {
+        username: cleanUsername,
+        displayName: data.displayName.trim() || cleanUsername,
+        passwordHash,
+        role
+      },
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        role: true,
+        isActive: true,
+        createdAt: true
+      }
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        userId: actorUserId,
+        action: 'ADMIN_USER_CREATED',
+        resource: 'auth',
+        details: `Created user "${created.username}" with role ${created.role}`
+      }
+    });
+
+    return { success: true, user: created };
+  },
+
+  /**
+   * Toggle active status (Suspend / Activate) of an admin user
+   */
+  async toggleUserStatus(actorUserId: string, targetUserId: string) {
+    if (actorUserId === targetUserId) {
+      return { success: false, error: 'ไม่สามารถระงับสิทธิ์บัญชีของตนเองได้' };
+    }
+
+    const target = await prisma.adminUser.findUnique({ where: { id: targetUserId } });
+    if (!target) {
+      return { success: false, error: 'ไม่พบบัญชีผู้ใช้งานนี้' };
+    }
+
+    const nextActive = !target.isActive;
+    const updated = await prisma.adminUser.update({
+      where: { id: targetUserId },
+      data: {
+        isActive: nextActive,
+        refreshToken: nextActive ? target.refreshToken : null // Revoke session if suspended
+      },
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        role: true,
+        isActive: true
+      }
+    });
+
+    await prisma.auditLog.create({
+      data: {
+        userId: actorUserId,
+        action: nextActive ? 'ADMIN_USER_ACTIVATED' : 'ADMIN_USER_SUSPENDED',
+        resource: 'auth',
+        details: `User "${updated.username}" status changed to ${nextActive ? 'ACTIVE' : 'SUSPENDED'}`
+      }
+    });
+
+    return { success: true, user: updated };
+  },
+
+  /**
+   * Delete an admin user (prevents self-deletion and last-admin deletion)
+   */
+  async deleteUser(actorUserId: string, targetUserId: string) {
+    if (actorUserId === targetUserId) {
+      return { success: false, error: 'ไม่สามารถลบบัญชีที่กำลังล็อกอินใช้งานอยู่ได้' };
+    }
+
+    const target = await prisma.adminUser.findUnique({ where: { id: targetUserId } });
+    if (!target) {
+      return { success: false, error: 'ไม่พบบัญชีผู้ใช้งานนี้' };
+    }
+
+    const totalAdmins = await prisma.adminUser.count({
+      where: { role: 'ADMIN', isActive: true }
+    });
+    if (target.role === 'ADMIN' && target.isActive && totalAdmins <= 1) {
+      return { success: false, error: 'ไม่สามารถลบผู้ดูแลระบบคนสุดท้ายได้' };
+    }
+
+    await prisma.adminUser.delete({ where: { id: targetUserId } });
+
+    await prisma.auditLog.create({
+      data: {
+        userId: actorUserId,
+        action: 'ADMIN_USER_DELETED',
+        resource: 'auth',
+        details: `Deleted user "${target.username}" (${target.role})`
+      }
+    });
+
+    return { success: true };
+  },
+
+  /**
    * Seed default admin user from environment variables (first-boot only, concurrency-safe)
    */
   async seedDefaultAdmin() {
@@ -268,7 +419,8 @@ export const authService = {
         create: {
           username,
           displayName,
-          passwordHash
+          passwordHash,
+          role: 'ADMIN'
         }
       });
       console.log(`[Auth] Default admin account verified/created: "${username}"`);

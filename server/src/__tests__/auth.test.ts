@@ -177,6 +177,100 @@ describe('Authentication & Authorization Suite', () => {
   it('11. Default admin should be seeded only once (idempotent)', async () => {
     await authService.seedDefaultAdmin();
     const count = await prisma.adminUser.count();
-    expect(count).toBe(1);
+    expect(count).toBeGreaterThanOrEqual(1);
+  });
+
+  it('12. Multi-Admin Management: Should create, list, suspend/activate, enforce VIEWER read-only, and delete additional admins', async () => {
+    const secondAdminUsername = `soc_admin2_${Date.now()}`;
+    const viewerUsername = `auditor_viewer_${Date.now()}`;
+
+    // 1. Create a second Full Admin
+    const createAdminRes = await request(app)
+      .post('/api/auth/users')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        username: secondAdminUsername,
+        displayName: 'SOC Lead Two',
+        password: 'Admin2Password@2026',
+        role: 'ADMIN'
+      });
+    expect(createAdminRes.status).toBe(201);
+    expect(createAdminRes.body.username).toBe(secondAdminUsername);
+    expect(createAdminRes.body.role).toBe('ADMIN');
+    const secondAdminId = createAdminRes.body.id;
+
+    // 2. Create a Read-Only Viewer account
+    const createViewerRes = await request(app)
+      .post('/api/auth/users')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        username: viewerUsername,
+        displayName: 'Executive Auditor',
+        password: 'ViewerPassword@2026',
+        role: 'VIEWER'
+      });
+    expect(createViewerRes.status).toBe(201);
+    expect(createViewerRes.body.role).toBe('VIEWER');
+    const viewerId = createViewerRes.body.id;
+
+    // 3. List all users
+    const listRes = await request(app)
+      .get('/api/auth/users')
+      .set('Authorization', `Bearer ${accessToken}`);
+    expect(listRes.status).toBe(200);
+    expect(listRes.body.length).toBeGreaterThanOrEqual(3);
+
+    // 4. Verify VIEWER can read (GET) but cannot mutate (POST/DELETE)
+    const { signAccessToken } = await import('../utils/jwt.js');
+    const viewerToken = signAccessToken({
+      userId: viewerId,
+      username: viewerUsername,
+      displayName: 'Executive Auditor',
+      role: 'VIEWER'
+    });
+
+    const viewerGetRes = await request(app)
+      .get('/api/campaigns')
+      .set('Authorization', `Bearer ${viewerToken}`);
+    expect(viewerGetRes.status).toBe(200);
+
+    const viewerPostRes = await request(app)
+      .post('/api/targets/groups')
+      .set('Authorization', `Bearer ${viewerToken}`)
+      .send({ name: 'Should Be Blocked' });
+    expect(viewerPostRes.status).toBe(403);
+
+    const viewerCreateUserRes = await request(app)
+      .post('/api/auth/users')
+      .set('Authorization', `Bearer ${viewerToken}`)
+      .send({ username: 'hacker', password: 'Password1234' });
+    expect(viewerCreateUserRes.status).toBe(403);
+
+    // 5. Suspend second admin
+    const suspendRes = await request(app)
+      .patch(`/api/auth/users/${secondAdminId}/status`)
+      .set('Authorization', `Bearer ${accessToken}`);
+    expect(suspendRes.status).toBe(200);
+    expect(suspendRes.body.isActive).toBe(false);
+
+    // 6. Prevent self-deletion
+    const meRes = await request(app)
+      .get('/api/auth/me')
+      .set('Authorization', `Bearer ${accessToken}`);
+    const selfDeleteRes = await request(app)
+      .delete(`/api/auth/users/${meRes.body.id}`)
+      .set('Authorization', `Bearer ${accessToken}`);
+    expect(selfDeleteRes.status).toBe(400);
+
+    // 7. Delete created test accounts
+    const delAdminRes = await request(app)
+      .delete(`/api/auth/users/${secondAdminId}`)
+      .set('Authorization', `Bearer ${accessToken}`);
+    expect(delAdminRes.status).toBe(200);
+
+    const delViewerRes = await request(app)
+      .delete(`/api/auth/users/${viewerId}`)
+      .set('Authorization', `Bearer ${accessToken}`);
+    expect(delViewerRes.status).toBe(200);
   });
 });

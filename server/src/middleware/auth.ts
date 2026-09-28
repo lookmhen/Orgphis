@@ -65,6 +65,15 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   try {
     const payload = verifyToken(token);
     req.user = payload;
+
+    // Enforce read-only permissions for VIEWER role on Admin APIs
+    if (payload.role === 'VIEWER' && !['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+      return res.status(403).json({
+        error: 'Insufficient permissions (Read-Only Viewer)',
+        message: 'บัญชีประเภทผู้ดูรายงาน (Viewer) ไม่ได้รับอนุญาตให้สร้าง แก้ไข หรือลบข้อมูล'
+      });
+    }
+
     return next();
   } catch (err: any) {
     const isExpired = err?.name === 'TokenExpiredError';
