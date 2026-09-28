@@ -3,257 +3,1207 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PhishCentral — Interactive UX/UI Design System (DESIGN.md)</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
-  <script>
-    if (window.tailwind) {
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              'warm-sand': '#FAF8F5',
-              'forest': {
-                DEFAULT: '#2D5A43',
-                hover: '#234735',
-                light: '#E8EFEA'
-              },
-              'amber-terracotta': {
-                DEFAULT: '#D97736',
-                hover: '#C26527',
-                light: '#FCF3EB'
-              },
-              'deep-slate': '#24292F',
-              'stone-border': '#E7E5E0',
-              'stone-muted': '#F5F3EE'
-            },
-            boxShadow: {
-              'soft': '0 2px 8px rgba(0, 0, 0, 0.04)',
-              'medium': '0 4px 16px rgba(0, 0, 0, 0.06)'
-            }
-          }
-        }
-      };
+  <title>PhishCentral — UX/UI Interactive Design System (DESIGN.md)</title>
+  <style>
+    /* ==========================================================================
+       1. DESIGN TOKENS (FROM DESIGN.MD — GOOGLE STITCH SPECIFICATION)
+       ========================================================================== */
+    :root {
+      --bg-warm-sand: #FAF8F5;
+      --bg-surface: #FFFFFF;
+      --bg-stone-muted: #F5F3EE;
+      --border-stone: #E7E5E0;
+
+      --forest: #2D5A43;
+      --forest-hover: #234735;
+      --forest-light: #E8EFEA;
+
+      --terracotta: #D97736;
+      --terracotta-hover: #C26527;
+      --terracotta-light: #FCF3EB;
+
+      --text-primary: #24292F;
+      --text-secondary: #4B5563;
+      --text-muted: #9CA3AF;
+
+      --danger: #DC2626;
+      --danger-hover: #B91C1C;
+      --danger-light: #FEE2E2;
+
+      --success: #16A34A;
+      --success-light: #DCFCE7;
+
+      --amber-bg: #FEF3C7;
+      --amber-text: #92400E;
+
+      --purple-bg: #F3E8FF;
+      --purple-text: #6B21A8;
+
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 16px;
+      --radius-full: 9999px;
+
+      --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.04);
+      --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.07);
+      --shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Thai', sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     }
-  </script>
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-warm-sand);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    code, .mono {
+      font-family: var(--font-mono);
+    }
+
+    /* ==========================================================================
+       2. TOP NAVIGATION BAR
+       ========================================================================== */
+    .top-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(255, 255, 255, 0.96);
+      border-bottom: 1px solid var(--border-stone);
+      padding: 12px 24px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-lg);
+      background: var(--forest);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .brand-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .nav-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      background: var(--bg-stone-muted);
+      padding: 4px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-stone);
+    }
+
+    .nav-pill {
+      border: none;
+      background: transparent;
+      padding: 7px 13px;
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: var(--font-sans);
+    }
+
+    .nav-pill:hover {
+      color: var(--text-primary);
+    }
+
+    .nav-pill.active {
+      background: var(--forest);
+      color: #fff;
+      box-shadow: var(--shadow-soft);
+    }
+
+    /* ==========================================================================
+       3. LAYOUT & CONTAINERS
+       ========================================================================== */
+    .container {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-stone);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .section-gap {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 20px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+    }
+
+    .grid-8 {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(125px, 1fr));
+      gap: 12px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* ==========================================================================
+       4. BUTTONS, BADGES & INPUTS
+       ========================================================================== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 9px 16px;
+      border-radius: var(--radius-lg);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+      font-family: var(--font-sans);
+    }
+
+    .btn-primary {
+      background: var(--forest);
+      color: #fff;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .btn-primary:hover {
+      background: var(--forest-hover);
+    }
+
+    .btn-secondary {
+      background: #fff;
+      border-color: var(--border-stone);
+      color: var(--text-primary);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-stone-muted);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: #fff;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .btn-danger:hover {
+      background: var(--danger-hover);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 9px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+    }
+
+    .badge-forest {
+      background: var(--forest-light);
+      color: var(--forest);
+    }
+
+    .badge-amber {
+      background: var(--amber-bg);
+      color: var(--amber-text);
+    }
+
+    .badge-purple {
+      background: var(--purple-bg);
+      color: var(--purple-text);
+    }
+
+    .badge-success {
+      background: var(--success-light);
+      color: var(--success);
+    }
+
+    .badge-danger {
+      background: var(--danger-light);
+      color: var(--danger);
+    }
+
+    .input-field {
+      width: 100%;
+      padding: 10px 14px;
+      font-size: 13px;
+      border: 1px solid var(--border-stone);
+      border-radius: var(--radius-lg);
+      background: #fff;
+      color: var(--text-primary);
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      font-family: var(--font-sans);
+    }
+
+    .input-field:focus {
+      border-color: var(--forest);
+      box-shadow: 0 0 0 3px rgba(45, 90, 67, 0.14);
+    }
+
+    .label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+
+    /* ==========================================================================
+       5. COLOR SWATCHES
+       ========================================================================== */
+    .swatch-card {
+      border: 1px solid var(--border-stone);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background: #fff;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .swatch-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-medium);
+    }
+
+    .swatch-color {
+      height: 64px;
+      border-bottom: 1px solid var(--border-stone);
+    }
+
+    .swatch-info {
+      padding: 10px;
+    }
+
+    .swatch-name {
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .swatch-hex {
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+    }
+
+    .swatch-role {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* ==========================================================================
+       6. CONSOLE SHELL (SIDEBAR + MAIN)
+       ========================================================================== */
+    .console-layout {
+      display: flex;
+      min-height: calc(100vh - 65px);
+    }
+
+    .sidebar {
+      width: 260px;
+      background: #fff;
+      border-right: 1px solid var(--border-stone);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 16px;
+    }
+
+    .sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: var(--radius-lg);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .sidebar-link:hover {
+      background: var(--bg-stone-muted);
+      color: var(--text-primary);
+    }
+
+    .sidebar-link.active {
+      background: var(--forest);
+      color: #fff;
+      font-weight: 600;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .console-main {
+      flex: 1;
+      padding: 28px;
+      max-width: 1020px;
+      margin: 0 auto;
+    }
+
+    /* ==========================================================================
+       7. LOGIN SCREEN & MODAL
+       ========================================================================== */
+    .login-wrapper {
+      min-height: calc(100vh - 70px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .login-box {
+      width: 100%;
+      max-width: 430px;
+    }
+
+    .modal-card {
+      max-width: 680px;
+      margin: 32px auto;
+      background: #fff;
+      border: 1px solid var(--border-stone);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-modal);
+      overflow: hidden;
+    }
+
+    .modal-tabs {
+      display: flex;
+      background: var(--bg-stone-muted);
+      border-bottom: 1px solid var(--border-stone);
+      padding: 8px 20px 0;
+      gap: 8px;
+    }
+
+    .modal-tab {
+      border: none;
+      background: transparent;
+      padding: 9px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      border-bottom: 2px solid transparent;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      font-family: var(--font-sans);
+    }
+
+    .modal-tab.active {
+      background: #fff;
+      color: var(--forest);
+      border-bottom-color: var(--forest);
+    }
+
+    .list-box {
+      border: 1px solid var(--border-stone);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .list-row {
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border-bottom: 1px solid var(--border-stone);
+      background: #fff;
+    }
+
+    .list-row:last-child {
+      border-bottom: none;
+    }
+
+    .toast-copy {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--forest);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: var(--radius-lg);
+      font-size: 12px;
+      font-weight: 600;
+      box-shadow: var(--shadow-medium);
+      z-index: 100;
+    }
+  </style>
 </head>
-<body class="bg-[#FAF8F5] text-[#24292F] antialiased min-h-screen">
-  <!-- Top Prototype Navigation Bar -->
-  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-[#E7E5E0] px-6 py-3 flex flex-wrap items-center justify-between gap-3 shadow-xs">
-    <div class="flex items-center space-x-3">
-      <div class="w-9 h-9 rounded-xl bg-[#2D5A43] flex items-center justify-center text-white font-bold shadow-xs">
-        🛡️
-      </div>
+<body>
+
+  <!-- Copy Toast Notification -->
+  <div id="copy-toast" class="toast-copy hidden">คัดลอกโค้ดสีเรียบร้อย!</div>
+
+  <!-- Top Navigation Header -->
+  <header class="top-header">
+    <div class="brand-row">
+      <div class="brand-icon">🛡️</div>
       <div>
-        <div class="flex items-center space-x-2">
-          <h1 class="font-bold text-sm text-[#24292F]">PhishCentral UX/UI Interactive Specification</h1>
-          <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#E8EFEA] text-[#2D5A43] font-semibold">v2.2.0 • DESIGN.md</span>
+        <div class="brand-title">
+          <span>PhishCentral UX/UI Design System</span>
+          <span class="badge badge-forest">v2.2.0 • DESIGN.md</span>
         </div>
-        <p class="text-[11px] text-gray-500">Executive Earthtone Minimalism • คลิกสลับหน้าจอเพื่อทดสอบ UX/UI แบบ Interactive</p>
+        <p class="brand-sub">Pure HTML/CSS/JS (ไม่ต้องใช้ CDN ภายนอก) • คลิกสลับแท็บด้านขวาเพื่อดูและทดสอบแต่ละหน้าจอ</p>
       </div>
     </div>
 
-    <!-- Screen Switcher Pills -->
-    <div class="flex items-center space-x-1 bg-[#F5F3EE] p-1 rounded-xl border border-[#E7E5E0]">
-      <button onclick="switchScreen('tokens')" id="btn-tokens" class="screen-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-[#2D5A43] text-white shadow-xs">
-        🎨 1. Design Tokens
-      </button>
-      <button onclick="switchScreen('login')" id="btn-login" class="screen-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-gray-600 hover:text-[#24292F]">
-        🔐 2. หน้า Login
-      </button>
-      <button onclick="switchScreen('console')" id="btn-console" class="screen-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-gray-600 hover:text-[#24292F]">
-        📊 3. Admin Console &amp; Multi-Vector
-      </button>
-      <button onclick="switchScreen('security')" id="btn-security" class="screen-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-gray-600 hover:text-[#24292F]">
-        👥 4. Multi-Admin &amp; Session Modal
-      </button>
+    <div class="nav-pills">
+      <button onclick="switchScreen('tokens')" id="btn-tokens" class="nav-pill active">🎨 1. Design Tokens</button>
+      <button onclick="switchScreen('login')" id="btn-login" class="nav-pill">🔐 2. หน้า Login</button>
+      <button onclick="switchScreen('console')" id="btn-console" class="nav-pill">📊 3. Admin Console &amp; Multi-Vector</button>
+      <button onclick="switchScreen('security')" id="btn-security" class="nav-pill">👥 4. Multi-Admin &amp; Session Modal</button>
     </div>
   </header>
 
-  <!-- VIEW 1: DESIGN TOKENS -->
-  <section id="screen-tokens" class="max-w-6xl mx-auto p-6 space-y-6">
-    <div class="bg-white rounded-2xl border border-[#E7E5E0] p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-      <div>
-        <span class="text-[11px] font-mono uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#E8EFEA] text-[#2D5A43] font-semibold">
-          Google Stitch DESIGN.md Spec
-        </span>
-        <h2 class="text-xl font-bold text-[#24292F] mt-2">PhishCentral Enterprise Earthtone Design System</h2>
-        <p class="text-xs text-gray-500 mt-1 max-w-2xl leading-relaxed">
-          ออกแบบภายใต้แนวคิด <strong>Calm Authority &amp; High-Density Clarity</strong> ใช้พื้นหลังโทนกระดาษถนอมสายตา (<code class="font-mono text-[#2D5A43]">#FAF8F5</code>) ตัดกับสีเขียวเข้ม (<code class="font-mono text-[#2D5A43]">#2D5A43</code>) และสีส้มอิฐ (<code class="font-mono text-[#D97736]">#D97736</code>) สำหรับทีม SOC และผู้บริหาร
+  <!-- =======================================================================
+       SCREEN 1: DESIGN TOKENS & ARCHITECTURE (DESIGN.MD)
+       ======================================================================= -->
+  <section id="screen-tokens" class="container section-gap">
+    <!-- Overview Hero -->
+    <div class="card" style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px;">
+      <div style="max-width: 700px;">
+        <span class="badge badge-forest">Google Stitch DESIGN.md Specification</span>
+        <h2 style="font-size:20px; font-weight:700; margin-top:8px;">PhishCentral Enterprise Earthtone Design System</h2>
+        <p style="font-size:13px; color:var(--text-secondary); margin-top:4px;">
+          ออกแบบภายใต้ปรัชญา <strong>Calm Authority &amp; High-Density Clarity</strong> ใช้พื้นหลังโทนกระดาษถนอมสายตา (<code>#FAF8F5</code>) ตัดกับสีเขียวเข้ม (<code>#2D5A43</code>) และสีส้มอิฐ (<code>#D97736</code>) สำหรับศูนย์ปฏิบัติการความปลอดภัย (SOC) และผู้บริหารระดับสูง
         </p>
       </div>
-      <div class="flex items-center space-x-2 shrink-0">
-        <button onclick="switchScreen('login')" class="px-4 py-2 bg-[#2D5A43] hover:bg-[#234735] text-white text-xs font-semibold rounded-xl shadow-xs transition-all cursor-pointer">
-          ทดลองหน้า Login →
-        </button>
-        <button onclick="switchScreen('security')" class="px-4 py-2 bg-white border border-[#E7E5E0] hover:bg-[#F5F3EE] text-[#24292F] text-xs font-semibold rounded-xl transition-all cursor-pointer">
-          ดูหน้าจัดการ Multi-Admin
-        </button>
+      <div style="display:flex; gap:8px;">
+        <button onclick="switchScreen('login')" class="btn btn-primary">ทดลองหน้า Login →</button>
+        <button onclick="switchScreen('security')" class="btn btn-secondary">จัดการผู้ดูแลหลายคน (Multi-Admin)</button>
       </div>
     </div>
 
-    <!-- Color Palette Grid -->
-    <div class="bg-white rounded-2xl border border-[#E7E5E0] p-6 shadow-xs">
-      <h3 class="text-sm font-bold text-[#24292F] mb-1">1. Color Palette &amp; Semantic Tokens</h3>
-      <p class="text-xs text-gray-500 mb-4">คลิกที่การ์ดสีเพื่อคัดลอกค่า Hex Code</p>
-      <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-        <div onclick="copyHex('#FAF8F5')" class="cursor-pointer rounded-xl border border-[#E7E5E0] overflow-hidden">
-          <div class="h-16 bg-[#FAF8F5] border-b border-[#E7E5E0]"></div>
-          <div class="p-2.5 bg-white">
-            <p class="text-xs font-bold">Warm Sand</p>
-            <p class="text-[11px] font-mono text-gray-500">#FAF8F5</p>
+    <!-- Color Palette -->
+    <div class="card">
+      <h3 style="font-size:15px; font-weight:700;">1. Color Palette &amp; Semantic Tokens</h3>
+      <p style="font-size:12px; color:var(--text-secondary); margin-bottom:16px;">คลิกที่การ์ดสีเพื่อคัดลอกค่า Hex Code ไปใช้งาน</p>
+
+      <div class="grid-8">
+        <div onclick="copyHex('#FAF8F5')" class="swatch-card">
+          <div class="swatch-color" style="background:#FAF8F5;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Warm Sand</div>
+            <div class="swatch-hex">#FAF8F5</div>
+            <div class="swatch-role">Canvas BG</div>
           </div>
         </div>
-        <div onclick="copyHex('#FFFFFF')" class="cursor-pointer rounded-xl border border-[#E7E5E0] overflow-hidden">
-          <div class="h-16 bg-[#FFFFFF] border-b border-[#E7E5E0]"></div>
-          <div class="p-2.5 bg-white">
-            <p class="text-xs font-bold">Pure Surface</p>
-            <p class="text-[11px] font-mono text-gray-500">#FFFFFF</p>
+        <div onclick="copyHex('#FFFFFF')" class="swatch-card">
+          <div class="swatch-color" style="background:#FFFFFF;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Pure Surface</div>
+            <div class="swatch-hex">#FFFFFF</div>
+            <div class="swatch-role">Card / Modal</div>
           </div>
         </div>
-        <div onclick="copyHex('#F5F3EE')" class="cursor-pointer rounded-xl border border-[#E7E5E0] overflow-hidden">
-          <div class="h-16 bg-[#F5F3EE] border-b border-[#E7E5E0]"></div>
-          <div class="p-2.5 bg-white">
-            <p class="text-xs font-bold">Stone Muted</p>
-            <p class="text-[11px] font-mono text-gray-500">#F5F3EE</p>
+        <div onclick="copyHex('#F5F3EE')" class="swatch-card">
+          <div class="swatch-color" style="background:#F5F3EE;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Stone Muted</div>
+            <div class="swatch-hex">#F5F3EE</div>
+            <div class="swatch-role">Hover / Pill BG</div>
           </div>
         </div>
-        <div onclick="copyHex('#E7E5E0')" class="cursor-pointer rounded-xl border border-[#E7E5E0] overflow-hidden">
-          <div class="h-16 bg-[#E7E5E0] border-b border-[#E7E5E0]"></div>
-          <div class="p-2.5 bg-white">
-            <p class="text-xs font-bold">Stone Border</p>
-            <p class="text-[11px] font-mono text-gray-500">#E7E5E0</p>
+        <div onclick="copyHex('#E7E5E0')" class="swatch-card">
+          <div class="swatch-color" style="background:#E7E5E0;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Stone Border</div>
+            <div class="swatch-hex">#E7E5E0</div>
+            <div class="swatch-role">Stroke / Divider</div>
           </div>
         </div>
-        <div onclick="copyHex('#2D5A43')" class="cursor-pointer rounded-xl border border-[#E7E5E0] overflow-hidden">
-          <div class="h-16 bg-[#2D5A43] border-b border-[#E7E5E0]"></div>
-          <div class="p-2.5 bg-white">
-            <p class="text-xs font-bold">Forest Primary</p>
-            <p class="text-[11px] font-mono text-gray-500">#2D5A43</p>
+        <div onclick="copyHex('#2D5A43')" class="swatch-card">
+          <div class="swatch-color" style="background:#2D5A43;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Forest Green</div>
+            <div class="swatch-hex">#2D5A43</div>
+            <div class="swatch-role">Primary Brand</div>
           </div>
         </div>
-        <div onclick="copyHex('#E8EFEA')" class="cursor-pointer rounded-xl border border-[#E7E5E0] overflow-hidden">
-          <div class="h-16 bg-[#E8EFEA] border-b border-[#E7E5E0]"></div>
-          <div class="p-2.5 bg-white">
-            <p class="text-xs font-bold">Forest Light</p>
-            <p class="text-[11px] font-mono text-gray-500">#E8EFEA</p>
+        <div onclick="copyHex('#E8EFEA')" class="swatch-card">
+          <div class="swatch-color" style="background:#E8EFEA;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Forest Light</div>
+            <div class="swatch-hex">#E8EFEA</div>
+            <div class="swatch-role">Active Tint</div>
           </div>
         </div>
-        <div onclick="copyHex('#D97736')" class="cursor-pointer rounded-xl border border-[#E7E5E0] overflow-hidden">
-          <div class="h-16 bg-[#D97736] border-b border-[#E7E5E0]"></div>
-          <div class="p-2.5 bg-white">
-            <p class="text-xs font-bold">Terracotta</p>
-            <p class="text-[11px] font-mono text-gray-500">#D97736</p>
+        <div onclick="copyHex('#D97736')" class="swatch-card">
+          <div class="swatch-color" style="background:#D97736;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Terracotta</div>
+            <div class="swatch-hex">#D97736</div>
+            <div class="swatch-role">Clicked Metric</div>
           </div>
         </div>
-        <div onclick="copyHex('#DC2626')" class="cursor-pointer rounded-xl border border-[#E7E5E0] overflow-hidden">
-          <div class="h-16 bg-[#DC2626] border-b border-[#E7E5E0]"></div>
-          <div class="p-2.5 bg-white">
-            <p class="text-xs font-bold">Danger Red</p>
-            <p class="text-[11px] font-mono text-gray-500">#DC2626</p>
+        <div onclick="copyHex('#DC2626')" class="swatch-card">
+          <div class="swatch-color" style="background:#DC2626;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Danger Red</div>
+            <div class="swatch-hex">#DC2626</div>
+            <div class="swatch-role">Compromised</div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Components & Zone Isolation -->
+    <div class="grid-2">
+      <!-- UI Components -->
+      <div class="card section-gap" style="gap:16px;">
+        <div>
+          <h3 style="font-size:15px; font-weight:700;">2. Core UI Components &amp; Badges</h3>
+          <p style="font-size:12px; color:var(--text-secondary);">ปุ่มกด, ป้ายสิทธิ์ผู้ใช้งาน (RBAC Badges), และช่องกรอกข้อมูล</p>
+        </div>
+
+        <div>
+          <span class="label">Action Buttons</span>
+          <div style="display:flex; flex-wrap:wrap; gap:8px;">
+            <button class="btn btn-primary">+ สร้างแคมเปญใหม่ (Primary)</button>
+            <button class="btn btn-secondary">↻ รีเฟรชข้อมูล (Secondary)</button>
+            <button class="btn btn-danger">⏹ หยุดฉุกเฉิน (Kill Switch)</button>
+          </div>
+        </div>
+
+        <div>
+          <span class="label">Role &amp; Telemetry Badges</span>
+          <div style="display:flex; flex-wrap:wrap; gap:8px;">
+            <span class="badge badge-forest">ADMIN — เต็มสิทธิ์</span>
+            <span class="badge badge-amber">VIEWER — ดูรายงานอย่างเดียว</span>
+            <span class="badge badge-purple">สุ่ม 3 เทมเพลต (Multi-Vector)</span>
+            <span class="badge badge-success">LOGIN_SUCCESS</span>
+            <span class="badge badge-danger">LOGIN_FAILED</span>
+          </div>
+        </div>
+
+        <div>
+          <span class="label">Standard Input Field (Focus Ring)</span>
+          <input type="text" class="input-field" value="soc_admin@corp.co.th" readonly />
+        </div>
+      </div>
+
+      <!-- Security Zone Isolation -->
+      <div class="card section-gap" style="gap:12px;">
+        <div>
+          <h3 style="font-size:15px; font-weight:700;">3. Route Isolation (Public vs Protected Admin Zone)</h3>
+          <p style="font-size:12px; color:var(--text-secondary);">โครงสร้างใน <code>server/src/index.ts</code> ที่แยก Callback ของพนักงานออกจากระบบหลังบ้าน</p>
+        </div>
+
+        <div style="padding:12px; border-radius:var(--radius-lg); background:#F0FDF4; border:1px solid #BBF7D0;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="font-size:12px; color:#14532D;">🟢 PUBLIC ZONE (ไม่ติด Lock — พนักงานคลิกได้ทันที)</strong>
+            <span class="badge badge-success">Mounted First</span>
+          </div>
+          <p class="mono" style="font-size:11px; color:#166534; margin-top:4px;">
+            GET /l/:token • POST /l/:token/submit • GET /report/:token • GET /track/open/:token
+          </p>
+        </div>
+
+        <div style="padding:12px; border-radius:var(--radius-lg); background:#FFFBEB; border:1px solid #FDE68A;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="font-size:12px; color:#78350F;">🟡 AUTH ZONE (Rate Limit 5 ครั้ง / 15 นาที)</strong>
+            <span class="badge badge-amber">/api/auth/*</span>
+          </div>
+          <p class="mono" style="font-size:11px; color:#92400E; margin-top:4px;">
+            POST /login • POST /refresh • POST /logout • GET /me • /users • /sessions
+          </p>
+        </div>
+
+        <div style="padding:12px; border-radius:var(--radius-lg); background:var(--forest-light); border:1px solid rgba(45,90,67,0.25);">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="font-size:12px; color:var(--forest);">🔒 ADMIN ZONE (Protected by requireAuth + RBAC)</strong>
+            <span class="badge badge-forest">Bearer + Cookie</span>
+          </div>
+          <p class="mono" style="font-size:11px; color:var(--forest); margin-top:4px;">
+            /api/campaigns/* • /api/targets/* • /api/templates/* • /api/smtp-profiles/* • /api/dashboard/*
+          </p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- VIEW 2: LOGIN -->
-  <section id="screen-login" class="hidden min-h-[82vh] flex flex-col justify-center items-center p-6">
-    <div class="w-full max-w-md">
-      <div class="text-center mb-7">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#2D5A43] text-white text-3xl shadow-xs mb-3">🛡️</div>
-        <h1 class="text-2xl font-bold tracking-tight">PhishCentral</h1>
-        <p class="text-sm text-gray-500 mt-1 font-medium">Security Awareness &amp; Phishing Simulation Console</p>
-      </div>
-      <div class="bg-white rounded-2xl border border-[#E7E5E0] shadow-xs p-8">
-        <h2 class="text-base font-bold mb-1">🔒 เข้าสู่ระบบผู้ดูแล (Admin Sign In)</h2>
-        <p class="text-xs text-gray-500 mb-5">เฉพาะเจ้าหน้าที่ดูแลระบบความปลอดภัย (SOC / IT Security)</p>
-        <div id="login-alert" class="hidden mb-4 p-3 rounded-xl bg-green-50 border border-green-200 text-green-800 text-xs font-medium">
-          ✅ ยืนยันตัวตนสำเร็จ! กำลังเข้าสู่หน้า Console...
+  <!-- =======================================================================
+       SCREEN 2: ADMIN LOGIN (/LOGIN)
+       ======================================================================= -->
+  <section id="screen-login" class="login-wrapper hidden">
+    <div class="login-box">
+      <div style="text-align:center; margin-bottom:24px;">
+        <div style="width:60px; height:60px; border-radius:16px; background:var(--forest); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:28px; box-shadow:var(--shadow-soft); margin-bottom:12px;">
+          🛡️
         </div>
-        <form onsubmit="simulateLogin(event)" class="space-y-4">
+        <h1 style="font-size:24px; font-weight:700;">PhishCentral</h1>
+        <p style="font-size:13px; color:var(--text-secondary);">Security Awareness &amp; Phishing Simulation Console</p>
+      </div>
+
+      <div class="card" style="padding:30px;">
+        <h2 style="font-size:16px; font-weight:700; margin-bottom:4px;">🔒 เข้าสู่ระบบผู้ดูแล (Admin Sign In)</h2>
+        <p style="font-size:12px; color:var(--text-secondary); margin-bottom:20px;">
+          เฉพาะเจ้าหน้าที่ดูแลระบบความปลอดภัย (SOC / IT Security) เท่านั้น
+        </p>
+
+        <div id="login-alert" class="hidden" style="margin-bottom:16px; padding:12px; border-radius:var(--radius-lg); background:var(--success-light); color:#14532D; font-size:12px; font-weight:600;">
+          ✅ ยืนยันตัวตนสำเร็จ! กำลังเข้าสู่หน้า Admin Console...
+        </div>
+
+        <form onsubmit="simulateLogin(event)" class="section-gap" style="gap:16px;">
           <div>
-            <label class="block text-xs font-semibold text-gray-700 mb-1.5">ชื่อผู้ใช้ (Username)</label>
-            <input type="text" id="demo-user" value="admin" required class="w-full px-3.5 py-2.5 text-sm border border-[#E7E5E0] rounded-xl outline-none" />
+            <label class="label">ชื่อผู้ใช้ (Username)</label>
+            <input type="text" id="demo-user" class="input-field" value="admin" required />
           </div>
+
           <div>
-            <label class="block text-xs font-semibold text-gray-700 mb-1.5">รหัสผ่าน (Password)</label>
-            <input type="password" id="demo-pass" value="PhishCentral@2026" required class="w-full px-3.5 py-2.5 text-sm border border-[#E7E5E0] rounded-xl outline-none" />
+            <label class="label">รหัสผ่าน (Password)</label>
+            <div style="position:relative;">
+              <input type="password" id="demo-pass" class="input-field" value="PhishCentral@2026" style="padding-right:64px;" required />
+              <button type="button" onclick="toggleDemoPass()" id="toggle-pass-btn" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); border:none; background:var(--bg-stone-muted); padding:4px 8px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer;">
+                แสดง
+              </button>
+            </div>
           </div>
-          <button type="submit" class="w-full py-2.5 px-4 bg-[#2D5A43] text-white font-semibold text-sm rounded-xl cursor-pointer">
-            เข้าสู่ระบบ (ทดลองคลิก) →
+
+          <button type="submit" class="btn btn-primary" style="width:100%; padding:11px;">
+            เข้าสู่ระบบ (คลิกเพื่อทดลอง) →
           </button>
         </form>
+
+        <div style="margin-top:22px; padding-top:14px; border-top:1px solid var(--border-stone); display:flex; justify-content:space-between; font-size:11px; color:var(--text-muted);">
+          <span>🛡️ Protected by JWT &amp; Rate Limiter</span>
+          <span>Zero-Password Policy</span>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- VIEW 3: CONSOLE -->
-  <section id="screen-console" class="hidden p-6 max-w-5xl mx-auto space-y-6">
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-      <div class="bg-white p-4 rounded-2xl border border-[#E7E5E0]">
-        <p class="text-xs text-gray-500">ดัชนีความพร้อม (Resilience Score)</p>
-        <p class="text-2xl font-bold font-mono text-[#2D5A43] mt-1">91.4 (Grade A)</p>
+  <!-- =======================================================================
+       SCREEN 3: ADMIN CONSOLE & MULTI-VECTOR CAMPAIGN SIMULATOR
+       ======================================================================= -->
+  <section id="screen-console" class="console-layout hidden">
+    <!-- Left Sidebar -->
+    <aside class="sidebar">
+      <div>
+        <div class="brand-row" style="padding-bottom:16px; border-bottom:1px solid var(--border-stone);">
+          <div class="brand-icon">🛡️</div>
+          <div>
+            <div style="font-weight:700; font-size:15px;">PhishCentral</div>
+            <div style="font-size:11px; color:var(--text-secondary);">Enterprise Simulation</div>
+          </div>
+        </div>
+
+        <nav class="sidebar-nav">
+          <div class="sidebar-link active">📊 ภาพรวมและแคมเปญ (Console)</div>
+          <div class="sidebar-link" onclick="switchScreen('security')">👥 จัดการผู้ดูแลระบบ (Multi-Admin)</div>
+          <div class="sidebar-link" onclick="switchScreen('tokens')">🎨 ดูระบบสีและ Design Tokens</div>
+        </nav>
       </div>
-      <div class="bg-white p-4 rounded-2xl border border-[#E7E5E0]">
-        <p class="text-xs text-gray-500">ส่งแล้วทั้งหมด (Sent)</p>
-        <p class="text-2xl font-bold font-mono mt-1">1,240</p>
+
+      <!-- User Profile Footer -->
+      <div class="section-gap" style="gap:10px; border-top:1px solid var(--border-stone); padding-top:14px;">
+        <div style="padding:12px; border-radius:var(--radius-lg); background:var(--bg-stone-muted); border:1px solid var(--border-stone); display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <strong style="font-size:12px;">System Admin</strong>
+              <span class="badge badge-forest" style="font-size:9px; padding:1px 6px;">ADMIN</span>
+            </div>
+            <div class="mono" style="font-size:11px; color:var(--text-secondary);">@admin</div>
+          </div>
+          <div style="display:flex; gap:4px;">
+            <button onclick="switchScreen('security')" title="จัดการผู้ดูแลระบบ & รหัสผ่าน" class="btn btn-secondary" style="padding:6px 8px;">🔑</button>
+            <button onclick="switchScreen('login')" title="ออกจากระบบ" class="btn btn-secondary" style="padding:6px 8px; color:var(--danger);">🚪</button>
+          </div>
+        </div>
+
+        <div style="padding:12px; border-radius:var(--radius-lg); background:var(--forest-light); border:1px solid rgba(45,90,67,0.18);">
+          <div style="font-size:11px; font-weight:700; color:var(--forest);">🛡️ PDPA Compliant</div>
+          <div style="font-size:10px; color:var(--forest); margin-top:2px;">Zero-Password Policy: ไม่เก็บรหัสผ่านจริง</div>
+        </div>
       </div>
-      <div class="bg-white p-4 rounded-2xl border border-[#E7E5E0]">
-        <p class="text-xs text-gray-500">คลิกลิงก์ (Clicked)</p>
-        <p class="text-2xl font-bold font-mono text-[#D97736] mt-1">84 (6.7%)</p>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="console-main section-gap">
+      <!-- KPI Row -->
+      <div class="grid-4">
+        <div class="card" style="padding:18px;">
+          <div style="font-size:12px; color:var(--text-secondary);">ดัชนีความพร้อม (Resilience Score)</div>
+          <div style="display:flex; align-items:baseline; gap:8px; margin-top:6px;">
+            <span class="mono" style="font-size:26px; font-weight:700; color:var(--forest);">91.4</span>
+            <span class="badge badge-forest">Grade A</span>
+          </div>
+        </div>
+        <div class="card" style="padding:18px;">
+          <div style="font-size:12px; color:var(--text-secondary);">ส่งอีเมลแล้ว (Sent)</div>
+          <div class="mono" style="font-size:26px; font-weight:700; margin-top:6px;">1,240</div>
+        </div>
+        <div class="card" style="padding:18px;">
+          <div style="font-size:12px; color:var(--text-secondary);">คลิกลิงก์ (Clicked)</div>
+          <div class="mono" style="font-size:26px; font-weight:700; color:var(--terracotta); margin-top:6px;">84 <span style="font-size:12px;">(6.7%)</span></div>
+        </div>
+        <div class="card" style="padding:18px;">
+          <div style="font-size:12px; color:var(--text-secondary);">กรอกข้อมูล (Compromised)</div>
+          <div class="mono" style="font-size:26px; font-weight:700; color:var(--danger); margin-top:6px;">19 <span style="font-size:12px;">(1.5%)</span></div>
+        </div>
       </div>
-      <div class="bg-white p-4 rounded-2xl border border-[#E7E5E0]">
-        <p class="text-xs text-gray-500">กรอกรหัสผ่าน (Compromised)</p>
-        <p class="text-2xl font-bold font-mono text-red-600 mt-1">19 (1.5%)</p>
+
+      <!-- Interactive Multi-Vector Campaign Simulator -->
+      <div class="card section-gap" style="gap:16px;">
+        <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; padding-bottom:14px; border-bottom:1px solid var(--border-stone);">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <h3 style="font-size:15px; font-weight:700;">🎯 จำลองการกระจายแคมเปญแบบสุ่มหลายเทมเพลต (Multi-Vector Randomizer)</h3>
+              <span class="badge badge-purple">Deduplication 100%</span>
+            </div>
+            <p style="font-size:12px; color:var(--text-secondary); margin-top:2px;">
+              คลิกเลือก/ยกเลิกเทมเพลต หรือปรับจำนวนพนักงาน เพื่อดูการคำนวณแบ่งสัดส่วนแบบ Round-Robin สดๆ
+            </p>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <label style="font-size:12px; font-weight:600;">จำนวนพนักงานเป้าหมาย:</label>
+            <input type="number" id="sim-target-count" value="100" min="1" max="5000" oninput="updateVectorSim()" class="input-field mono" style="width:90px; padding:6px 10px;" />
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <!-- Template Checkboxes -->
+          <div class="section-gap" style="gap:8px;">
+            <span class="label">เลือกเทมเพลตอีเมลที่ต้องการสุ่มกระจายในแคมเปญนี้:</span>
+            <label class="list-row" style="border:1px solid var(--border-stone); border-radius:var(--radius-lg); cursor:pointer;">
+              <span style="font-size:12px; font-weight:600;">
+                <input type="checkbox" class="tmpl-cb" value="Microsoft 365 Unusual Sign-in" checked onchange="updateVectorSim()" />
+                Microsoft 365 Unusual Sign-in (สุ่ม 30 พิกัด)
+              </span>
+              <span class="badge badge-forest">M365</span>
+            </label>
+            <label class="list-row" style="border:1px solid var(--border-stone); border-radius:var(--radius-lg); cursor:pointer;">
+              <span style="font-size:12px; font-weight:600;">
+                <input type="checkbox" class="tmpl-cb" value="Microsoft Teams Unread Voice Message" checked onchange="updateVectorSim()" />
+                Microsoft Teams Unread Voice Message
+              </span>
+              <span class="badge badge-forest">Teams</span>
+            </label>
+            <label class="list-row" style="border:1px solid var(--border-stone); border-radius:var(--radius-lg); cursor:pointer;">
+              <span style="font-size:12px; font-weight:600;">
+                <input type="checkbox" class="tmpl-cb" value="Exchange Online Mailbox Quota (99.4%)" checked onchange="updateVectorSim()" />
+                Exchange Online Mailbox Quota (99.4%)
+              </span>
+              <span class="badge badge-forest">Exchange</span>
+            </label>
+            <label class="list-row" style="border:1px solid var(--border-stone); border-radius:var(--radius-lg); cursor:pointer;">
+              <span style="font-size:12px; font-weight:600;">
+                <input type="checkbox" class="tmpl-cb" value="HR Annual Welfare & Bonus Review" onchange="updateVectorSim()" />
+                HR Annual Welfare &amp; Bonus Review
+              </span>
+              <span class="badge badge-amber">HR</span>
+            </label>
+          </div>
+
+          <!-- Live Distribution Result -->
+          <div style="background:var(--bg-stone-muted); border:1px solid var(--border-stone); border-radius:var(--radius-lg); padding:16px; display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+              <h4 style="font-size:13px; font-weight:700;">ผลลัพธ์การสุ่มกระจาย (Round-Robin Distribution)</h4>
+              <p style="font-size:11px; color:var(--text-secondary); margin-top:2px;">พนักงานที่อยู่ซ้ำหลายกลุ่มจะถูก Deduplicate เหลือเพียง 1 อีเมลอัตโนมัติ</p>
+              <div id="vector-sim-output" class="section-gap" style="gap:8px; margin-top:12px;"></div>
+            </div>
+            <div style="font-size:11px; color:var(--amber-text); font-weight:600; margin-top:12px;">
+              ✓ รับประกัน 100%: พนักงาน 1 คน ได้รับเพียง 1 ฉบับ และ 1 เทมเพลตเท่านั้น
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- =======================================================================
+       SCREEN 4: MULTI-ADMIN & SESSION SECURITY MODAL
+       ======================================================================= -->
+  <section id="screen-security" class="container hidden">
+    <div class="modal-card">
+      <div style="padding:18px 22px; border-bottom:1px solid var(--border-stone); display:flex; align-items:center; justify-content:space-between;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:18px;">🔑</span>
+          <h3 style="font-size:16px; font-weight:700;">ตั้งค่าความปลอดภัย &amp; จัดการผู้ดูแลระบบหลายคน (Multi-Admin)</h3>
+        </div>
+        <span class="badge badge-forest">Interactive Demo</span>
+      </div>
+
+      <!-- Modal Tabs -->
+      <div class="modal-tabs">
+        <button onclick="switchModalTab('admins')" id="mtab-admins" class="modal-tab active">
+          👥 จัดการผู้ดูแล (<span id="admin-count">3</span>)
+        </button>
+        <button onclick="switchModalTab('pwd')" id="mtab-pwd" class="modal-tab">
+          🔑 เปลี่ยนรหัสผ่าน
+        </button>
+        <button onclick="switchModalTab('sessions')" id="mtab-sessions" class="modal-tab">
+          🛡️ Session &amp; Audit Log
+        </button>
+      </div>
+
+      <!-- Tab 1: Multi-Admin CRUD -->
+      <div id="mpanel-admins" style="padding:22px;" class="section-gap">
+        <div id="admin-toast" class="hidden" style="padding:10px 14px; border-radius:var(--radius-lg); background:var(--success-light); color:#14532D; font-size:12px; font-weight:600;"></div>
+
+        <form onsubmit="addDemoAdmin(event)" style="background:var(--bg-stone-muted); border:1px solid var(--border-stone); border-radius:var(--radius-lg); padding:16px;" class="section-gap">
+          <h4 style="font-size:13px; font-weight:700;">➕ เพิ่มบัญชีผู้ดูแลระบบใหม่ (Add Administrator / Viewer)</h4>
+          <div class="grid-2" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
+            <div>
+              <label class="label">Username *</label>
+              <input type="text" id="new-username" class="input-field" placeholder="เช่น soc_team2" required />
+            </div>
+            <div>
+              <label class="label">ชื่อแสดงผล (Display Name)</label>
+              <input type="text" id="new-display" class="input-field" placeholder="เช่น สมชาย (SOC Analyst)" />
+            </div>
+            <div>
+              <label class="label">รหัสผ่านเริ่มต้น (อย่างน้อย 8 ตัวอักษร) *</label>
+              <input type="password" id="new-pwd" class="input-field" value="Secure@2026" required />
+            </div>
+            <div>
+              <label class="label">ระดับสิทธิ์ (Role)</label>
+              <select id="new-role" class="input-field">
+                <option value="ADMIN">ADMIN — ผู้ดูแลระบบเต็มสิทธิ์</option>
+                <option value="VIEWER">VIEWER — ดูรายงานอย่างเดียว (Read-Only)</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex; justify-content:flex-end;">
+            <button type="submit" class="btn btn-primary">+ เพิ่มผู้ดูแลระบบ (ทดลองคลิกได้)</button>
+          </div>
+        </form>
+
+        <div>
+          <span class="label">รายชื่อผู้ดูแลทั้งหมดในระบบ</span>
+          <div id="admin-list" class="list-box"></div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Change Password -->
+      <div id="mpanel-pwd" style="padding:22px;" class="section-gap hidden">
+        <div>
+          <label class="label">รหัสผ่านปัจจุบัน (Current Password)</label>
+          <input type="password" class="input-field" value="••••••••••••" />
+        </div>
+        <div>
+          <label class="label">รหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)</label>
+          <input type="password" class="input-field" placeholder="กรอกรหัสผ่านใหม่..." />
+        </div>
+        <div>
+          <label class="label">ยืนยันรหัสผ่านใหม่ (Confirm New Password)</label>
+          <input type="password" class="input-field" placeholder="กรอกรหัสผ่านใหม่อีกครั้ง..." />
+        </div>
+        <div style="display:flex; justify-content:flex-end;">
+          <button onclick="alert('เปลี่ยนรหัสผ่านสำเร็จ! ระบบจะยกเลิก Refresh Token เดิมและให้นำรหัสใหม่มาเข้าสู่ระบบ')" class="btn btn-primary">
+            บันทึกรหัสผ่านใหม่
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab 3: Sessions & Security Audit Log -->
+      <div id="mpanel-sessions" style="padding:22px;" class="section-gap hidden">
+        <div style="padding:14px; border-radius:var(--radius-lg); background:var(--forest-light); border:1px solid rgba(45,90,67,0.25); display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <div style="font-size:13px; font-weight:700; color:var(--forest);">Session ปัจจุบัน: @admin (ADMIN)</div>
+            <div style="font-size:11px; color:var(--text-secondary); margin-top:2px;">
+              IP: <span class="mono">192.168.114.46</span> • Access Token: 1h • Refresh Token: 7d (SHA-256 Rotation)
+            </div>
+          </div>
+          <button onclick="alert('ยกเลิก Session ทั้งหมดเรียบร้อย!')" class="btn btn-danger">Revoke All</button>
+        </div>
+
+        <div>
+          <span class="label">ประวัติกิจกรรมความปลอดภัยล่าสุด (Security Audit Log)</span>
+          <div class="list-box">
+            <div class="list-row">
+              <div>
+                <span class="badge badge-success">LOGIN_SUCCESS</span>
+                <span style="font-size:12px; margin-left:6px;">User "admin" (ADMIN) logged in successfully</span>
+              </div>
+              <span class="mono" style="font-size:11px; color:var(--text-muted);">วันนี้ 13:40</span>
+            </div>
+            <div class="list-row">
+              <div>
+                <span class="badge badge-amber">ADMIN_USER_CREATED</span>
+                <span style="font-size:12px; margin-left:6px;">Created user "soc_lead" with role ADMIN</span>
+              </div>
+              <span class="mono" style="font-size:11px; color:var(--text-muted);">วันนี้ 13:32</span>
+            </div>
+            <div class="list-row">
+              <div>
+                <span class="badge badge-danger">LOGIN_FAILED</span>
+                <span style="font-size:12px; margin-left:6px;">Failed login attempt for username "unknown"</span>
+              </div>
+              <span class="mono" style="font-size:11px; color:var(--text-muted);">วันนี้ 13:15</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- VIEW 4: SECURITY & MULTI-ADMIN -->
-  <section id="screen-security" class="hidden max-w-2xl mx-auto p-6">
-    <div class="bg-white rounded-2xl border border-[#E7E5E0] p-6 space-y-4">
-      <h3 class="font-bold text-base">👥 จัดการผู้ดูแลระบบหลายคน (Multi-Admin Management)</h3>
-      <div id="admin-list" class="border border-[#E7E5E0] rounded-xl divide-y divide-[#E7E5E0]"></div>
-    </div>
-  </section>
-
+  <!-- =======================================================================
+       PURE VANILLA JAVASCRIPT (ZERO EXTERNAL DEPENDENCIES)
+       ======================================================================= -->
   <script>
-    const demoAdmins = [
-      { id: '1', username: 'admin', displayName: 'System Administrator', role: 'ADMIN', isActive: true, isSelf: true, lastLogin: 'วันนี้ 13:30' },
+    var demoAdmins = [
+      { id: '1', username: 'admin', displayName: 'System Administrator', role: 'ADMIN', isActive: true, isSelf: true, lastLogin: 'วันนี้ 13:40' },
       { id: '2', username: 'soc_lead', displayName: 'วรพล (SOC Lead)', role: 'ADMIN', isActive: true, isSelf: false, lastLogin: 'วันนี้ 11:20' },
       { id: '3', username: 'iso_auditor', displayName: 'ผู้ตรวจสอบภายใน (ISO 27001)', role: 'VIEWER', isActive: true, isSelf: false, lastLogin: 'เมื่อวาน 16:45' }
     ];
+
     function renderAdminList() {
-      const container = document.getElementById('admin-list');
+      var container = document.getElementById('admin-list');
+      var countEl = document.getElementById('admin-count');
+      if (countEl) countEl.textContent = String(demoAdmins.length);
       if (!container) return;
-      container.innerHTML = demoAdmins.map(a => `
-        <div class="p-3 flex items-center justify-between">
-          <div>
-            <span class="font-bold text-xs">${a.displayName}</span>
-            <span class="text-[11px] font-mono text-gray-500 ml-1">@${a.username}</span>
-            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#E8EFEA] text-[#2D5A43] font-semibold ml-1">${a.role}</span>
-          </div>
-          <span class="text-[10px] text-gray-400">${a.lastLogin}</span>
-        </div>
-      `).join('');
+
+      var html = '';
+      for (var i = 0; i < demoAdmins.length; i++) {
+        var a = demoAdmins[i];
+        var roleBadge = a.role === 'VIEWER'
+          ? '<span class="badge badge-amber">VIEWER</span>'
+          : '<span class="badge badge-forest">ADMIN</span>';
+        var selfBadge = a.isSelf
+          ? '<span class="badge badge-forest">คุณ (You)</span>'
+          : '';
+        var statusBadge = !a.isActive
+          ? '<span class="badge badge-danger">ถูกระงับ (Suspended)</span>'
+          : '';
+
+        var actions = '';
+        if (!a.isSelf) {
+          actions = '<div style="display:flex; gap:6px;">' +
+            '<button type="button" onclick="toggleAdmin(' + i + ')" class="btn btn-secondary" style="padding:5px 10px; font-size:11px;">' +
+              (a.isActive ? '⏸ ระงับสิทธิ์' : '▶ เปิดใช้งาน') +
+            '</button>' +
+            '<button type="button" onclick="deleteAdmin(' + i + ')" class="btn btn-secondary" style="padding:5px 10px; font-size:11px; color:var(--danger);">' +
+              '🗑 ลบ' +
+            '</button>' +
+          '</div>';
+        } else {
+          actions = '<span style="font-size:11px; color:var(--text-muted);">ป้องกันการลบตัวเอง</span>';
+        }
+
+        html += '<div class="list-row">' +
+          '<div>' +
+            '<div style="display:flex; flex-wrap:wrap; align-items:center; gap:6px;">' +
+              '<strong style="font-size:13px;">' + a.displayName + '</strong>' +
+              '<span class="mono" style="font-size:12px; color:var(--text-secondary);">@' + a.username + '</span>' +
+              selfBadge + roleBadge + statusBadge +
+            '</div>' +
+            '<div style="font-size:11px; color:var(--text-muted); margin-top:2px;">เข้าสู่ระบบล่าสุด: ' + a.lastLogin + '</div>' +
+          '</div>' +
+          actions +
+        '</div>';
+      }
+      container.innerHTML = html;
     }
-    function switchScreen(name) {
-      ['tokens', 'login', 'console', 'security'].forEach(s => {
-        document.getElementById('screen-' + s).classList.toggle('hidden', s !== name);
-        const btn = document.getElementById('btn-' + s);
-        btn.className = s === name
-          ? 'screen-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-[#2D5A43] text-white shadow-xs'
-          : 'screen-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-gray-600 hover:text-[#24292F]';
+
+    function addDemoAdmin(e) {
+      e.preventDefault();
+      var uInput = document.getElementById('new-username');
+      var dInput = document.getElementById('new-display');
+      var rInput = document.getElementById('new-role');
+      var u = uInput.value.trim().toLowerCase();
+      var d = dInput.value.trim() || u;
+      var r = rInput.value;
+      if (!u) return;
+
+      demoAdmins.push({
+        id: String(Date.now()),
+        username: u,
+        displayName: d,
+        role: r,
+        isActive: true,
+        isSelf: false,
+        lastLogin: 'เพิ่งสร้างเมื่อสักครู่'
       });
+
+      uInput.value = '';
+      dInput.value = '';
+      var toast = document.getElementById('admin-toast');
+      toast.textContent = '✅ เพิ่มบัญชี @' + u + ' (' + r + ') เรียบร้อยแล้ว!';
+      toast.classList.remove('hidden');
+      renderAdminList();
     }
+
+    function toggleAdmin(idx) {
+      demoAdmins[idx].isActive = !demoAdmins[idx].isActive;
+      renderAdminList();
+    }
+
+    function deleteAdmin(idx) {
+      demoAdmins.splice(idx, 1);
+      renderAdminList();
+    }
+
+    function switchScreen(name) {
+      var screens = ['tokens', 'login', 'console', 'security'];
+      for (var i = 0; i < screens.length; i++) {
+        var s = screens[i];
+        var el = document.getElementById('screen-' + s);
+        var btn = document.getElementById('btn-' + s);
+        if (s === name) {
+          el.classList.remove('hidden');
+          btn.classList.add('active');
+        } else {
+          el.classList.add('hidden');
+          btn.classList.remove('active');
+        }
+      }
+    }
+
+    function switchModalTab(tab) {
+      var tabs = ['admins', 'pwd', 'sessions'];
+      for (var i = 0; i < tabs.length; i++) {
+        var t = tabs[i];
+        var panel = document.getElementById('mpanel-' + t);
+        var btn = document.getElementById('mtab-' + t);
+        if (t === tab) {
+          panel.classList.remove('hidden');
+          btn.classList.add('active');
+        } else {
+          panel.classList.add('hidden');
+          btn.classList.remove('active');
+        }
+      }
+    }
+
+    function toggleDemoPass() {
+      var inp = document.getElementById('demo-pass');
+      var btn = document.getElementById('toggle-pass-btn');
+      if (inp.type === 'password') {
+        inp.type = 'text';
+        btn.textContent = 'ซ่อน';
+      } else {
+        inp.type = 'password';
+        btn.textContent = 'แสดง';
+      }
+    }
+
     function simulateLogin(e) {
       e.preventDefault();
-      document.getElementById('login-alert').classList.remove('hidden');
-      setTimeout(() => switchScreen('console'), 700);
+      var alertEl = document.getElementById('login-alert');
+      alertEl.classList.remove('hidden');
+      setTimeout(function () {
+        alertEl.classList.add('hidden');
+        switchScreen('console');
+      }, 700);
     }
-    function copyHex(hex) { navigator.clipboard?.writeText(hex); }
+
+    function updateVectorSim() {
+      var countInput = document.getElementById('sim-target-count');
+      var totalTargets = Math.max(1, parseInt(countInput.value || '100', 10));
+      var cbs = document.querySelectorAll('.tmpl-cb');
+      var selected = [];
+      for (var i = 0; i < cbs.length; i++) {
+        if (cbs[i].checked) selected.push(cbs[i].value);
+      }
+
+      var out = document.getElementById('vector-sim-output');
+      if (selected.length === 0) {
+        out.innerHTML = '<div style="font-size:12px; color:var(--danger); font-weight:600;">⚠️ กรุณาเลือกอย่างน้อย 1 เทมเพลต</div>';
+        return;
+      }
+
+      var baseCount = Math.floor(totalTargets / selected.length);
+      var remainder = totalTargets % selected.length;
+      var html = '';
+
+      for (var j = 0; j < selected.length; j++) {
+        var assigned = baseCount + (j < remainder ? 1 : 0);
+        var pct = ((assigned / totalTargets) * 100).toFixed(1);
+        html += '<div class="list-row" style="border:1px solid var(--border-stone); border-radius:8px; padding:8px 12px;">' +
+          '<span style="font-size:12px; font-weight:600;">' + (j + 1) + '. ' + selected[j] + '</span>' +
+          '<span class="mono" style="font-size:12px; font-weight:700; color:var(--forest);">' + assigned + ' คน (' + pct + '%)</span>' +
+        '</div>';
+      }
+      out.innerHTML = html;
+    }
+
+    function copyHex(hex) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(hex);
+      }
+      var toast = document.getElementById('copy-toast');
+      toast.textContent = 'คัดลอกโค้ดสี ' + hex + ' เรียบร้อย!';
+      toast.classList.remove('hidden');
+      setTimeout(function () {
+        toast.classList.add('hidden');
+      }, 1500);
+    }
+
     renderAdminList();
+    updateVectorSim();
   </script>
 </body>
 </html>
