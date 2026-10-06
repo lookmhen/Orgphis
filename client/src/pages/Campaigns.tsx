@@ -1052,7 +1052,8 @@ export const Campaigns: React.FC = () => {
                                 <th className="py-3 px-3">แผนก</th>
                                 <th className="py-3 px-3">เทมเพลตที่ได้รับ</th>
                                 <th className="py-3 px-3 text-center">สถานะ</th>
-                                <th className="py-3 px-3">เวลาส่ง</th>
+                                <th className="py-3 px-3">กำหนดส่ง (Scheduled)</th>
+                                <th className="py-3 px-3">เวลาส่งจริง (Sent)</th>
                                 <th className="py-3 px-3">เวลาคลิก</th>
                                 <th className="py-3 px-3">เวลากรอกข้อมูล</th>
                                 <th className="py-3 px-3">เวลาแจ้งเตือน</th>
@@ -1109,8 +1110,22 @@ export const Campaigns: React.FC = () => {
                                         </span>
                                       )}
                                     </td>
-                                    <td className="py-3 px-3 text-gray-500 font-mono text-[11px] whitespace-nowrap">
-                                      {formatTimestamp(ct.sentAt)}
+                                    <td className="py-3 px-3 font-mono text-[11px] whitespace-nowrap">
+                                      {ct.scheduledAt ? (
+                                        <span className="inline-flex items-center text-amber-800 font-medium bg-amber-50 px-2 py-0.5 rounded border border-amber-200" title="กำหนดส่งตามคิวสุ่มเวลา">
+                                          <Clock className="w-3 h-3 text-amber-600 mr-1 shrink-0" />
+                                          <span>{formatTimestamp(ct.scheduledAt)}</span>
+                                        </span>
+                                      ) : (
+                                        <span className="text-gray-400 font-sans">ส่งทันที</span>
+                                      )}
+                                    </td>
+                                    <td className="py-3 px-3 font-mono text-[11px] whitespace-nowrap">
+                                      {ct.isSent ? (
+                                        <span className="text-gray-700">{formatTimestamp(ct.sentAt)}</span>
+                                      ) : (
+                                        <span className="text-gray-400 font-sans">ยังไม่ส่ง</span>
+                                      )}
                                     </td>
                                     <td className="py-3 px-3 text-gray-500 font-mono text-[11px] whitespace-nowrap">
                                       {ct.clickedAt ? (

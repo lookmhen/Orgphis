@@ -444,7 +444,7 @@ campaignsRouter.get('/:id/export', async (req: Request, res: Response) => {
     res.setHeader('Content-Disposition', `attachment; filename="campaign-${id}-report.csv"`);
 
     // UTF-8 BOM for Excel compatibility
-    res.write('\ufeffEmail,Name,Department,Template,Status,SentAt,ClickedAt,SubmittedAt,ReportedAt\n');
+    res.write('\ufeffEmail,Name,Department,Template,Status,ScheduledAt,SentAt,ClickedAt,SubmittedAt,ReportedAt\n');
 
     for (const ct of campaign.campaignTargets) {
       const name = `"${(`${ct.target.firstName || ''} ${ct.target.lastName || ''}`).trim()}"`;
@@ -452,12 +452,13 @@ campaignsRouter.get('/:id/export', async (req: Request, res: Response) => {
       const dept = `"${ct.target.department || ''}"`;
       const tmplName = `"${(ct.emailTemplate?.name || campaign.emailTemplate?.name || 'General').replace(/"/g, '""')}"`;
       const status = ct.isSubmitted ? 'COMPROMISED' : ct.isReported ? 'REPORTED' : ct.isClicked ? 'CLICKED' : ct.isSent ? 'SENT' : 'PENDING';
+      const scheduled = ct.scheduledAt ? `"${ct.scheduledAt.toISOString()}"` : '""';
       const sent = ct.sentAt ? `"${ct.sentAt.toISOString()}"` : '""';
       const clicked = ct.clickedAt ? `"${ct.clickedAt.toISOString()}"` : '""';
       const submitted = ct.submittedAt ? `"${ct.submittedAt.toISOString()}"` : '""';
       const reported = ct.reportedAt ? `"${ct.reportedAt.toISOString()}"` : '""';
 
-      res.write(`${email},${name},${dept},${tmplName},${status},${sent},${clicked},${submitted},${reported}\n`);
+      res.write(`${email},${name},${dept},${tmplName},${status},${scheduled},${sent},${clicked},${submitted},${reported}\n`);
     }
 
     res.end();
