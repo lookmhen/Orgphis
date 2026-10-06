@@ -944,233 +944,218 @@ export const Campaigns: React.FC = () => {
 
               const filterTabs = [
                 { id: 'ALL', label: 'ทั้งหมด', count: totalCount, badgeClass: 'bg-stone-200 text-gray-800' },
+                { id: 'SENT', label: 'ส่งแล้ว', count: sentCount, badgeClass: 'bg-blue-100 text-blue-800 font-semibold' },
+                { id: 'CLICKED', label: 'คลิกลิงก์', count: clickedCount, badgeClass: 'bg-amber-100 text-amber-800 font-semibold' },
                 { id: 'COMPROMISED', label: 'เผลอกรอกข้อมูล', count: compromisedCount, badgeClass: 'bg-red-100 text-red-800 font-bold' },
-                { id: 'CLICKED', label: 'คลิกลิงก์', count: clickedCount, badgeClass: 'bg-amber-100 text-amber-800' },
                 { id: 'REPORTED', label: 'แจ้งเบาะแส', count: reportedCount, badgeClass: 'bg-emerald-100 text-emerald-800 font-bold' },
-                { id: 'SENT', label: 'ส่งแล้ว', count: sentCount, badgeClass: 'bg-blue-100 text-blue-800' },
                 { id: 'PENDING', label: 'รอดำเนินการ', count: pendingCount, badgeClass: 'bg-gray-200 text-gray-600' }
               ];
 
+              const matchStatus = (ct: any, filter: string) => {
+                if (filter === 'ALL') return true;
+                if (filter === 'SENT') return Boolean(ct.isSent);
+                if (filter === 'CLICKED') return Boolean(ct.isClicked);
+                if (filter === 'COMPROMISED') return Boolean(ct.isSubmitted);
+                if (filter === 'REPORTED') return Boolean(ct.isReported);
+                if (filter === 'PENDING') return !ct.isSent;
+                return true;
+              };
+
+              const matchesSearch = (ct: any, query: string) => {
+                if (!query.trim()) return true;
+                const q = query.toLowerCase().trim();
+                const fullName = `${ct.target?.firstName || ''} ${ct.target?.lastName || ''}`.toLowerCase();
+                const email = (ct.target?.email || '').toLowerCase();
+                const dept = (ct.target?.department || '').toLowerCase();
+                const tmplName = (ct.emailTemplate?.name || viewingCampaign.emailTemplate?.name || '').toLowerCase();
+                return fullName.includes(q) || email.includes(q) || dept.includes(q) || tmplName.includes(q);
+              };
+
+              const filtered = targets.filter((ct: any) => matchStatus(ct, recipientStatusFilter) && matchesSearch(ct, recipientSearch));
+
               return (
-                <div className="bg-warm-sand/50 p-4 border-b border-stone-border space-y-3 flex-shrink-0">
-                  {/* Status Filter Buttons */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    {filterTabs.map((tab) => (
-                      <button
-                        key={tab.id}
-                        onClick={() => setRecipientStatusFilter(tab.id)}
-                        className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
-                          recipientStatusFilter === tab.id
-                            ? 'bg-deep-slate text-white border-deep-slate shadow-xs'
-                            : 'bg-white text-gray-600 border-stone-border hover:bg-stone-muted'
-                        }`}
-                      >
-                        <span>{tab.label}</span>
-                        <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${recipientStatusFilter === tab.id ? 'bg-white/20 text-white' : tab.badgeClass}`}>
-                          {tab.count}
-                        </span>
-                      </button>
-                    ))}
+                <>
+                  <div className="bg-warm-sand/50 p-4 border-b border-stone-border space-y-3 flex-shrink-0">
+                    {/* Status Filter Buttons */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      {filterTabs.map((tab) => (
+                        <button
+                          key={tab.id}
+                          onClick={() => setRecipientStatusFilter(tab.id)}
+                          className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                            recipientStatusFilter === tab.id
+                              ? 'bg-deep-slate text-white border-deep-slate shadow-xs'
+                              : 'bg-white text-gray-600 border-stone-border hover:bg-stone-muted'
+                          }`}
+                        >
+                          <span>{tab.label}</span>
+                          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${recipientStatusFilter === tab.id ? 'bg-white/20 text-white' : tab.badgeClass}`}>
+                            {tab.count}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Search Box */}
+                    <div className="relative">
+                      <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={recipientSearch}
+                        onChange={(e) => setRecipientSearch(e.target.value)}
+                        placeholder="ค้นหาด้วยชื่อ, อีเมล, แผนก, หรือเทมเพลตที่ได้รับ..."
+                        className="w-full pl-9 pr-8 py-2 bg-white border border-stone-border rounded-xl text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest"
+                      />
+                      {recipientSearch && (
+                        <button
+                          onClick={() => setRecipientSearch('')}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Search Box */}
-                  <div className="relative">
-                    <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      value={recipientSearch}
-                      onChange={(e) => setRecipientSearch(e.target.value)}
-                      placeholder="ค้นหาด้วยชื่อ, อีเมล, แผนก, หรือเทมเพลตที่ได้รับ..."
-                      className="w-full pl-9 pr-8 py-2 bg-white border border-stone-border rounded-xl text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest"
-                    />
-                    {recipientSearch && (
-                      <button
-                        onClick={() => setRecipientSearch('')}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
+                  {/* Recipient Table Area */}
+                  <div className="flex-1 overflow-y-auto p-4">
+                    {recipientsLoading ? (
+                      <div className="py-16 text-center text-gray-500">
+                        <RefreshCw className="w-7 h-7 text-forest animate-spin mx-auto mb-2" />
+                        <p className="text-xs">กำลังโหลดข้อมูลรายชื่อผู้รับ...</p>
+                      </div>
+                    ) : targets.length === 0 ? (
+                      <div className="py-16 text-center text-gray-400">
+                        <Users className="w-10 h-10 mx-auto text-gray-300 mb-2" />
+                        <p className="text-sm font-medium">ยังไม่มีรายชื่อผู้รับในแคมเปญนี้</p>
+                      </div>
+                    ) : filtered.length === 0 ? (
+                      <div className="py-16 text-center text-gray-400">
+                        <Search className="w-8 h-8 mx-auto text-gray-300 mb-2" />
+                        <p className="text-xs">ไม่พบรายชื่อผู้รับที่ตรงกับเงื่อนไขการค้นหาหรือตัวกรอง</p>
+                      </div>
+                    ) : (
+                      <div className="border border-stone-border rounded-xl overflow-hidden shadow-xs bg-white">
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left border-collapse text-xs">
+                            <thead>
+                              <tr className="bg-stone-50 border-b border-stone-border text-gray-600 font-semibold uppercase tracking-wider text-[11px]">
+                                <th className="py-3 px-3 w-10 text-center">#</th>
+                                <th className="py-3 px-3">พนักงานผู้รับ</th>
+                                <th className="py-3 px-3">แผนก</th>
+                                <th className="py-3 px-3">เทมเพลตที่ได้รับ</th>
+                                <th className="py-3 px-3 text-center">สถานะ</th>
+                                <th className="py-3 px-3">เวลาส่ง</th>
+                                <th className="py-3 px-3">เวลาคลิก</th>
+                                <th className="py-3 px-3">เวลากรอกข้อมูล</th>
+                                <th className="py-3 px-3">เวลาแจ้งเตือน</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-stone-border/60">
+                              {filtered.map((ct: any, idx: number) => {
+                                const fullName = `${ct.target?.firstName || ''} ${ct.target?.lastName || ''}`.trim();
+                                const templateName = ct.emailTemplate?.name || viewingCampaign.emailTemplate?.name || 'General Template';
+
+                                return (
+                                  <tr key={ct.id || idx} className="hover:bg-warm-sand/40 transition-colors">
+                                    <td className="py-3 px-3 text-center text-gray-400 font-mono text-[11px]">
+                                      {idx + 1}
+                                    </td>
+                                    <td className="py-3 px-3">
+                                      <div className="font-semibold text-deep-slate">
+                                        {fullName || 'ไม่ระบุชื่อ'}
+                                      </div>
+                                      <div className="text-[11px] text-gray-500 font-mono">
+                                        {ct.target?.email}
+                                      </div>
+                                    </td>
+                                    <td className="py-3 px-3">
+                                      <span className="px-2 py-0.5 bg-stone-100 text-gray-700 rounded text-[11px]">
+                                        {ct.target?.department || 'ไม่ระบุ'}
+                                      </span>
+                                    </td>
+                                    <td className="py-3 px-3">
+                                      <div className="text-gray-800 font-medium truncate max-w-[180px]" title={templateName}>
+                                        {templateName}
+                                      </div>
+                                    </td>
+                                    <td className="py-3 px-3 text-center">
+                                      {ct.isSubmitted ? (
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-red-100 text-red-800 border border-red-200">
+                                          เผลอกรอกข้อมูล
+                                        </span>
+                                      ) : ct.isReported ? (
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                          แจ้งเบาะแส
+                                        </span>
+                                      ) : ct.isClicked ? (
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                                          คลิกลิงก์
+                                        </span>
+                                      ) : ct.isSent ? (
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-stone-100 text-stone-700 border border-stone-200">
+                                          ส่งแล้ว
+                                        </span>
+                                      ) : (
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 text-gray-500 border border-gray-200">
+                                          รอดำเนินการ
+                                        </span>
+                                      )}
+                                    </td>
+                                    <td className="py-3 px-3 text-gray-500 font-mono text-[11px] whitespace-nowrap">
+                                      {formatTimestamp(ct.sentAt)}
+                                    </td>
+                                    <td className="py-3 px-3 text-gray-500 font-mono text-[11px] whitespace-nowrap">
+                                      {ct.clickedAt ? (
+                                        <span className="text-amber-700 font-medium">{formatTimestamp(ct.clickedAt)}</span>
+                                      ) : '-'}
+                                    </td>
+                                    <td className="py-3 px-3 text-gray-500 font-mono text-[11px] whitespace-nowrap">
+                                      {ct.submittedAt ? (
+                                        <span className="text-red-700 font-bold">{formatTimestamp(ct.submittedAt)}</span>
+                                      ) : '-'}
+                                    </td>
+                                    <td className="py-3 px-3 text-gray-500 font-mono text-[11px] whitespace-nowrap">
+                                      {ct.reportedAt ? (
+                                        <span className="text-forest font-semibold">{formatTimestamp(ct.reportedAt)}</span>
+                                      ) : '-'}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
                     )}
                   </div>
-                </div>
-              );
-            })()}
 
-            {/* Recipient Table Area */}
-            <div className="flex-1 overflow-y-auto p-4">
-              {recipientsLoading ? (
-                <div className="py-16 text-center text-gray-500">
-                  <RefreshCw className="w-7 h-7 text-forest animate-spin mx-auto mb-2" />
-                  <p className="text-xs">กำลังโหลดข้อมูลรายชื่อผู้รับ...</p>
-                </div>
-              ) : (() => {
-                const targets = viewingCampaign.campaignTargets || [];
-                const filtered = targets.filter((ct: any) => {
-                  const status = ct.isSubmitted ? 'COMPROMISED' : ct.isReported ? 'REPORTED' : ct.isClicked ? 'CLICKED' : ct.isSent ? 'SENT' : 'PENDING';
-                  if (recipientStatusFilter !== 'ALL' && status !== recipientStatusFilter) {
-                    return false;
-                  }
-                  if (!recipientSearch.trim()) return true;
-                  const q = recipientSearch.toLowerCase();
-                  const fullName = `${ct.target?.firstName || ''} ${ct.target?.lastName || ''}`.toLowerCase();
-                  const email = (ct.target?.email || '').toLowerCase();
-                  const dept = (ct.target?.department || '').toLowerCase();
-                  const tmplName = (ct.emailTemplate?.name || viewingCampaign.emailTemplate?.name || '').toLowerCase();
-                  return fullName.includes(q) || email.includes(q) || dept.includes(q) || tmplName.includes(q);
-                });
-
-                if (targets.length === 0) {
-                  return (
-                    <div className="py-16 text-center text-gray-400">
-                      <Users className="w-10 h-10 mx-auto text-gray-300 mb-2" />
-                      <p className="text-sm font-medium">ยังไม่มีรายชื่อผู้รับในแคมเปญนี้</p>
+                  {/* Modal Footer */}
+                  <div className="flex items-center justify-between p-4 border-t border-stone-border bg-stone-50/70 flex-shrink-0">
+                    <div className="text-xs text-gray-500 font-medium">
+                      แสดง {filtered.length} จากทั้งหมด {targets.length} รายการ
                     </div>
-                  );
-                }
-
-                if (filtered.length === 0) {
-                  return (
-                    <div className="py-16 text-center text-gray-400">
-                      <Search className="w-8 h-8 mx-auto text-gray-300 mb-2" />
-                      <p className="text-xs">ไม่พบรายชื่อผู้รับที่ตรงกับเงื่อนไขการค้นหาหรือตัวกรอง</p>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div className="border border-stone-border rounded-xl overflow-hidden shadow-xs bg-white">
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse text-xs">
-                        <thead>
-                          <tr className="bg-stone-50 border-b border-stone-border text-gray-600 font-semibold uppercase tracking-wider text-[11px]">
-                            <th className="py-3 px-3 w-10 text-center">#</th>
-                            <th className="py-3 px-3">พนักงานผู้รับ</th>
-                            <th className="py-3 px-3">แผนก</th>
-                            <th className="py-3 px-3">เทมเพลตที่ได้รับ</th>
-                            <th className="py-3 px-3 text-center">สถานะ</th>
-                            <th className="py-3 px-3">เวลาส่ง</th>
-                            <th className="py-3 px-3">เวลาคลิก</th>
-                            <th className="py-3 px-3">เวลากรอกข้อมูล</th>
-                            <th className="py-3 px-3">เวลาแจ้งเตือน</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-stone-border/60">
-                          {filtered.map((ct: any, idx: number) => {
-                            const fullName = `${ct.target?.firstName || ''} ${ct.target?.lastName || ''}`.trim();
-                            const templateName = ct.emailTemplate?.name || viewingCampaign.emailTemplate?.name || 'General Template';
-
-                            return (
-                              <tr key={ct.id || idx} className="hover:bg-warm-sand/40 transition-colors">
-                                <td className="py-3 px-3 text-center text-gray-400 font-mono text-[11px]">
-                                  {idx + 1}
-                                </td>
-                                <td className="py-3 px-3">
-                                  <div className="font-semibold text-deep-slate">
-                                    {fullName || 'ไม่ระบุชื่อ'}
-                                  </div>
-                                  <div className="text-[11px] text-gray-500 font-mono">
-                                    {ct.target?.email}
-                                  </div>
-                                </td>
-                                <td className="py-3 px-3">
-                                  <span className="px-2 py-0.5 bg-stone-100 text-gray-700 rounded text-[11px]">
-                                    {ct.target?.department || 'ไม่ระบุ'}
-                                  </span>
-                                </td>
-                                <td className="py-3 px-3">
-                                  <div className="text-gray-800 font-medium truncate max-w-[180px]" title={templateName}>
-                                    {templateName}
-                                  </div>
-                                </td>
-                                <td className="py-3 px-3 text-center">
-                                  {ct.isSubmitted ? (
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-red-100 text-red-800 border border-red-200">
-                                      เผลอกรอกข้อมูล
-                                    </span>
-                                  ) : ct.isReported ? (
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                      แจ้งเบาะแส
-                                    </span>
-                                  ) : ct.isClicked ? (
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-                                      คลิกลิงก์
-                                    </span>
-                                  ) : ct.isSent ? (
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-stone-100 text-stone-700 border border-stone-200">
-                                      ส่งแล้ว
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 text-gray-500 border border-gray-200">
-                                      รอดำเนินการ
-                                    </span>
-                                  )}
-                                </td>
-                                <td className="py-3 px-3 text-gray-500 font-mono text-[11px] whitespace-nowrap">
-                                  {formatTimestamp(ct.sentAt)}
-                                </td>
-                                <td className="py-3 px-3 text-gray-500 font-mono text-[11px] whitespace-nowrap">
-                                  {ct.clickedAt ? (
-                                    <span className="text-amber-700 font-medium">{formatTimestamp(ct.clickedAt)}</span>
-                                  ) : '-'}
-                                </td>
-                                <td className="py-3 px-3 text-gray-500 font-mono text-[11px] whitespace-nowrap">
-                                  {ct.submittedAt ? (
-                                    <span className="text-red-700 font-bold">{formatTimestamp(ct.submittedAt)}</span>
-                                  ) : '-'}
-                                </td>
-                                <td className="py-3 px-3 text-gray-500 font-mono text-[11px] whitespace-nowrap">
-                                  {ct.reportedAt ? (
-                                    <span className="text-forest font-semibold">{formatTimestamp(ct.reportedAt)}</span>
-                                  ) : '-'}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                    <div className="flex items-center space-x-2">
+                      <a
+                        href={`/api/campaigns/${viewingCampaign.id}/export`}
+                        download
+                        className="px-3.5 py-1.5 border border-stone-border bg-white hover:bg-stone-muted text-gray-700 rounded-xl text-xs font-semibold transition-all flex items-center space-x-1"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>ดาวน์โหลด CSV (Excel)</span>
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => setViewingCampaign(null)}
+                        className="px-4 py-1.5 rounded-xl text-xs font-semibold bg-deep-slate text-white hover:bg-gray-800 transition-all shadow-xs"
+                      >
+                        ปิดหน้าต่าง
+                      </button>
                     </div>
                   </div>
-                );
-              })()}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="flex items-center justify-between p-4 border-t border-stone-border bg-stone-50/70 flex-shrink-0">
-              <div className="text-xs text-gray-500">
-                {(() => {
-                  const targets = viewingCampaign.campaignTargets || [];
-                  const filtered = targets.filter((ct: any) => {
-                    const status = ct.isSubmitted ? 'COMPROMISED' : ct.isReported ? 'REPORTED' : ct.isClicked ? 'CLICKED' : ct.isSent ? 'SENT' : 'PENDING';
-                    if (recipientStatusFilter !== 'ALL' && status !== recipientStatusFilter) return false;
-                    if (!recipientSearch.trim()) return true;
-                    const q = recipientSearch.toLowerCase();
-                    const fullName = `${ct.target?.firstName || ''} ${ct.target?.lastName || ''}`.toLowerCase();
-                    const email = (ct.target?.email || '').toLowerCase();
-                    const dept = (ct.target?.department || '').toLowerCase();
-                    const tmplName = (ct.emailTemplate?.name || viewingCampaign.emailTemplate?.name || '').toLowerCase();
-                    return fullName.includes(q) || email.includes(q) || dept.includes(q) || tmplName.includes(q);
-                  });
-                  return `แสดง ${filtered.length} จากทั้งหมด ${targets.length} รายการ`;
-                })()}
-              </div>
-              <div className="flex items-center space-x-2">
-                <a
-                  href={`/api/campaigns/${viewingCampaign.id}/export`}
-                  download
-                  className="px-3.5 py-1.5 border border-stone-border bg-white hover:bg-stone-muted text-gray-700 rounded-xl text-xs font-semibold transition-all flex items-center space-x-1"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>ดาวน์โหลด CSV (Excel)</span>
-                </a>
-                <button
-                  type="button"
-                  onClick={() => setViewingCampaign(null)}
-                  className="px-4 py-1.5 rounded-xl text-xs font-semibold bg-deep-slate text-white hover:bg-gray-800 transition-all shadow-xs"
-                >
-                  ปิดหน้าต่าง
-                </button>
-              </div>
-            </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}
