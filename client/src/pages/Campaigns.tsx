@@ -56,7 +56,7 @@ export const Campaigns: React.FC = () => {
       const res = await fetch('/api/campaigns');
       if (res.ok) {
         const data = await res.json();
-        setCampaigns(data);
+        setCampaigns(Array.isArray(data) ? data : []);
       }
     } catch (err) {
       console.error('Failed to fetch campaigns:', err);
@@ -109,22 +109,29 @@ export const Campaigns: React.FC = () => {
 
   const loadDependencies = () => {
     return Promise.all([
-      fetch('/api/targets/groups').then(r => r.json()),
-      fetch('/api/templates/emails').then(r => r.json()),
-      fetch('/api/templates/landing-pages').then(r => r.json()),
-      fetch('/api/smtp-profiles').then(r => r.json())
+      fetch('/api/targets/groups').then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch('/api/templates/emails').then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch('/api/templates/landing-pages').then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch('/api/smtp-profiles').then(r => r.ok ? r.json() : []).catch(() => [])
     ]).then(([groups, emails, landings, smtps]) => {
-      setTargetGroups(groups);
-      setEmailTemplates(emails);
-      setLandingTemplates(landings);
-      setSmtpProfiles(smtps);
+      const validGroups = Array.isArray(groups) ? groups : [];
+      const validEmails = Array.isArray(emails) ? emails : [];
+      const validLandings = Array.isArray(landings) ? landings : [];
+      const validSmtps = Array.isArray(smtps) ? smtps : [];
+
+      setTargetGroups(validGroups);
+      setEmailTemplates(validEmails);
+      setLandingTemplates(validLandings);
+      setSmtpProfiles(validSmtps);
       setForm(f => ({
         ...f,
-        targetGroupIds: f.targetGroupIds.length > 0 ? f.targetGroupIds : (groups.length > 0 ? [groups[0].id] : []),
-        emailTemplateId: f.emailTemplateId || (emails.length > 0 ? emails[0].id : ''),
-        landingPageTemplateId: f.landingPageTemplateId || (landings.length > 0 ? landings[0].id : ''),
-        smtpProfileId: f.smtpProfileId || (smtps.length > 0 ? smtps[0].id : '')
+        targetGroupIds: f.targetGroupIds.length > 0 ? f.targetGroupIds : (validGroups.length > 0 ? [validGroups[0].id] : []),
+        emailTemplateId: f.emailTemplateId || (validEmails.length > 0 ? validEmails[0].id : ''),
+        landingPageTemplateId: f.landingPageTemplateId || (validLandings.length > 0 ? validLandings[0].id : ''),
+        smtpProfileId: f.smtpProfileId || (validSmtps.length > 0 ? validSmtps[0].id : '')
       }));
+    }).catch(err => {
+      console.error('Failed to load campaign dependencies:', err);
     });
   };
 
