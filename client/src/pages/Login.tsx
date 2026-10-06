@@ -45,9 +45,9 @@ export const Login: React.FC = () => {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-forest text-white shadow-soft mb-4">
             <ShieldCheck className="w-9 h-9" />
           </div>
-          <h1 className="text-2xl font-bold text-deep-slate tracking-tight">PhishCentral</h1>
+          <h1 className="text-2xl font-bold text-deep-slate tracking-tight">Enterprise Console</h1>
           <p className="text-sm text-gray-500 mt-1 font-medium">
-            Security Awareness &amp; Phishing Simulation Console
+            ระบบบริหารจัดการข้อมูลและทรัพยากรส่วนกลาง (Management Portal)
           </p>
         </div>
 
@@ -56,10 +56,10 @@ export const Login: React.FC = () => {
           <div className="mb-6">
             <h2 className="text-lg font-bold text-deep-slate flex items-center space-x-2">
               <Lock className="w-4 h-4 text-forest" />
-              <span>เข้าสู่ระบบผู้ดูแล (Admin Sign In)</span>
+              <span>เข้าสู่ระบบ (Sign In)</span>
             </h2>
             <p className="text-xs text-gray-500 mt-1">
-              เฉพาะเจ้าหน้าที่ดูแลระบบความปลอดภัย (SOC / IT Security) เท่านั้น
+              เฉพาะเจ้าหน้าที่และผู้ดูแลระบบที่ได้รับอนุญาตเท่านั้น (Authorized Personnel Only)
             </p>
           </div>
 
@@ -127,13 +127,13 @@ export const Login: React.FC = () => {
           </form>
 
           <div className="mt-6 pt-5 border-t border-stone-border/60 flex items-center justify-between text-[11px] text-gray-400">
-            <span>🛡️ Protected by JWT &amp; Rate Limiter</span>
-            <span>Zero-Password Policy</span>
+            <span>🛡️ Secure Authentication</span>
+            <span>Authorized Access Only</span>
           </div>
         </div>
 
         <p className="text-center text-xs text-gray-400 mt-6">
-          PhishCentral v2.2.0 • Enterprise Security Awareness Platform
+          Enterprise Portal v2.2.0 • Internal Management System
         </p>
       </div>
     </div>
