@@ -72,4 +72,35 @@ describe('Randomized Smear Scheduler Utility', () => {
       expect(schedule[i].getTime()).toBeGreaterThanOrEqual(schedule[i - 1].getTime());
     }
   });
+
+  it('should strictly respect client timezone offset (e.g. UTC+7 Thailand -420) and never exceed dailyEndTime', () => {
+    const config: ScheduleConfig = {
+      startDate: '2026-10-12',
+      endDate: '2026-10-16',
+      allowedDays: [1, 2, 3, 4, 5],
+      dailyStartTime: '08:30',
+      dailyEndTime: '17:00',
+      randomizeSendTimes: true,
+      timezoneOffset: -420 // Thailand UTC+7
+    };
+
+    const schedule = generateRandomizedSchedule(30, config);
+    expect(schedule.length).toBe(30);
+
+    for (const d of schedule) {
+      // Convert to local time in Thailand (UTC+7)
+      const thaiMs = d.getTime() + (7 * 60 * 60 * 1000);
+      const thaiDate = new Date(thaiMs);
+      const hour = thaiDate.getUTCHours();
+      const minute = thaiDate.getUTCMinutes();
+      const totalMinutes = hour * 60 + minute;
+
+      // 08:30 is 510 minutes, 17:00 is 1020 minutes
+      expect(totalMinutes).toBeGreaterThanOrEqual(510);
+      expect(totalMinutes).toBeLessThanOrEqual(1020);
+
+      // Verify it is NEVER evening/night like 21:00 (1260 min)
+      expect(totalMinutes).toBeLessThan(17 * 60);
+    }
+  });
 });

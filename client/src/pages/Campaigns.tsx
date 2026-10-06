@@ -209,7 +209,8 @@ export const Campaigns: React.FC = () => {
     const payload = {
       ...form,
       emailTemplateIds: form.isMultiTemplate ? form.emailTemplateIds : [form.emailTemplateId],
-      allowedDays: form.allowedDays.join(',')
+      allowedDays: form.allowedDays.join(','),
+      timezoneOffset: new Date().getTimezoneOffset()
     };
 
     const res = await fetch('/api/campaigns', {

@@ -190,7 +190,8 @@ campaignsRouter.post('/', async (req: Request, res: Response) => {
     allowedDays = '1,2,3,4,5',
     dailyStartTime = '08:30',
     dailyEndTime = '17:00',
-    randomizeSendTimes = true
+    randomizeSendTimes = true,
+    timezoneOffset
   } = req.body;
 
   // Accept targetGroupIds array or single targetGroupId
@@ -267,12 +268,13 @@ campaignsRouter.post('/', async (req: Request, res: Response) => {
     if (isRandomized && uniqueTargets.length > 0) {
       const parsedDays = String(allowedDays).split(',').map(d => parseInt(d.trim(), 10)).filter(Boolean);
       scheduledDates = generateRandomizedSchedule(uniqueTargets.length, {
-        startDate: parsedStartDate,
-        endDate: parsedEndDate,
+        startDate: startDate || parsedStartDate,
+        endDate: endDate || parsedEndDate,
         allowedDays: parsedDays.length > 0 ? parsedDays : [1, 2, 3, 4, 5],
         dailyStartTime,
         dailyEndTime,
-        randomizeSendTimes: Boolean(randomizeSendTimes)
+        randomizeSendTimes: Boolean(randomizeSendTimes),
+        timezoneOffset: typeof timezoneOffset === 'number' ? timezoneOffset : undefined
       });
     }
 
