@@ -109,6 +109,68 @@ export function getValidScheduleDates(startDate: Date, endDate: Date, allowedDay
  * 3. If a slot for today is already in the past or after dailyEndTime, it gracefully reschedules to the
  *    next available valid business day within working hours.
  */
+/**
+ * Helper to compute a single slot time on a specific calendar day strictly within daily business hours,
+ * taking into account past-time rules and client timezone offset.
+ */
+export function generateSlotTimeForDay(
+  selectedDay: CalendarDay,
+  startMinutes: number,
+  endMinutes: number,
+  workingMinutesPerDay: number,
+  tzOffset: number,
+  now: Date,
+  validDays: CalendarDay[],
+  minuteOffset?: number
+): Date {
+  const chosenMinuteOffset = typeof minuteOffset === 'number'
+    ? (minuteOffset % workingMinutesPerDay)
+    : Math.floor(Math.random() * workingMinutesPerDay);
+
+  const randomSeconds = Math.floor(Math.random() * 60);
+  const totalMinutes = startMinutes + chosenMinuteOffset;
+  const hour = Math.floor(totalMinutes / 60);
+  const minute = totalMinutes % 60;
+
+  const targetUtcMs = Date.UTC(selectedDay.year, selectedDay.month, selectedDay.day, hour, minute, randomSeconds) + (tzOffset * 60 * 1000);
+  let targetDate = new Date(targetUtcMs);
+
+  // Past-time check: If the generated slot has already passed
+  if (targetDate.getTime() < now.getTime()) {
+    const todayEndUtcMs = Date.UTC(selectedDay.year, selectedDay.month, selectedDay.day, Math.floor(endMinutes / 60), endMinutes % 60, 0) + (tzOffset * 60 * 1000);
+    const remainingTodayMs = todayEndUtcMs - (now.getTime() + 2 * 60 * 1000); // 2 min buffer
+
+    if (remainingTodayMs > 3 * 60 * 1000) {
+      const randomBuffer = Math.floor(Math.random() * remainingTodayMs);
+      targetDate = new Date(now.getTime() + 2 * 60 * 1000 + randomBuffer);
+    } else {
+      const futureDays = validDays.filter(d => {
+        const dStartMs = Date.UTC(d.year, d.month, d.day, Math.floor(startMinutes / 60), startMinutes % 60, 0) + (tzOffset * 60 * 1000);
+        return dStartMs > now.getTime();
+      });
+
+      if (futureDays.length > 0) {
+        const chosenDay = futureDays[Math.floor(Math.random() * futureDays.length)];
+        const fMinuteOffset = Math.floor(Math.random() * workingMinutesPerDay);
+        const fTotalMin = startMinutes + fMinuteOffset;
+        const fHour = Math.floor(fTotalMin / 60);
+        const fMin = fTotalMin % 60;
+        const fSec = Math.floor(Math.random() * 60);
+        targetDate = new Date(Date.UTC(chosenDay.year, chosenDay.month, chosenDay.day, fHour, fMin, fSec) + (tzOffset * 60 * 1000));
+      } else {
+        const nextDayUtcMs = Date.UTC(selectedDay.year, selectedDay.month, selectedDay.day + 1, hour, minute, randomSeconds) + (tzOffset * 60 * 1000);
+        targetDate = new Date(nextDayUtcMs);
+      }
+    }
+  }
+
+  return targetDate;
+}
+
+/**
+ * Distributes target count across valid dates and daily business hours.
+ * Kept for backward compatibility and test suites.
+ */
 export function generateRandomizedSchedule(
   targetCount: number,
   config: ScheduleConfig
@@ -135,7 +197,6 @@ export function generateRandomizedSchedule(
   const now = new Date();
 
   for (let i = 0; i < targetCount; i++) {
-    // 1. Select calendar day
     let selectedDay: CalendarDay;
     if (config.randomizeSendTimes) {
       const randomIndex = Math.floor(Math.random() * validDays.length);
@@ -144,59 +205,167 @@ export function generateRandomizedSchedule(
       selectedDay = validDays[i % validDays.length];
     }
 
-    // 2. Pick minutes strictly within working hours (dailyStartTime .. dailyEndTime)
-    let randomMinuteOffset: number;
+    let minuteOffset: number;
     if (config.randomizeSendTimes) {
-      randomMinuteOffset = Math.floor(Math.random() * workingMinutesPerDay);
+      minuteOffset = Math.floor(Math.random() * workingMinutesPerDay);
     } else {
-      randomMinuteOffset = Math.floor((i / targetCount) * workingMinutesPerDay) % workingMinutesPerDay;
+      minuteOffset = Math.floor((i / targetCount) * workingMinutesPerDay) % workingMinutesPerDay;
     }
 
-    const randomSeconds = Math.floor(Math.random() * 60);
-    const totalMinutes = startMinutes + randomMinuteOffset;
-    const hour = Math.floor(totalMinutes / 60);
-    const minute = totalMinutes % 60;
-
-    // Convert local time in client's timezone to absolute UTC timestamp
-    const targetUtcMs = Date.UTC(selectedDay.year, selectedDay.month, selectedDay.day, hour, minute, randomSeconds) + (tzOffset * 60 * 1000);
-    let targetDate = new Date(targetUtcMs);
-
-    // 3. Past-time check: If the generated slot has already passed
-    if (targetDate.getTime() < now.getTime()) {
-      // Check if today's business hours are still active:
-      const todayEndUtcMs = Date.UTC(selectedDay.year, selectedDay.month, selectedDay.day, Math.floor(endMinutes / 60), endMinutes % 60, 0) + (tzOffset * 60 * 1000);
-      const remainingTodayMs = todayEndUtcMs - (now.getTime() + 2 * 60 * 1000); // 2 min buffer
-
-      if (remainingTodayMs > 3 * 60 * 1000) {
-        // Still have time today before end of working hours (e.g. between now + 2 min and dailyEndTime)
-        const randomBuffer = Math.floor(Math.random() * remainingTodayMs);
-        targetDate = new Date(now.getTime() + 2 * 60 * 1000 + randomBuffer);
-      } else {
-        // Today's working hours are OVER (e.g. current time is after 17:00, or at night like 21:00).
-        // NEVER schedule outside working hours! Move to future valid business day during working hours:
-        const futureDays = validDays.filter(d => {
-          const dStartMs = Date.UTC(d.year, d.month, d.day, Math.floor(startMinutes / 60), startMinutes % 60, 0) + (tzOffset * 60 * 1000);
-          return dStartMs > now.getTime();
-        });
-
-        if (futureDays.length > 0) {
-          const chosenDay = futureDays[Math.floor(Math.random() * futureDays.length)];
-          const fMinuteOffset = Math.floor(Math.random() * workingMinutesPerDay);
-          const fTotalMin = startMinutes + fMinuteOffset;
-          const fHour = Math.floor(fTotalMin / 60);
-          const fMin = fTotalMin % 60;
-          const fSec = Math.floor(Math.random() * 60);
-          targetDate = new Date(Date.UTC(chosenDay.year, chosenDay.month, chosenDay.day, fHour, fMin, fSec) + (tzOffset * 60 * 1000));
-        } else {
-          // If no future days in configured range, schedule for tomorrow during working hours:
-          const nextDayUtcMs = Date.UTC(selectedDay.year, selectedDay.month, selectedDay.day + 1, hour, minute, randomSeconds) + (tzOffset * 60 * 1000);
-          targetDate = new Date(nextDayUtcMs);
-        }
-      }
-    }
+    const targetDate = generateSlotTimeForDay(
+      selectedDay,
+      startMinutes,
+      endMinutes,
+      workingMinutesPerDay,
+      tzOffset,
+      now,
+      validDays,
+      minuteOffset
+    );
 
     scheduledDates.push(targetDate);
   }
 
   return scheduledDates.sort((a, b) => a.getTime() - b.getTime());
+}
+
+export interface TargetWithDept {
+  id: string;
+  department?: string | null;
+  [key: string]: any;
+}
+
+/**
+ * Distributes campaign targets across valid calendar days with a STRICT guarantee:
+ * Targets belonging to the SAME DEPARTMENT are NOT scheduled on the same calendar day
+ * (unless target count in that department exceeds the number of available business days,
+ * in which case they are spread evenly across all available days using balanced round-robin).
+ */
+export function generateDepartmentAwareSchedule<T extends TargetWithDept>(
+  targets: T[],
+  config: ScheduleConfig
+): Map<string, Date> {
+  const result = new Map<string, Date>();
+  if (!targets || targets.length === 0) return result;
+
+  const tzOffset = typeof config.timezoneOffset === 'number'
+    ? config.timezoneOffset
+    : (config.startDate instanceof Date ? config.startDate.getTimezoneOffset() : new Date().getTimezoneOffset());
+
+  const validDays = getValidCalendarDays(config.startDate, config.endDate, config.allowedDays, tzOffset);
+
+  if (validDays.length === 0) {
+    const fallbackParts = parseDateParts(config.startDate, tzOffset);
+    const fallbackMs = Date.UTC(fallbackParts.year, fallbackParts.month, fallbackParts.day, 9, 0, 0) + (tzOffset * 60 * 1000);
+    for (const t of targets) {
+      result.set(t.id, new Date(fallbackMs));
+    }
+    return result;
+  }
+
+  const startMinutes = parseTimeToMinutes(config.dailyStartTime || '08:30');
+  const endMinutes = parseTimeToMinutes(config.dailyEndTime || '17:00');
+  const workingMinutesPerDay = Math.max(endMinutes - startMinutes, 1);
+  const now = new Date();
+  const numDays = validDays.length;
+
+  // 1. Group targets by normalized department name
+  const deptGroups = new Map<string, T[]>();
+  const unassignedTargets: T[] = [];
+
+  for (const t of targets) {
+    const rawDept = (t.department || '').trim();
+    const normalized = rawDept.toLowerCase();
+    if (!normalized || normalized === '-' || normalized === 'n/a' || normalized === 'none' || normalized === 'ไม่ระบุ') {
+      unassignedTargets.push(t);
+    } else {
+      if (!deptGroups.has(normalized)) {
+        deptGroups.set(normalized, []);
+      }
+      deptGroups.get(normalized)!.push(t);
+    }
+  }
+
+  // 2. Track total target load assigned to each day index (0..numDays-1)
+  const dayLoad = new Array(numDays).fill(0);
+  const targetsByDay = new Map<number, T[]>();
+  for (let i = 0; i < numDays; i++) {
+    targetsByDay.set(i, []);
+  }
+
+  // 3. For each department, assign days such that members NEVER share the same day
+  // (or if members > numDays, spread them across distinct days first before repeating)
+  // Sort departments by size descending so larger departments get first choice of balanced days
+  const sortedDepts = Array.from(deptGroups.entries()).sort((a, b) => b[1].length - a[1].length);
+
+  for (const [, members] of sortedDepts) {
+    const shuffledMembers = [...members].sort(() => Math.random() - 0.5);
+    const numRounds = Math.ceil(shuffledMembers.length / numDays);
+
+    let memberIdx = 0;
+    for (let r = 0; r < numRounds; r++) {
+      const remainingCount = shuffledMembers.length - memberIdx;
+      const countInThisRound = Math.min(numDays, remainingCount);
+
+      // Rank day indices by current dayLoad + random jitter to pick the least loaded distinct days
+      const rankedDayIndices = Array.from({ length: numDays }, (_, idx) => idx)
+        .sort((a, b) => (dayLoad[a] + Math.random()) - (dayLoad[b] + Math.random()));
+
+      const chosenDays = rankedDayIndices.slice(0, countInThisRound);
+
+      for (const dayIdx of chosenDays) {
+        const member = shuffledMembers[memberIdx++];
+        dayLoad[dayIdx]++;
+        targetsByDay.get(dayIdx)!.push(member);
+      }
+    }
+  }
+
+  // 4. Assign unassigned targets to the least loaded days
+  for (const target of unassignedTargets) {
+    const bestDayIdx = Array.from({ length: numDays }, (_, idx) => idx)
+      .sort((a, b) => (dayLoad[a] + Math.random()) - (dayLoad[b] + Math.random()))[0];
+
+    dayLoad[bestDayIdx]++;
+    targetsByDay.get(bestDayIdx)!.push(target);
+  }
+
+  // 5. For each day, assign send times within daily working hours
+  for (let dayIdx = 0; dayIdx < numDays; dayIdx++) {
+    const dayTargets = targetsByDay.get(dayIdx) || [];
+    if (dayTargets.length === 0) continue;
+
+    const calendarDay = validDays[dayIdx];
+    const mCount = dayTargets.length;
+    const minuteInterval = workingMinutesPerDay / (mCount + 1);
+    const shuffledDayTargets = [...dayTargets].sort(() => Math.random() - 0.5);
+
+    for (let i = 0; i < mCount; i++) {
+      const target = shuffledDayTargets[i];
+
+      let minuteOffset: number;
+      if (config.randomizeSendTimes) {
+        const baseMin = Math.floor((i + 1) * minuteInterval);
+        const jitter = Math.floor((Math.random() - 0.5) * Math.min(minuteInterval * 0.8, 30));
+        minuteOffset = Math.max(0, Math.min(workingMinutesPerDay - 1, baseMin + jitter));
+      } else {
+        minuteOffset = Math.floor((i / Math.max(mCount, 1)) * workingMinutesPerDay) % workingMinutesPerDay;
+      }
+
+      const sendDate = generateSlotTimeForDay(
+        calendarDay,
+        startMinutes,
+        endMinutes,
+        workingMinutesPerDay,
+        tzOffset,
+        now,
+        validDays,
+        minuteOffset
+      );
+
+      result.set(target.id, sendDate);
+    }
+  }
+
+  return result;
 }

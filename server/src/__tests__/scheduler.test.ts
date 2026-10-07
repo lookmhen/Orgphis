@@ -3,6 +3,8 @@ import {
   isAllowedDay,
   getValidScheduleDates,
   generateRandomizedSchedule,
+  generateDepartmentAwareSchedule,
+  parseDateParts,
   ScheduleConfig
 } from '../utils/scheduler.js';
 
@@ -101,6 +103,130 @@ describe('Randomized Smear Scheduler Utility', () => {
 
       // Verify it is NEVER evening/night like 21:00 (1260 min)
       expect(totalMinutes).toBeLessThan(17 * 60);
+    }
+  });
+
+  it('should guarantee members of the same department are NEVER scheduled on the same calendar day (when dept size <= valid days)', () => {
+    const config: ScheduleConfig = {
+      startDate: '2026-10-12', // Monday
+      endDate: '2026-10-16',   // Friday (5 business days)
+      allowedDays: [1, 2, 3, 4, 5],
+      dailyStartTime: '08:30',
+      dailyEndTime: '17:00',
+      randomizeSendTimes: true,
+      timezoneOffset: -420 // Thailand UTC+7
+    };
+
+    const targets = [
+      { id: 'it-1', department: 'IT', email: 'it1@org.com' },
+      { id: 'it-2', department: 'IT', email: 'it2@org.com' },
+      { id: 'it-3', department: 'IT', email: 'it3@org.com' },
+      { id: 'hr-1', department: 'HR', email: 'hr1@org.com' },
+      { id: 'hr-2', department: 'HR', email: 'hr2@org.com' },
+      { id: 'fin-1', department: 'Finance', email: 'fin1@org.com' },
+      { id: 'fin-2', department: 'Finance', email: 'fin2@org.com' },
+      { id: 'fin-3', department: 'Finance', email: 'fin3@org.com' },
+      { id: 'mkt-1', department: 'Marketing', email: 'mkt1@org.com' },
+      { id: 'nodept-1', department: null, email: 'nodept1@org.com' }
+    ];
+
+    const scheduleMap = generateDepartmentAwareSchedule(targets, config);
+
+    expect(scheduleMap.size).toBe(targets.length);
+
+    // Helper to get calendar day key (YYYY-MM-DD) in target timezone
+    const getDayKey = (d: Date) => {
+      const parts = parseDateParts(d, -420);
+      return `${parts.year}-${parts.month + 1}-${parts.day}`;
+    };
+
+    // 1. Check IT department: all 3 must have DIFFERENT calendar days
+    const itDays = ['it-1', 'it-2', 'it-3'].map(id => getDayKey(scheduleMap.get(id)!));
+    const uniqueItDays = new Set(itDays);
+    expect(uniqueItDays.size).toBe(3); // 3 distinct days!
+
+    // 2. Check HR department: all 2 must have DIFFERENT calendar days
+    const hrDays = ['hr-1', 'hr-2'].map(id => getDayKey(scheduleMap.get(id)!));
+    const uniqueHrDays = new Set(hrDays);
+    expect(uniqueHrDays.size).toBe(2); // 2 distinct days!
+
+    // 3. Check Finance department: all 3 must have DIFFERENT calendar days
+    const finDays = ['fin-1', 'fin-2', 'fin-3'].map(id => getDayKey(scheduleMap.get(id)!));
+    const uniqueFinDays = new Set(finDays);
+    expect(uniqueFinDays.size).toBe(3); // 3 distinct days!
+
+    // 4. Verify all generated times are strictly between 08:30 and 17:00
+    for (const [id, date] of scheduleMap.entries()) {
+      const thaiMs = date.getTime() + (7 * 60 * 60 * 1000);
+      const thaiDate = new Date(thaiMs);
+      const totalMin = thaiDate.getUTCHours() * 60 + thaiDate.getUTCMinutes();
+      expect(totalMin).toBeGreaterThanOrEqual(510);
+      expect(totalMin).toBeLessThanOrEqual(1020);
+    }
+  });
+
+  it('should handle case-insensitive department matching (e.g. IT, it, IT with spaces) and separate them', () => {
+    const config: ScheduleConfig = {
+      startDate: '2026-10-12',
+      endDate: '2026-10-16',
+      allowedDays: [1, 2, 3, 4, 5],
+      dailyStartTime: '09:00',
+      dailyEndTime: '17:00',
+      randomizeSendTimes: true,
+      timezoneOffset: -420
+    };
+
+    const targets = [
+      { id: '1', department: 'IT' },
+      { id: '2', department: 'it' },
+      { id: '3', department: ' IT ' }
+    ];
+
+    const scheduleMap = generateDepartmentAwareSchedule(targets, config);
+    const getDayKey = (d: Date) => {
+      const parts = parseDateParts(d, -420);
+      return `${parts.year}-${parts.month + 1}-${parts.day}`;
+    };
+
+    const days = targets.map(t => getDayKey(scheduleMap.get(t.id)!));
+    const uniqueDays = new Set(days);
+    expect(uniqueDays.size).toBe(3); // All 3 recognized as the same department and assigned distinct days!
+  });
+
+  it('should evenly balance distribution across days when department target count exceeds valid days', () => {
+    const config: ScheduleConfig = {
+      startDate: '2026-10-12',
+      endDate: '2026-10-16', // 5 business days
+      allowedDays: [1, 2, 3, 4, 5],
+      dailyStartTime: '08:30',
+      dailyEndTime: '17:00',
+      randomizeSendTimes: true,
+      timezoneOffset: -420
+    };
+
+    // 8 members in Engineering, only 5 days
+    const targets = Array.from({ length: 8 }, (_, i) => ({
+      id: `eng-${i + 1}`,
+      department: 'Engineering'
+    }));
+
+    const scheduleMap = generateDepartmentAwareSchedule(targets, config);
+    const getDayKey = (d: Date) => {
+      const parts = parseDateParts(d, -420);
+      return `${parts.year}-${parts.month + 1}-${parts.day}`;
+    };
+
+    const dayCounts = new Map<string, number>();
+    for (const t of targets) {
+      const day = getDayKey(scheduleMap.get(t.id)!);
+      dayCounts.set(day, (dayCounts.get(day) || 0) + 1);
+    }
+
+    // All 5 days must be utilized
+    expect(dayCounts.size).toBe(5);
+    // Max count per day must not exceed ceil(8 / 5) = 2
+    for (const count of dayCounts.values()) {
+      expect(count).toBeLessThanOrEqual(2);
     }
   });
 });

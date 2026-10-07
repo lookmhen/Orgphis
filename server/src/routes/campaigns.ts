@@ -3,11 +3,9 @@ import { prisma } from '../prisma.js';
 import { generateTrackingToken } from '../utils/tokenAndBot.js';
 import { dispatchService } from '../services/dispatchService.js';
 import { resolveServerBaseUrl } from '../utils/network.js';
-import { generateRandomizedSchedule } from '../utils/scheduler.js';
+import { generateRandomizedSchedule, generateDepartmentAwareSchedule } from '../utils/scheduler.js';
 
 export const campaignsRouter = Router();
-
-// GET all campaigns with telemetry aggregation
 campaignsRouter.get('/', async (_req: Request, res: Response) => {
   try {
     const campaigns = await prisma.campaign.findMany({
@@ -264,10 +262,11 @@ campaignsRouter.post('/', async (req: Request, res: Response) => {
     const uniqueTargets = Array.from(uniqueTargetsMap.values());
 
     // 3. Pre-calculate randomized scheduled send dates if configured
-    let scheduledDates: Date[] = [];
+    // 3. Pre-calculate randomized scheduled send dates if configured (Department-Aware Day Separation)
+    let scheduleMap = new Map<string, Date>();
     if (isRandomized && uniqueTargets.length > 0) {
       const parsedDays = String(allowedDays).split(',').map(d => parseInt(d.trim(), 10)).filter(Boolean);
-      scheduledDates = generateRandomizedSchedule(uniqueTargets.length, {
+      scheduleMap = generateDepartmentAwareSchedule(uniqueTargets, {
         startDate: startDate || parsedStartDate,
         endDate: endDate || parsedEndDate,
         allowedDays: parsedDays.length > 0 ? parsedDays : [1, 2, 3, 4, 5],
@@ -292,7 +291,7 @@ campaignsRouter.post('/', async (req: Request, res: Response) => {
           emailTemplateId: templateIds[idx % numTemplates],
           token: generateTrackingToken(),
           dispatchStatus: 'PENDING',
-          scheduledAt: isRandomized && scheduledDates[idx] ? scheduledDates[idx] : null
+          scheduledAt: isRandomized && scheduleMap.get(t.id) ? scheduleMap.get(t.id)! : null
         }))
       });
     }
