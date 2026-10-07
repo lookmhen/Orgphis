@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Send, Play, Square, Download, Plus, CheckCircle2, Clock, AlertCircle, RotateCcw, Trash2, RefreshCw, Calendar, Sliders, Users, Search, X, Filter } from 'lucide-react';
+import { Send, Play, Square, Download, Plus, CheckCircle2, Clock, AlertCircle, RotateCcw, Trash2, RefreshCw, Calendar, Sliders, Users, Search, X, Filter, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const Campaigns: React.FC = () => {
@@ -50,6 +50,10 @@ export const Campaigns: React.FC = () => {
   const [recipientsLoading, setRecipientsLoading] = useState(false);
   const [recipientSearch, setRecipientSearch] = useState('');
   const [recipientStatusFilter, setRecipientStatusFilter] = useState<string>('ALL');
+  const [recipientSortKey, setRecipientSortKey] = useState<
+    'index' | 'name' | 'department' | 'template' | 'status' | 'scheduledAt' | 'sentAt' | 'clickedAt' | 'submittedAt' | 'reportedAt'
+  >('scheduledAt');
+  const [recipientSortDir, setRecipientSortDir] = useState<'asc' | 'desc'>('asc');
 
   const fetchCampaigns = async () => {
     try {
@@ -74,6 +78,8 @@ export const Campaigns: React.FC = () => {
     setViewingCampaign({ id: campaignId, name: campaignName, campaignTargets: [] });
     setRecipientSearch('');
     setRecipientStatusFilter('ALL');
+    setRecipientSortKey('scheduledAt');
+    setRecipientSortDir('asc');
     try {
       const res = await fetch(`/api/campaigns/${campaignId}`);
       if (res.ok) {
@@ -942,7 +948,11 @@ export const Campaigns: React.FC = () => {
 
             {/* KPI Summary Strip */}
             {(() => {
-              const targets = viewingCampaign.campaignTargets || [];
+              const rawTargets = viewingCampaign.campaignTargets || [];
+              const targets = rawTargets.map((t: any, idx: number) => ({
+                ...t,
+                _originalIndex: idx
+              }));
               const totalCount = targets.length;
               const pendingCount = targets.filter((t: any) => !t.isSent).length;
               const sentCount = targets.filter((t: any) => t.isSent).length;
@@ -981,6 +991,128 @@ export const Campaigns: React.FC = () => {
 
               const filtered = targets.filter((ct: any) => matchStatus(ct, recipientStatusFilter) && matchesSearch(ct, recipientSearch));
 
+              const sortKeyLabels: Record<string, string> = {
+                index: 'ลำดับ',
+                name: 'พนักงานผู้รับ',
+                department: 'แผนก',
+                template: 'เทมเพลตที่ได้รับ',
+                status: 'สถานะ',
+                scheduledAt: 'กำหนดส่ง (Scheduled)',
+                sentAt: 'เวลาส่งจริง (Sent)',
+                clickedAt: 'เวลาคลิก',
+                submittedAt: 'เวลากรอกข้อมูล',
+                reportedAt: 'เวลาแจ้งเตือน'
+              };
+
+              const handleToggleSort = (key: any) => {
+                if (recipientSortKey === key) {
+                  setRecipientSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
+                } else {
+                  setRecipientSortKey(key);
+                  setRecipientSortDir('asc');
+                }
+              };
+
+              const sortedRecipients = [...filtered].sort((a: any, b: any) => {
+                if (recipientSortKey === 'index') {
+                  return recipientSortDir === 'asc'
+                    ? a._originalIndex - b._originalIndex
+                    : b._originalIndex - a._originalIndex;
+                }
+
+                if (recipientSortKey === 'name') {
+                  const nameA = `${a.target?.firstName || ''} ${a.target?.lastName || ''} ${a.target?.email || ''}`.trim();
+                  const nameB = `${b.target?.firstName || ''} ${b.target?.lastName || ''} ${b.target?.email || ''}`.trim();
+                  const cmp = nameA.localeCompare(nameB, 'th', { sensitivity: 'base' });
+                  return recipientSortDir === 'asc' ? cmp : -cmp;
+                }
+
+                if (recipientSortKey === 'department') {
+                  const deptA = a.target?.department || '';
+                  const deptB = b.target?.department || '';
+                  const cmp = deptA.localeCompare(deptB, 'th', { sensitivity: 'base' });
+                  return recipientSortDir === 'asc' ? cmp : -cmp;
+                }
+
+                if (recipientSortKey === 'template') {
+                  const tmplA = a.emailTemplate?.name || viewingCampaign.emailTemplate?.name || '';
+                  const tmplB = b.emailTemplate?.name || viewingCampaign.emailTemplate?.name || '';
+                  const cmp = tmplA.localeCompare(tmplB, 'th', { sensitivity: 'base' });
+                  return recipientSortDir === 'asc' ? cmp : -cmp;
+                }
+
+                if (recipientSortKey === 'status') {
+                  const getStatusWeight = (ct: any) => {
+                    if (ct.isSubmitted) return 5;
+                    if (ct.isReported) return 4;
+                    if (ct.isClicked) return 3;
+                    if (ct.isSent) return 2;
+                    return 1;
+                  };
+                  const diff = getStatusWeight(a) - getStatusWeight(b);
+                  return recipientSortDir === 'asc' ? diff : -diff;
+                }
+
+                // Date columns: scheduledAt, sentAt, clickedAt, submittedAt, reportedAt
+                const getDateVal = (ct: any) => {
+                  switch (recipientSortKey) {
+                    case 'scheduledAt': return ct.scheduledAt;
+                    case 'sentAt': return ct.sentAt;
+                    case 'clickedAt': return ct.clickedAt;
+                    case 'submittedAt': return ct.submittedAt;
+                    case 'reportedAt': return ct.reportedAt;
+                    default: return null;
+                  }
+                };
+
+                const valA = getDateVal(a);
+                const valB = getDateVal(b);
+
+                // Nulls always go to bottom regardless of asc/desc
+                if (!valA && !valB) return a._originalIndex - b._originalIndex;
+                if (!valA) return 1;
+                if (!valB) return -1;
+
+                const timeA = new Date(valA).getTime();
+                const timeB = new Date(valB).getTime();
+                const diff = recipientSortDir === 'asc' ? timeA - timeB : timeB - timeA;
+                return diff !== 0 ? diff : a._originalIndex - b._originalIndex;
+              });
+
+              const renderSortHeader = (
+                key: any,
+                label: string,
+                align: 'left' | 'center' = 'left',
+                extraClasses = ''
+              ) => {
+                const isActive = recipientSortKey === key;
+                return (
+                  <th
+                    key={key}
+                    onClick={() => handleToggleSort(key)}
+                    className={`py-3 px-3 cursor-pointer select-none transition-all group hover:bg-stone-100 ${
+                      isActive ? 'text-forest font-bold bg-forest-light/40 border-b-2 border-forest' : 'text-gray-600'
+                    } ${align === 'center' ? 'text-center' : 'text-left'} ${extraClasses}`}
+                    title={`คลิกเพื่อสลับการเรียง (${label})`}
+                  >
+                    <div className={`inline-flex items-center space-x-1.5 ${align === 'center' ? 'justify-center w-full' : ''}`}>
+                      <span>{label}</span>
+                      <span className="shrink-0">
+                        {isActive ? (
+                          recipientSortDir === 'asc' ? (
+                            <ArrowUp className="w-3.5 h-3.5 text-forest" />
+                          ) : (
+                            <ArrowDown className="w-3.5 h-3.5 text-forest" />
+                          )
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 text-gray-400 opacity-40 group-hover:opacity-100 transition-opacity" />
+                        )}
+                      </span>
+                    </div>
+                  </th>
+                );
+              };
+
               return (
                 <>
                   <div className="bg-warm-sand/50 p-4 border-b border-stone-border space-y-3 flex-shrink-0">
@@ -1004,24 +1136,56 @@ export const Campaigns: React.FC = () => {
                       ))}
                     </div>
 
-                    {/* Search Box */}
-                    <div className="relative">
-                      <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        value={recipientSearch}
-                        onChange={(e) => setRecipientSearch(e.target.value)}
-                        placeholder="ค้นหาด้วยชื่อ, อีเมล, แผนก, หรือเทมเพลตที่ได้รับ..."
-                        className="w-full pl-9 pr-8 py-2 bg-white border border-stone-border rounded-xl text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest"
-                      />
-                      {recipientSearch && (
-                        <button
-                          onClick={() => setRecipientSearch('')}
-                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      )}
+                    {/* Search Box & Sort Status Bar */}
+                    <div className="space-y-2">
+                      <div className="relative">
+                        <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          value={recipientSearch}
+                          onChange={(e) => setRecipientSearch(e.target.value)}
+                          placeholder="ค้นหาด้วยชื่อ, อีเมล, แผนก, หรือเทมเพลตที่ได้รับ..."
+                          className="w-full pl-9 pr-8 py-2 bg-white border border-stone-border rounded-xl text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest"
+                        />
+                        {recipientSearch && (
+                          <button
+                            onClick={() => setRecipientSearch('')}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between text-[11px] text-gray-500 px-1">
+                        <div className="flex items-center space-x-1.5">
+                          <span>กำลังเรียงตาม:</span>
+                          <span className="font-semibold text-deep-slate bg-white px-2 py-0.5 rounded border border-stone-border inline-flex items-center space-x-1 shadow-xs">
+                            <span>{sortKeyLabels[recipientSortKey] || recipientSortKey}</span>
+                            {recipientSortDir === 'asc' ? (
+                              <ArrowUp className="w-3 h-3 text-forest inline" />
+                            ) : (
+                              <ArrowDown className="w-3 h-3 text-forest inline" />
+                            )}
+                            <span className="text-gray-400 font-normal">
+                              ({recipientSortDir === 'asc' ? 'น้อยไปมาก / เก่าไปใหม่' : 'มากไปน้อย / ใหม่ไปเก่า'})
+                            </span>
+                          </span>
+                        </div>
+                        {(recipientSortKey !== 'scheduledAt' || recipientSortDir !== 'asc') && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRecipientSortKey('scheduledAt');
+                              setRecipientSortDir('asc');
+                            }}
+                            className="text-forest hover:underline flex items-center space-x-1 font-medium"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            <span>รีเซ็ตการเรียงลำดับ</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -1048,20 +1212,20 @@ export const Campaigns: React.FC = () => {
                           <table className="w-full text-left border-collapse text-xs">
                             <thead>
                               <tr className="bg-stone-50 border-b border-stone-border text-gray-600 font-semibold uppercase tracking-wider text-[11px]">
-                                <th className="py-3 px-3 w-10 text-center">#</th>
-                                <th className="py-3 px-3">พนักงานผู้รับ</th>
-                                <th className="py-3 px-3">แผนก</th>
-                                <th className="py-3 px-3">เทมเพลตที่ได้รับ</th>
-                                <th className="py-3 px-3 text-center">สถานะ</th>
-                                <th className="py-3 px-3">กำหนดส่ง (Scheduled)</th>
-                                <th className="py-3 px-3">เวลาส่งจริง (Sent)</th>
-                                <th className="py-3 px-3">เวลาคลิก</th>
-                                <th className="py-3 px-3">เวลากรอกข้อมูล</th>
-                                <th className="py-3 px-3">เวลาแจ้งเตือน</th>
+                                {renderSortHeader('index', '#', 'center', 'w-12')}
+                                {renderSortHeader('name', 'พนักงานผู้รับ')}
+                                {renderSortHeader('department', 'แผนก')}
+                                {renderSortHeader('template', 'เทมเพลตที่ได้รับ')}
+                                {renderSortHeader('status', 'สถานะ', 'center')}
+                                {renderSortHeader('scheduledAt', 'กำหนดส่ง (Scheduled)')}
+                                {renderSortHeader('sentAt', 'เวลาส่งจริง (Sent)')}
+                                {renderSortHeader('clickedAt', 'เวลาคลิก')}
+                                {renderSortHeader('submittedAt', 'เวลากรอกข้อมูล')}
+                                {renderSortHeader('reportedAt', 'เวลาแจ้งเตือน')}
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-stone-border/60">
-                              {filtered.map((ct: any, idx: number) => {
+                              {sortedRecipients.map((ct: any, idx: number) => {
                                 const fullName = `${ct.target?.firstName || ''} ${ct.target?.lastName || ''}`.trim();
                                 const templateName = ct.emailTemplate?.name || viewingCampaign.emailTemplate?.name || 'General Template';
 
@@ -1155,8 +1319,12 @@ export const Campaigns: React.FC = () => {
 
                   {/* Modal Footer */}
                   <div className="flex items-center justify-between p-4 border-t border-stone-border bg-stone-50/70 flex-shrink-0">
-                    <div className="text-xs text-gray-500 font-medium">
-                      แสดง {filtered.length} จากทั้งหมด {targets.length} รายการ
+                    <div className="text-xs text-gray-500 font-medium flex items-center space-x-2">
+                      <span>แสดง {sortedRecipients.length} จากทั้งหมด {targets.length} รายการ</span>
+                      <span className="text-stone-300">&bull;</span>
+                      <span className="text-gray-600">
+                        เรียงตาม: <strong className="text-deep-slate">{sortKeyLabels[recipientSortKey]}</strong> ({recipientSortDir === 'asc' ? 'น้อยไปมาก ↑' : 'มากไปน้อย ↓'})
+                      </span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <a
