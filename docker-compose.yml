@@ -14,6 +14,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
+      - TZ=Asia/Bangkok
       - DATABASE_URL=file:/app/data/phishcentral.db
       - ADMIN_API_KEY=${ADMIN_API_KEY:-phish-secret-admin-key}
       - BASE_URL=${BASE_URL:-http://localhost:3000}
