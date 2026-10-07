@@ -89,6 +89,35 @@ publicTrackingRouter.get('/l/:token', async (req: Request, res: Response) => {
       department: target.target.department || ''
     };
 
+    // If template has custom raw HTML, compile and render it directly
+    if (lp.customHtml && lp.customHtml.trim()) {
+      const extendedVariables = {
+        ...variables,
+        token,
+        submit_url: `/l/${token}/submit`,
+        report_url: `/report/${token}`
+      };
+      let rendered = renderTemplate(lp.customHtml, extendedVariables);
+
+      // Auto-wire form submission to /l/:token/submit if a <form> exists
+      if (/<form\b/i.test(rendered)) {
+        rendered = rendered.replace(/<form\b([^>]*)>/i, (_m, rest) => {
+          let newRest = rest;
+          if (/\baction\s*=/i.test(newRest)) {
+            newRest = newRest.replace(/\baction\s*=\s*["'][^"']*["']/i, `action="/l/${token}/submit"`);
+          } else {
+            newRest += ` action="/l/${token}/submit"`;
+          }
+          if (!/\bmethod\s*=/i.test(newRest)) {
+            newRest += ` method="POST"`;
+          }
+          return `<form${newRest}>`;
+        });
+      }
+
+      return res.send(rendered);
+    }
+
     // Render HTML form
     const html = `
 <!DOCTYPE html>

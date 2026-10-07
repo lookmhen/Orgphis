@@ -230,7 +230,8 @@ templatesRouter.post('/landing-pages', async (req: Request, res: Response) => {
   const {
     name, pageTitle, logoUrl, headerText, subHeaderText,
     submitButtonText, showEmailField,
-    showPasswordField, postSubmitAction, redirectUrl, awarenessContent
+    showPasswordField, postSubmitAction, redirectUrl, awarenessContent,
+    customHtml
   } = req.body;
 
   if (!name || !pageTitle) {
@@ -246,6 +247,7 @@ templatesRouter.post('/landing-pages', async (req: Request, res: Response) => {
         showPasswordField: showPasswordField ?? true,
         postSubmitAction: postSubmitAction || 'AWARENESS_PAGE',
         redirectUrl, awarenessContent,
+        customHtml: customHtml || null,
         isPreset: false
       }
     });
@@ -276,6 +278,7 @@ templatesRouter.post('/landing-pages/:id/clone', async (req: Request, res: Respo
         postSubmitAction: source.postSubmitAction,
         redirectUrl: source.redirectUrl,
         awarenessContent: source.awarenessContent,
+        customHtml: source.customHtml,
         isPreset: false
       }
     });
@@ -292,7 +295,8 @@ templatesRouter.put('/landing-pages/:id', async (req: Request, res: Response) =>
   const {
     name, pageTitle, logoUrl, headerText, subHeaderText,
     submitButtonText, showEmailField,
-    showPasswordField, postSubmitAction, redirectUrl, awarenessContent
+    showPasswordField, postSubmitAction, redirectUrl, awarenessContent,
+    customHtml
   } = req.body;
 
   try {
@@ -301,7 +305,8 @@ templatesRouter.put('/landing-pages/:id', async (req: Request, res: Response) =>
       data: {
         name, pageTitle, logoUrl, headerText, subHeaderText,
         submitButtonText, showEmailField,
-        showPasswordField, postSubmitAction, redirectUrl, awarenessContent
+        showPasswordField, postSubmitAction, redirectUrl, awarenessContent,
+        customHtml: customHtml !== undefined ? (customHtml || null) : undefined
       }
     });
     return res.json(updated);

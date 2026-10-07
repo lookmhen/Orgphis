@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Copy, Plus, Eye, Edit3, Trash2, CheckCircle2, Monitor, Smartphone, Tag, Send, RefreshCw, AlertCircle, Paperclip } from 'lucide-react';
+import { Copy, Plus, Eye, Edit3, Trash2, CheckCircle2, Monitor, Smartphone, Tag, Send, RefreshCw, AlertCircle, Paperclip, Code2, LayoutTemplate, FileCode } from 'lucide-react';
 import { EmailEditorWithTools } from '../components/EmailEditorWithTools';
 
 export const TemplateLibrary: React.FC = () => {
@@ -14,6 +14,8 @@ export const TemplateLibrary: React.FC = () => {
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
   const [editingEmail, setEditingEmail] = useState<any | null>(null);
   const [editingLanding, setEditingLanding] = useState<any | null>(null);
+  const [landingEditorMode, setLandingEditorMode] = useState<'form' | 'customHtml'>('form');
+  const [landingPreviewTab, setLandingPreviewTab] = useState<'code' | 'preview'>('code');
 
   // Test Send Email Modal State
   const [testEmailModal, setTestEmailModal] = useState<any | null>(null);
@@ -34,6 +36,18 @@ export const TemplateLibrary: React.FC = () => {
       .replace(/\{\{signin_ip\}\}/g, '14.162.180.95')
       .replace(/\{\{signin_device\}\}/g, 'Windows 10 • Chrome Browser')
       .replace(/\{\{signin_time\}\}/g, '03:42');
+  };
+
+  const renderLandingPreviewHtml = (html: string) => {
+    return (html || '')
+      .replace(/\{\{name\}\}/g, 'สมชาย ใจมั่นคง')
+      .replace(/\{\{email\}\}/g, 'somchai.j@company.com')
+      .replace(/\{\{department\}\}/g, 'IT & Information Security')
+      .replace(/\{\{current_date\}\}/g, new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' }))
+      .replace(/\{\{phishing_url\}\}/g, '#')
+      .replace(/\{\{submit_url\}\}/g, '#')
+      .replace(/\{\{report_url\}\}/g, '#')
+      .replace(/\{\{token\}\}/g, 'demo-sim-token');
   };
 
   const fetchData = () => {
@@ -130,6 +144,8 @@ export const TemplateLibrary: React.FC = () => {
         const cloned = await res.json();
         fetchData();
         setEditingLanding(cloned); // Open editor immediately for the clone!
+        setLandingEditorMode(cloned.customHtml && cloned.customHtml.trim() ? 'customHtml' : 'form');
+        setLandingPreviewTab('code');
       }
     } catch (err) {
       alert('Clone failed');
@@ -226,6 +242,103 @@ export const TemplateLibrary: React.FC = () => {
     }
   };
 
+  const insertLandingVariable = (variable: string) => {
+    if (editingLanding) {
+      setEditingLanding({
+        ...editingLanding,
+        customHtml: (editingLanding.customHtml || '') + variable
+      });
+    }
+  };
+
+  const insertSampleLandingHtml = () => {
+    const sample = `<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>เข้าสู่ระบบบัญชีผู้ใช้</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #FAF8F5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .card {
+      background: #ffffff;
+      border: 1px solid #E7E5E0;
+      border-radius: 12px;
+      padding: 32px 28px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    }
+    .title { font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 6px; }
+    .subtitle { font-size: 13px; color: #6B7280; margin-bottom: 24px; }
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 6px; }
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #D1D5DB;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+    }
+    input:focus { border-color: #2D5A43; box-shadow: 0 0 0 3px rgba(45,90,67,0.12); }
+    .btn {
+      width: 100%;
+      padding: 11px;
+      background: #2D5A43;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .btn:hover { background: #234735; }
+    .footer { margin-top: 20px; text-align: center; font-size: 12px; color: #9CA3AF; }
+    .report-link { display: block; text-align: center; margin-top: 16px; font-size: 12px; color: #D97736; text-decoration: none; }
+    .report-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="title">ยืนยันตัวตนเพื่อเข้าใช้งาน</div>
+    <div class="subtitle">กรุณากรอกข้อมูลบัญชีองค์กรเพื่อดำเนินการต่อ</div>
+    <form method="POST" action="{{submit_url}}">
+      <div class="form-group">
+        <label>อีเมล / บัญชีผู้ใช้</label>
+        <input type="text" name="email" value="{{email}}" required />
+      </div>
+      <div class="form-group">
+        <label>รหัสผ่าน</label>
+        <input type="password" name="password" required />
+      </div>
+      <button type="submit" class="btn">เข้าสู่ระบบ</button>
+    </form>
+    <a href="{{report_url}}" class="report-link">⚠️ รายงานอีเมลหรือหน้านี้เป็นฟิชชิ่ง</a>
+    <div class="footer">ระบบรักษาความปลอดภัยสารสนเทศองค์กร</div>
+  </div>
+</body>
+</html>`;
+
+    if (editingLanding?.customHtml && !confirm('ต้องการแทนที่โค้ดปัจจุบันด้วยตัวอย่างโค้ดหรือไม่?')) {
+      return;
+    }
+    setEditingLanding({
+      ...editingLanding,
+      customHtml: sample
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -247,17 +360,24 @@ export const TemplateLibrary: React.FC = () => {
             </button>
           ) : (
             <button
-              onClick={() => setEditingLanding({
-                name: 'New Custom Portal',
-                pageTitle: 'Single Sign-On',
-                logoUrl: '',
-                headerText: 'เข้าสู่ระบบบัญชีองค์กร',
-                subHeaderText: 'กรุณากรอกข้อมูลเพื่อยืนยันตัวตน',
-                submitButtonText: 'เข้าสู่ระบบ',
-                showEmailField: true,
-                showPasswordField: true,
-                postSubmitAction: 'AWARENESS_PAGE'
-              })}
+              onClick={() => {
+                setEditingLanding({
+                  name: 'New Custom Portal',
+                  pageTitle: 'Single Sign-On',
+                  logoUrl: '',
+                  headerText: 'เข้าสู่ระบบบัญชีองค์กร',
+                  subHeaderText: 'กรุณากรอกข้อมูลเพื่อยืนยันตัวตน',
+                  submitButtonText: 'เข้าสู่ระบบ',
+                  showEmailField: true,
+                  showPasswordField: true,
+                  postSubmitAction: 'AWARENESS_PAGE',
+                  redirectUrl: '',
+                  awarenessContent: '',
+                  customHtml: ''
+                });
+                setLandingEditorMode('form');
+                setLandingPreviewTab('code');
+              }}
               className="flex items-center space-x-1.5 px-4 py-2 bg-forest text-white rounded-xl text-xs font-semibold hover:bg-forest-hover shadow-soft"
             >
               <Plus className="w-4 h-4" />
@@ -393,9 +513,18 @@ export const TemplateLibrary: React.FC = () => {
                 <h3 className="font-bold text-deep-slate text-base line-clamp-1">{t.name}</h3>
                 <p className="text-xs text-gray-500 mt-1 line-clamp-1 font-medium">{t.pageTitle}</p>
                 <div className="mt-4 p-3 bg-stone-muted/50 rounded-lg text-[12px] text-gray-600 space-y-1 border border-stone-border/50">
-                  <p>หัวข้อ: <span className="font-semibold text-deep-slate">{t.headerText}</span></p>
-                  <p>ปุ่มส่ง: <span className="font-semibold text-deep-slate">{t.submitButtonText}</span></p>
-                  <p>ช่องกรอก: {t.showEmailField && 'อีเมล '}{t.showPasswordField && 'รหัสผ่าน'}</p>
+                  {t.customHtml && t.customHtml.trim() ? (
+                    <div className="flex items-center space-x-1.5 text-blue-700 font-medium py-1">
+                      <Code2 className="w-3.5 h-3.5 text-blue-600" />
+                      <span>โครงสร้าง: <strong>Custom Raw HTML</strong></span>
+                    </div>
+                  ) : (
+                    <>
+                      <p>หัวข้อ: <span className="font-semibold text-deep-slate">{t.headerText}</span></p>
+                      <p>ปุ่มส่ง: <span className="font-semibold text-deep-slate">{t.submitButtonText}</span></p>
+                      <p>ช่องกรอก: {t.showEmailField && 'อีเมล '}{t.showPasswordField && 'รหัสผ่าน'}</p>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -411,7 +540,11 @@ export const TemplateLibrary: React.FC = () => {
                 <div className="flex space-x-1.5">
                   {!t.isPreset && (
                     <button
-                      onClick={() => setEditingLanding(t)}
+                      onClick={() => {
+                        setEditingLanding(t);
+                        setLandingEditorMode(t.customHtml && t.customHtml.trim() ? 'customHtml' : 'form');
+                        setLandingPreviewTab('code');
+                      }}
                       className="flex items-center space-x-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold border border-stone-border text-gray-700 hover:bg-stone-muted transition-all"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
@@ -496,13 +629,13 @@ export const TemplateLibrary: React.FC = () => {
       {/* ================= MODAL: EDIT LANDING PAGE TEMPLATE ================= */}
       {editingLanding && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-stone-border overflow-hidden">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-stone-border overflow-hidden">
             <div className="flex items-center justify-between p-5 pb-4 border-b border-stone-border bg-white flex-shrink-0">
               <div>
                 <h3 className="font-bold text-deep-slate text-lg">
                   {editingLanding.id ? '✏️ ปรับแต่งหน้าเว็บ/ฟอร์ม (Customize Landing Page)' : '➕ สร้างหน้าเว็บใหม่'}
                 </h3>
-                <p className="text-xs text-gray-500">ปรับเปลี่ยนชื่อ โลโก้ หัวข้อฟอร์ม ปุ่มกด และเลือกเปิด-ปิดช่องกรอกข้อมูล</p>
+                <p className="text-xs text-gray-500">เลือกปรับแต่งด้วยแบบฟอร์มสำเร็จรูป หรือเขียนโค้ด Raw HTML ได้อย่างอิสระ</p>
               </div>
               <button 
                 type="button"
@@ -515,9 +648,10 @@ export const TemplateLibrary: React.FC = () => {
 
             <form onSubmit={handleSaveLanding} className="flex flex-col flex-1 overflow-hidden text-xs">
               <div className="p-5 overflow-y-auto space-y-4 flex-1">
+                {/* Basic info: Name & Title */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block font-medium text-gray-700 mb-1">ชื่อเทมเพลต (Template Name)</label>
+                    <label className="block font-medium text-gray-700 mb-1">ชื่อเทมเพลต (Template Name) *</label>
                     <input
                       type="text"
                       required
@@ -527,7 +661,7 @@ export const TemplateLibrary: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block font-medium text-gray-700 mb-1">Title บนแท็บเบราว์เซอร์ (Page Title)</label>
+                    <label className="block font-medium text-gray-700 mb-1">Title บนแท็บเบราว์เซอร์ (Page Title) *</label>
                     <input
                       type="text"
                       required
@@ -538,78 +672,220 @@ export const TemplateLibrary: React.FC = () => {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block font-medium text-gray-700 mb-1">URL โลโก้ (Logo Image URL)</label>
-                  <input
-                    type="text"
-                    placeholder="https://example.com/logo.png (เว้นว่างได้)"
-                    value={editingLanding.logoUrl || ''}
-                    onChange={e => setEditingLanding({ ...editingLanding, logoUrl: e.target.value })}
-                    className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest"
-                  />
+                {/* Mode Selector */}
+                <div className="flex items-center space-x-2 border-y border-stone-border py-2.5 bg-stone-50/60 -mx-5 px-5">
+                  <span className="font-semibold text-gray-600 mr-2">โหมดการสร้าง:</span>
+                  <button
+                    type="button"
+                    onClick={() => setLandingEditorMode('form')}
+                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                      landingEditorMode === 'form'
+                        ? 'bg-forest text-white shadow-soft'
+                        : 'text-gray-600 hover:bg-stone-muted border border-stone-border bg-white'
+                    }`}
+                  >
+                    <LayoutTemplate className="w-3.5 h-3.5" />
+                    <span>🎨 แบบฟอร์มสำเร็จรูป (Form Builder)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLandingEditorMode('customHtml')}
+                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                      landingEditorMode === 'customHtml'
+                        ? 'bg-forest text-white shadow-soft'
+                        : 'text-gray-600 hover:bg-stone-muted border border-stone-border bg-white'
+                    }`}
+                  >
+                    <Code2 className="w-3.5 h-3.5" />
+                    <span>💻 เขียนโค้ด Raw HTML (Custom Raw Code)</span>
+                  </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block font-medium text-gray-700 mb-1">ข้อความหัวข้อฟอร์ม (Header Text)</label>
-                    <input
-                      type="text"
-                      required
-                      value={editingLanding.headerText}
-                      onChange={e => setEditingLanding({ ...editingLanding, headerText: e.target.value })}
-                      className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-medium text-gray-700 mb-1">ข้อความปุ่มส่ง (Button Text)</label>
-                    <input
-                      type="text"
-                      required
-                      value={editingLanding.submitButtonText}
-                      onChange={e => setEditingLanding({ ...editingLanding, submitButtonText: e.target.value })}
-                      className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block font-medium text-gray-700 mb-1">คำอธิบายใต้หัวข้อ (Sub-header)</label>
-                  <input
-                    type="text"
-                    value={editingLanding.subHeaderText || ''}
-                    onChange={e => setEditingLanding({ ...editingLanding, subHeaderText: e.target.value })}
-                    className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest"
-                  />
-                </div>
-
-                {/* Form Fields Toggle */}
-                <div className="p-3.5 bg-stone-muted/50 rounded-xl border border-stone-border/60 space-y-2">
-                  <span className="block font-bold text-deep-slate">ช่องกรอกข้อมูลในแบบฟอร์ม (Form Fields Layout):</span>
-                  <div className="flex space-x-6">
-                    <label className="flex items-center space-x-2 cursor-pointer">
+                {landingEditorMode === 'form' ? (
+                  /* Standard Form Builder */
+                  <div className="space-y-4 pt-1">
+                    <div>
+                      <label className="block font-medium text-gray-700 mb-1">URL โลโก้ (Logo Image URL)</label>
                       <input
-                        type="checkbox"
-                        checked={editingLanding.showEmailField}
-                        onChange={e => setEditingLanding({ ...editingLanding, showEmailField: e.target.checked })}
-                        className="rounded text-forest focus:ring-forest"
+                        type="text"
+                        placeholder="https://example.com/logo.png หรือ /static/logos/... (เว้นว่างได้)"
+                        value={editingLanding.logoUrl || ''}
+                        onChange={e => setEditingLanding({ ...editingLanding, logoUrl: e.target.value })}
+                        className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest"
                       />
-                      <span>ช่องอีเมล (Email)</span>
-                    </label>
+                    </div>
 
-                    <label className="flex items-center space-x-2 cursor-pointer">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block font-medium text-gray-700 mb-1">ข้อความหัวข้อฟอร์ม (Header Text)</label>
+                        <input
+                          type="text"
+                          required
+                          value={editingLanding.headerText || ''}
+                          onChange={e => setEditingLanding({ ...editingLanding, headerText: e.target.value })}
+                          className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-medium text-gray-700 mb-1">ข้อความปุ่มส่ง (Button Text)</label>
+                        <input
+                          type="text"
+                          required
+                          value={editingLanding.submitButtonText || 'เข้าสู่ระบบ'}
+                          onChange={e => setEditingLanding({ ...editingLanding, submitButtonText: e.target.value })}
+                          className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block font-medium text-gray-700 mb-1">คำอธิบายใต้หัวข้อ (Sub-header)</label>
                       <input
-                        type="checkbox"
-                        checked={editingLanding.showPasswordField}
-                        onChange={e => setEditingLanding({ ...editingLanding, showPasswordField: e.target.checked })}
-                        className="rounded text-forest focus:ring-forest"
+                        type="text"
+                        value={editingLanding.subHeaderText || ''}
+                        onChange={e => setEditingLanding({ ...editingLanding, subHeaderText: e.target.value })}
+                        className="w-full p-2.5 border border-stone-border rounded-lg outline-none focus:border-forest"
                       />
-                      <span>ช่องรหัสผ่าน (Password)</span>
-                    </label>
+                    </div>
+
+                    {/* Form Fields Toggle */}
+                    <div className="p-3.5 bg-stone-muted/50 rounded-xl border border-stone-border/60 space-y-2">
+                      <span className="block font-bold text-deep-slate">ช่องกรอกข้อมูลในแบบฟอร์ม (Form Fields Layout):</span>
+                      <div className="flex space-x-6">
+                        <label className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={editingLanding.showEmailField}
+                            onChange={e => setEditingLanding({ ...editingLanding, showEmailField: e.target.checked })}
+                            className="rounded text-forest focus:ring-forest"
+                          />
+                          <span>ช่องอีเมล (Email)</span>
+                        </label>
+
+                        <label className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={editingLanding.showPasswordField}
+                            onChange={e => setEditingLanding({ ...editingLanding, showPasswordField: e.target.checked })}
+                            className="rounded text-forest focus:ring-forest"
+                          />
+                          <span>ช่องรหัสผ่าน (Password)</span>
+                        </label>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  /* Custom Raw HTML Mode */
+                  <div className="space-y-3 pt-1">
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-blue-900 text-xs flex items-start space-x-2">
+                      <AlertCircle className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                      <div className="space-y-1">
+                        <p className="font-semibold">โหมด Custom Raw HTML:</p>
+                        <p className="text-blue-800 leading-relaxed">
+                          วางโค้ด HTML ของหน้า Landing Page ได้อย่างอิสระ ระบบจะเรนเดอร์หน้านี้แทนแบบฟอร์มสำเร็จรูป
+                          และเมื่อเหยื่อกดส่งข้อมูลผ่านแท็ก <code className="bg-blue-100 px-1 py-0.5 rounded font-mono">&lt;form&gt;</code> 
+                          ระบบจะดักจับข้อมูลจำลอง (Zero-Password Sanitizer) และบันทึกสถิติ Compromised อัตโนมัติ
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-[11px] font-semibold text-gray-500 mr-1">แทรกตัวแปร:</span>
+                        {[
+                          { tag: '{{submit_url}}', label: 'URL ส่งฟอร์ม' },
+                          { tag: '{{email}}', label: 'อีเมล' },
+                          { tag: '{{name}}', label: 'ชื่อพนักงาน' },
+                          { tag: '{{department}}', label: 'แผนก' },
+                          { tag: '{{report_url}}', label: 'ลิงก์รายงาน' },
+                          { tag: '{{current_date}}', label: 'วันที่' }
+                        ].map(v => (
+                          <button
+                            key={v.tag}
+                            type="button"
+                            onClick={() => insertLandingVariable(v.tag)}
+                            title={`แทรก ${v.label}`}
+                            className="px-2 py-0.5 bg-stone-100 hover:bg-forest hover:text-white text-forest text-[11px] font-mono font-medium rounded-lg border border-forest/20 shadow-xs transition-all flex items-center space-x-1"
+                          >
+                            <span>+</span>
+                            <span className="font-semibold">{v.tag}</span>
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <button
+                          type="button"
+                          onClick={insertSampleLandingHtml}
+                          className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg text-xs font-semibold flex items-center space-x-1 transition-all"
+                        >
+                          <FileCode className="w-3.5 h-3.5 text-amber-700" />
+                          <span>แทรกตัวอย่างโค้ดฟอร์ม</span>
+                        </button>
+                        {editingLanding.customHtml && (
+                          <button
+                            type="button"
+                            onClick={() => setEditingLanding({ ...editingLanding, customHtml: '' })}
+                            className="text-[11px] text-gray-400 hover:text-red-600 transition-all underline"
+                          >
+                            ล้างโค้ด
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="border border-stone-border rounded-xl overflow-hidden bg-white">
+                      <div className="flex items-center justify-between bg-stone-50 border-b border-stone-border px-3 py-1.5">
+                        <div className="flex space-x-2">
+                          <button
+                            type="button"
+                            onClick={() => setLandingPreviewTab('code')}
+                            className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                              landingPreviewTab === 'code' ? 'bg-white text-deep-slate shadow-xs border border-stone-border' : 'text-gray-500 hover:text-deep-slate'
+                            }`}
+                          >
+                            💻 โค้ด HTML
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setLandingPreviewTab('preview')}
+                            className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                              landingPreviewTab === 'preview' ? 'bg-white text-forest shadow-xs border border-stone-border' : 'text-gray-500 hover:text-deep-slate'
+                            }`}
+                          >
+                            👁️ พรีวิวผลลัพธ์ (Live Preview)
+                          </button>
+                        </div>
+                        <span className="text-[11px] font-mono text-gray-400">
+                          {(editingLanding.customHtml || '').length} ตัวอักษร
+                        </span>
+                      </div>
+
+                      {landingPreviewTab === 'code' ? (
+                        <textarea
+                          rows={16}
+                          value={editingLanding.customHtml || ''}
+                          onChange={e => setEditingLanding({ ...editingLanding, customHtml: e.target.value })}
+                          placeholder="<!DOCTYPE html>&#10;<html>&#10;  <!-- วางโค้ดหน้าเว็บ Landing Page ของคุณที่นี่ -->&#10;</html>"
+                          className="w-full p-3 font-mono text-xs outline-none bg-stone-900 text-stone-100 leading-relaxed resize-y focus:ring-0"
+                          style={{ minHeight: '300px' }}
+                        />
+                      ) : (
+                        <div className="p-4 bg-warm-sand min-h-[300px] flex items-center justify-center">
+                          <iframe
+                            title="Landing Live Preview"
+                            sandbox="allow-scripts allow-forms"
+                            className="w-full h-[380px] bg-white rounded-lg border border-stone-border shadow-xs"
+                            srcDoc={renderLandingPreviewHtml(editingLanding.customHtml || '<p style="text-align:center;color:#999;padding:40px;">(ยังไม่มีโค้ด HTML)</p>')}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Post Submit Action */}
-                <div>
+                <div className="pt-2 border-t border-stone-border">
                   <label className="block font-medium text-gray-700 mb-1">พฤติกรรมหลังจากผู้ใช้กด Submit</label>
                   <select
                     value={editingLanding.postSubmitAction}
@@ -719,35 +995,41 @@ export const TemplateLibrary: React.FC = () => {
                   title="Preview"
                   sandbox="allow-scripts allow-forms"
                   className="w-full h-full min-h-[420px] bg-white"
-                  srcDoc={previewTemplate.bodyHtml ? renderEmailPreviewHtml(previewTemplate.bodyHtml) : `
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                      <meta charset="utf-8">
-                      <style>
-                        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #FAF8F5; padding: 24px; color: #24292F; display: flex; justify-content: center; align-items: center; min-height: 80vh; }
-                        .card { background: #fff; border: 1px solid #E7E5E0; border-radius: 12px; max-width: 380px; width: 100%; padding: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-                        .logo { max-height: 40px; margin-bottom: 16px; }
-                        h2 { font-size: 18px; margin-bottom: 6px; }
-                        p { font-size: 13px; color: #666; margin-bottom: 20px; }
-                        .group { margin-bottom: 12px; }
-                        label { display: block; font-size: 12px; font-weight: 500; margin-bottom: 4px; color: #444; }
-                        input { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; }
-                        button { width: 100%; padding: 10px; background: #2D5A43; color: #fff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 10px; }
-                      </style>
-                    </head>
-                    <body>
-                      <div class="card">
-                        ${previewTemplate.logoUrl ? `<img src="${previewTemplate.logoUrl}" class="logo" />` : ''}
-                        <h2>${previewTemplate.headerText || previewTemplate.pageTitle}</h2>
-                        <p>${previewTemplate.subHeaderText || ''}</p>
-                        ${previewTemplate.showEmailField ? '<div class="group"><label>Email</label><input type="text" value="employee@company.com" /></div>' : ''}
-                        ${previewTemplate.showPasswordField ? '<div class="group"><label>Password</label><input type="password" /></div>' : ''}
-                        <button>${previewTemplate.submitButtonText || 'เข้าสู่ระบบ'}</button>
-                      </div>
-                    </body>
-                    </html>
-                  `}
+                  srcDoc={
+                    previewTemplate.bodyHtml
+                      ? renderEmailPreviewHtml(previewTemplate.bodyHtml)
+                      : (previewTemplate.customHtml && previewTemplate.customHtml.trim()
+                          ? renderLandingPreviewHtml(previewTemplate.customHtml)
+                          : `
+                            <!DOCTYPE html>
+                            <html>
+                            <head>
+                              <meta charset="utf-8">
+                              <style>
+                                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #FAF8F5; padding: 24px; color: #24292F; display: flex; justify-content: center; align-items: center; min-height: 80vh; }
+                                .card { background: #fff; border: 1px solid #E7E5E0; border-radius: 12px; max-width: 380px; width: 100%; padding: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+                                .logo { max-height: 40px; margin-bottom: 16px; }
+                                h2 { font-size: 18px; margin-bottom: 6px; }
+                                p { font-size: 13px; color: #666; margin-bottom: 20px; }
+                                .group { margin-bottom: 12px; }
+                                label { display: block; font-size: 12px; font-weight: 500; margin-bottom: 4px; color: #444; }
+                                input { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; }
+                                button { width: 100%; padding: 10px; background: #2D5A43; color: #fff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+                              </style>
+                            </head>
+                            <body>
+                              <div class="card">
+                                ${previewTemplate.logoUrl ? `<img src="${previewTemplate.logoUrl}" class="logo" />` : ''}
+                                <h2>${previewTemplate.headerText || previewTemplate.pageTitle}</h2>
+                                <p>${previewTemplate.subHeaderText || ''}</p>
+                                ${previewTemplate.showEmailField ? '<div class="group"><label>Email</label><input type="text" value="employee@company.com" /></div>' : ''}
+                                ${previewTemplate.showPasswordField ? '<div class="group"><label>Password</label><input type="password" /></div>' : ''}
+                                <button>${previewTemplate.submitButtonText || 'เข้าสู่ระบบ'}</button>
+                              </div>
+                            </body>
+                            </html>
+                          `)
+                  }
                 />
               </div>
             </div>
