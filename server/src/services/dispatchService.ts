@@ -2,6 +2,8 @@ import nodemailer, { type Transporter } from 'nodemailer';
 import { prisma } from '../prisma.js';
 import { renderTemplate } from './templateService.js';
 import { trackingService } from './trackingService.js';
+import { isWithinBusinessHours, generateDepartmentAwareSchedule } from '../utils/scheduler.js';
+import { getLocalIpAddress } from '../utils/network.js';
 
 interface DispatchOptions {
   campaignId: string;
@@ -85,6 +87,28 @@ class DispatchService {
 
     while (this.activeCampaigns.has(campaignId)) {
       const now = new Date();
+
+      // Working Hours Guard: Never dispatch randomized simulation emails outside allowed days / hours
+      if (isRandomized) {
+        const parsedDays = campaign.allowedDays
+          ? String(campaign.allowedDays).split(',').map((d: string) => parseInt(d.trim(), 10)).filter(Boolean)
+          : [1, 2, 3, 4, 5];
+        const dailyStartTime = campaign.dailyStartTime || '08:30';
+        const dailyEndTime = campaign.dailyEndTime || '17:00';
+
+        const inBusinessHours = isWithinBusinessHours(
+          now,
+          parsedDays.length > 0 ? parsedDays : [1, 2, 3, 4, 5],
+          dailyStartTime,
+          dailyEndTime
+        );
+
+        if (!inBusinessHours) {
+          // Pause and wait for next check (60 seconds)
+          await new Promise((resolve) => setTimeout(resolve, 60000));
+          continue;
+        }
+      }
 
       // Find targets pending dispatch.
       // If RANDOMIZED, only pick targets whose scheduledAt has arrived (scheduledAt <= now)
@@ -241,8 +265,182 @@ class DispatchService {
   /**
    * Emergency Kill Switch to stop active dispatching immediately
    */
-  public killCampaign(campaignId: string): void {
+  public async killCampaign(campaignId: string): Promise<void> {
     this.activeCampaigns.delete(campaignId);
+    await prisma.campaignTarget.updateMany({
+      where: { campaignId, dispatchStatus: 'SENDING' },
+      data: { dispatchStatus: 'PENDING' }
+    });
+  }
+
+  /**
+   * Pauses an active campaign dispatching loop
+   */
+  public async pauseCampaign(campaignId: string): Promise<void> {
+    this.activeCampaigns.delete(campaignId);
+
+    // Reset any targets stuck in SENDING back to PENDING so they are not lost
+    await prisma.campaignTarget.updateMany({
+      where: { campaignId, dispatchStatus: 'SENDING' },
+      data: { dispatchStatus: 'PENDING' }
+    });
+
+    await prisma.campaign.update({
+      where: { id: campaignId },
+      data: { status: 'PAUSED' }
+    });
+
+    console.log(`[DispatchService] Campaign ${campaignId} paused.`);
+  }
+
+  /**
+   * Resumes a paused campaign
+   */
+  public async resumeCampaign(options: DispatchOptions): Promise<void> {
+    const { campaignId, baseUrl } = options;
+
+    // Reschedule any targets that became overdue during the pause
+    await this.rescheduleOverdueTargets(campaignId);
+
+    // Reset any targets stuck in SENDING back to PENDING
+    await prisma.campaignTarget.updateMany({
+      where: { campaignId, dispatchStatus: 'SENDING' },
+      data: { dispatchStatus: 'PENDING' }
+    });
+
+    await prisma.campaign.update({
+      where: { id: campaignId },
+      data: { status: 'RUNNING' }
+    });
+
+    return this.launchCampaign({ campaignId, baseUrl });
+  }
+
+  /**
+   * Reschedules any overdue targets whose scheduledAt timestamp has already passed
+   * into upcoming business hours, maintaining department separation and randomized jitter.
+   */
+  public async rescheduleOverdueTargets(campaignId: string): Promise<number> {
+    const campaign = await prisma.campaign.findUnique({
+      where: { id: campaignId }
+    });
+    if (!campaign || campaign.scheduleType !== 'RANDOMIZED') return 0;
+
+    const now = new Date();
+    // Overdue targets: PENDING/QUEUED whose scheduledAt is in the past (<= now) or null
+    const overdueTargets = await prisma.campaignTarget.findMany({
+      where: {
+        campaignId,
+        dispatchStatus: { in: ['PENDING', 'QUEUED'] },
+        OR: [
+          { scheduledAt: null },
+          { scheduledAt: { lte: now } }
+        ]
+      },
+      include: { target: true }
+    });
+
+    if (overdueTargets.length === 0) return 0;
+
+    const parsedDays = campaign.allowedDays
+      ? String(campaign.allowedDays).split(',').map((d: string) => parseInt(d.trim(), 10)).filter(Boolean)
+      : [1, 2, 3, 4, 5];
+    const dailyStartTime = campaign.dailyStartTime || '08:30';
+    const dailyEndTime = campaign.dailyEndTime || '17:00';
+
+    let schedEnd = campaign.endDate ? new Date(campaign.endDate) : null;
+    if (!schedEnd || schedEnd.getTime() <= now.getTime()) {
+      // Extend end date to 3 business days into the future if campaign endDate was in the past
+      schedEnd = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+    }
+
+    const targetObjects = overdueTargets.map(ct => ct.target);
+    const newScheduleMap = generateDepartmentAwareSchedule(targetObjects, {
+      startDate: now,
+      endDate: schedEnd,
+      allowedDays: parsedDays.length > 0 ? parsedDays : [1, 2, 3, 4, 5],
+      dailyStartTime,
+      dailyEndTime,
+      randomizeSendTimes: campaign.randomizeSendTimes ?? true
+    });
+
+    for (const ct of overdueTargets) {
+      const newSlot = newScheduleMap.get(ct.targetId);
+      if (newSlot) {
+        await prisma.campaignTarget.update({
+          where: { id: ct.id },
+          data: { scheduledAt: newSlot }
+        });
+      }
+    }
+
+    console.log(`[DispatchService] Rescheduled ${overdueTargets.length} overdue target(s) for campaign "${campaign.name}" into upcoming business hours.`);
+    return overdueTargets.length;
+  }
+
+  /**
+   * Automatically restores and resumes any campaigns that were in RUNNING state
+   * prior to a server restart.
+   */
+  public async autoResumeRunningCampaigns(defaultBaseUrl?: string): Promise<void> {
+    try {
+      const runningCampaigns = await prisma.campaign.findMany({
+        where: { status: 'RUNNING' }
+      });
+
+      if (runningCampaigns.length === 0) {
+        return;
+      }
+
+      console.log(`[DispatchService] Auto-resume: Found ${runningCampaigns.length} running campaign(s) to restore...`);
+
+      let resolvedBaseUrl = defaultBaseUrl;
+      if (!resolvedBaseUrl) {
+        const localIp = getLocalIpAddress();
+        const port = process.env.PORT || '3000';
+        resolvedBaseUrl = process.env.BASE_URL || `http://${localIp}:${port}`;
+      }
+
+      for (const campaign of runningCampaigns) {
+        // 1. Reset any targets stuck in SENDING from unexpected server crash
+        await prisma.campaignTarget.updateMany({
+          where: { campaignId: campaign.id, dispatchStatus: 'SENDING' },
+          data: { dispatchStatus: 'PENDING' }
+        });
+
+        // 2. Check if all targets are already finished
+        const remaining = await prisma.campaignTarget.count({
+          where: {
+            campaignId: campaign.id,
+            dispatchStatus: { in: ['PENDING', 'QUEUED'] }
+          }
+        });
+
+        if (remaining === 0) {
+          await prisma.campaign.update({
+            where: { id: campaign.id },
+            data: { status: 'COMPLETED', endedAt: new Date() }
+          });
+          console.log(`[DispatchService] Campaign "${campaign.name}" (${campaign.id}) already completed all dispatches.`);
+          continue;
+        }
+
+        // 3. Reschedule any overdue targets
+        if (campaign.scheduleType === 'RANDOMIZED') {
+          await this.rescheduleOverdueTargets(campaign.id);
+        }
+
+        // 4. Launch campaign dispatch loop
+        this.launchCampaign({
+          campaignId: campaign.id,
+          baseUrl: resolvedBaseUrl
+        });
+
+        console.log(`[DispatchService] Auto-resumed campaign "${campaign.name}" (${campaign.id}) successfully.`);
+      }
+    } catch (err: any) {
+      console.error('[DispatchService] Error during auto-resume of running campaigns:', err.message);
+    }
   }
 }
 

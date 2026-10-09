@@ -39,6 +39,33 @@ export function parseTimeToMinutes(timeStr: string): number {
 }
 
 /**
+ * Checks if a specific timestamp is currently within allowed business days and working hours.
+ */
+export function isWithinBusinessHours(
+  now: Date,
+  allowedDays: number[] = [1, 2, 3, 4, 5],
+  dailyStartTime: string = '08:30',
+  dailyEndTime: string = '17:00',
+  timezoneOffset?: number
+): boolean {
+  const tzOffset = typeof timezoneOffset === 'number' ? timezoneOffset : now.getTimezoneOffset();
+  const localMs = now.getTime() - (tzOffset * 60 * 1000);
+  const localDate = new Date(localMs);
+
+  const jsDay = localDate.getUTCDay();
+  const dayNumber = jsDay === 0 ? 7 : jsDay;
+  if (!allowedDays.includes(dayNumber)) {
+    return false;
+  }
+
+  const currentMinutes = localDate.getUTCHours() * 60 + localDate.getUTCMinutes();
+  const startMinutes = parseTimeToMinutes(dailyStartTime);
+  const endMinutes = parseTimeToMinutes(dailyEndTime);
+
+  return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
+}
+
+/**
  * Parses a Date or ISO string into local calendar date parts (year, month 0-indexed, day)
  * with respect to the given timezone offset (in minutes).
  */

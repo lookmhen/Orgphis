@@ -18,6 +18,7 @@ import { campaignsRouter } from './routes/campaigns.js';
 import { dashboardRouter } from './routes/dashboard.js';
 import { publicTrackingRouter } from './routes/publicTracking.js';
 import { getLocalIpAddress } from './utils/network.js';
+import { dispatchService } from './services/dispatchService.js';
 
 dotenv.config();
 
@@ -117,14 +118,18 @@ app.get('*', (_req, res, next) => {
   });
 });
 
-// Initialize database pragmas, seed presets, seed default admin, and start server
+// Initialize database pragmas, seed presets, seed default admin, auto-resume running campaigns, and start server
 async function bootstrap() {
   await initDatabasePragmas();
   await seedOfficialPresets();
   await authService.seedDefaultAdmin();
 
+  // Auto-resume any campaigns that were in RUNNING state prior to server restart
+  const localIp = getLocalIpAddress();
+  const defaultBaseUrl = process.env.BASE_URL || `http://${localIp}:${PORT}`;
+  await dispatchService.autoResumeRunningCampaigns(defaultBaseUrl);
+
   app.listen(PORT, '0.0.0.0', () => {
-    const localIp = getLocalIpAddress();
     console.log(`====================================================`);
     console.log(`🛡️  PhishCentral Server running on port ${PORT} (0.0.0.0)`);
     console.log(`🌐 Base URL: ${process.env.BASE_URL || `http://${localIp}:${PORT}`}`);

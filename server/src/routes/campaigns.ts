@@ -317,12 +317,40 @@ campaignsRouter.post('/:id/launch', async (req: Request, res: Response) => {
   }
 });
 
+// PAUSE campaign
+campaignsRouter.post('/:id/pause', async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    await dispatchService.pauseCampaign(id);
+    return res.json({ success: true, message: 'พักการส่งแคมเปญชั่วคราวเรียบร้อยแล้ว' });
+  } catch (err: any) {
+    console.error(`[Campaigns] Pause error:`, err);
+    return res.status(500).json({ error: `พักแคมเปญไม่สำเร็จ: ${err.message}` });
+  }
+});
+
+// RESUME campaign
+campaignsRouter.post('/:id/resume', async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const baseUrl = resolveServerBaseUrl(req.body?.baseUrl, req.get('host'), req.protocol);
+
+  try {
+    console.log(`[Campaigns] Resuming campaign ${id} with Phishing Base URL: ${baseUrl}`);
+    await dispatchService.resumeCampaign({ campaignId: id, baseUrl });
+    return res.json({ success: true, message: `รันแคมเปญต่อเรียบร้อยแล้ว`, baseUrl });
+  } catch (err: any) {
+    console.error(`[Campaigns] Resume error:`, err);
+    return res.status(500).json({ error: `รันแคมเปญต่อไม่สำเร็จ: ${err.message}` });
+  }
+});
+
 // EMERGENCY KILL SWITCH
 campaignsRouter.post('/:id/kill', async (req: Request, res: Response) => {
   const { id } = req.params;
 
   try {
-    dispatchService.killCampaign(id);
+    await dispatchService.killCampaign(id);
     await prisma.campaign.update({
       where: { id },
       data: { status: 'CANCELLED', endedAt: new Date() }

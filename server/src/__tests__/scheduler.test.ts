@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   isAllowedDay,
+  isWithinBusinessHours,
   getValidScheduleDates,
   generateRandomizedSchedule,
   generateDepartmentAwareSchedule,
@@ -228,5 +229,25 @@ describe('Randomized Smear Scheduler Utility', () => {
     for (const count of dayCounts.values()) {
       expect(count).toBeLessThanOrEqual(2);
     }
+  });
+
+  describe('isWithinBusinessHours Guard', () => {
+    it('should return true during business hours on weekdays', () => {
+      // Wednesday 2026-10-14 at 10:30 Bangkok time (UTC+7, UTC 03:30)
+      const wednesday1030Utc = new Date(Date.UTC(2026, 9, 14, 3, 30, 0));
+      expect(isWithinBusinessHours(wednesday1030Utc, [1, 2, 3, 4, 5], '08:30', '17:00', -420)).toBe(true);
+    });
+
+    it('should return false at night outside working hours (e.g. 21:00)', () => {
+      // Wednesday 2026-10-14 at 21:00 Bangkok time (UTC+7, UTC 14:00)
+      const wednesday2100Utc = new Date(Date.UTC(2026, 9, 14, 14, 0, 0));
+      expect(isWithinBusinessHours(wednesday2100Utc, [1, 2, 3, 4, 5], '08:30', '17:00', -420)).toBe(false);
+    });
+
+    it('should return false on weekends even during day time', () => {
+      // Saturday 2026-10-17 at 11:00 Bangkok time (UTC+7, UTC 04:00)
+      const saturday1100Utc = new Date(Date.UTC(2026, 9, 17, 4, 0, 0));
+      expect(isWithinBusinessHours(saturday1100Utc, [1, 2, 3, 4, 5], '08:30', '17:00', -420)).toBe(false);
+    });
   });
 });

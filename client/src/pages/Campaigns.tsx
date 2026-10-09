@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Send, Play, Square, Download, Plus, CheckCircle2, Clock, AlertCircle, RotateCcw, Trash2, RefreshCw, Calendar, Sliders, Users, Search, X, Filter, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Send, Play, Pause, Square, Download, Plus, CheckCircle2, Clock, AlertCircle, RotateCcw, Trash2, RefreshCw, Calendar, Sliders, Users, Search, X, Filter, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const Campaigns: React.FC = () => {
@@ -276,6 +276,41 @@ export const Campaigns: React.FC = () => {
     }
   };
 
+  const handlePause = async (id: string) => {
+    if (!confirm('ต้องการพักการส่งอีเมลสำหรับแคมเปญนี้ชั่วคราว (Pause) ใช่หรือไม่?')) return;
+    const res = await fetch(`/api/campaigns/${id}/pause`, { method: 'POST' });
+    if (res.ok) {
+      alert('พักการส่งแคมเปญชั่วคราวเรียบร้อยแล้ว');
+      fetchCampaigns();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error || 'พักแคมเปญไม่สำเร็จ');
+    }
+  };
+
+  const handleResume = async (id: string) => {
+    if (!confirm('ยืนยันให้ระบบรันต่อ (Resume) และส่งอีเมลต่อจากเดิม?')) return;
+
+    let clientBaseUrl = window.location.origin;
+    if (clientBaseUrl.includes(':5173')) {
+      clientBaseUrl = clientBaseUrl.replace(':5173', ':3000');
+    }
+
+    const res = await fetch(`/api/campaigns/${id}/resume`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ baseUrl: clientBaseUrl })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      alert(data.message || 'รันแคมเปญต่อเรียบร้อยแล้ว');
+      fetchCampaigns();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error || 'รันแคมเปญต่อไม่สำเร็จ');
+    }
+  };
+
   const handleKill = async (id: string) => {
     if (!confirm('⚠️ คำเตือน: คุณต้องการสั่ง Emergency Kill Switch เพื่อหยุดแคมเปญนี้ทันทีใช่หรือไม่?')) return;
     const res = await fetch(`/api/campaigns/${id}/kill`, { method: 'POST' });
@@ -396,11 +431,12 @@ export const Campaigns: React.FC = () => {
                     <h3 className="font-bold text-deep-slate text-base">{c.name}</h3>
                     <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
                       c.status === 'RUNNING' ? 'bg-amber-50 text-amber-terracotta animate-pulse' :
+                      c.status === 'PAUSED' ? 'bg-amber-100 text-amber-800 border border-amber-300' :
                       c.status === 'COMPLETED' ? 'bg-forest-light text-forest' :
                       c.status === 'CANCELLED' ? 'bg-red-50 text-red-600' :
                       'bg-stone-muted text-gray-600'
                     }`}>
-                      {c.status}
+                      {c.status === 'PAUSED' ? 'PAUSED (พักชั่วคราว)' : c.status}
                     </span>
                     {c.scheduleType === 'RANDOMIZED' && (
                       <span className="flex items-center space-x-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
@@ -442,13 +478,47 @@ export const Campaigns: React.FC = () => {
                   )}
 
                   {c.status === 'RUNNING' && (
-                    <button
-                      onClick={() => handleKill(c.id)}
-                      className="flex items-center space-x-1 px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700 shadow-soft"
-                    >
-                      <Square className="w-3.5 h-3.5" />
-                      <span>หยุดฉุกเฉิน (Kill)</span>
-                    </button>
+                    <>
+                      <button
+                        onClick={() => handlePause(c.id)}
+                        className="flex items-center space-x-1 px-3 py-1.5 bg-amber-500 text-white rounded-lg text-xs font-semibold hover:bg-amber-600 shadow-soft"
+                        title="พักการส่งชั่วคราว (Pause)"
+                      >
+                        <Pause className="w-3.5 h-3.5" />
+                        <span>พักชั่วคราว (Pause)</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleKill(c.id)}
+                        className="flex items-center space-x-1 px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700 shadow-soft"
+                        title="หยุดฉุกเฉิน (Kill)"
+                      >
+                        <Square className="w-3.5 h-3.5" />
+                        <span>หยุดฉุกเฉิน (Kill)</span>
+                      </button>
+                    </>
+                  )}
+
+                  {c.status === 'PAUSED' && (
+                    <>
+                      <button
+                        onClick={() => handleResume(c.id)}
+                        className="flex items-center space-x-1 px-3 py-1.5 bg-forest text-white rounded-lg text-xs font-semibold hover:bg-forest-hover shadow-soft"
+                        title="รันต่อ (Resume)"
+                      >
+                        <Play className="w-3.5 h-3.5" />
+                        <span>รันต่อ (Resume)</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleKill(c.id)}
+                        className="flex items-center space-x-1 px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700 shadow-soft"
+                        title="หยุดฉุกเฉิน (Kill)"
+                      >
+                        <Square className="w-3.5 h-3.5" />
+                        <span>หยุดฉุกเฉิน (Kill)</span>
+                      </button>
+                    </>
                   )}
 
                   {c.status !== 'RUNNING' && (
