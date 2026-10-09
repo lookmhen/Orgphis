@@ -648,8 +648,8 @@ export const Campaigns: React.FC = () => {
                 {isExpanded && (
                   <div className="border-t border-stone-border/70 bg-stone-50/50 p-4 space-y-4">
                     {/* Metadata Details Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs bg-white p-3.5 rounded-lg border border-stone-border/60">
-                      <div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 text-xs bg-white p-3.5 rounded-lg border border-stone-border/60">
+                      <div className="lg:col-span-3 min-w-0">
                         <p className="text-gray-400 font-medium">🎯 กลุ่มเป้าหมาย:</p>
                         <p className="font-semibold text-deep-slate mt-0.5 truncate" title={c.targetGroupNames?.join(', ') || c.targetGroup?.name}>
                           {c.targetGroupNames && c.targetGroupNames.length > 0
@@ -657,27 +657,39 @@ export const Campaigns: React.FC = () => {
                             : c.targetGroup?.name || 'ไม่มีกลุ่ม'}
                         </p>
                       </div>
-                      <div>
+                      <div className="lg:col-span-3 min-w-0">
                         <p className="text-gray-400 font-medium">✉️ เทมเพลตอีเมล:</p>
-                        <p className="font-semibold text-deep-slate mt-0.5 truncate">
+                        <p className="font-semibold text-deep-slate mt-0.5 truncate" title={c.campaignEmailTemplates && c.campaignEmailTemplates.length > 1 ? c.campaignEmailTemplates.map((cet: any) => cet.emailTemplate?.name).join(', ') : c.emailTemplate?.name}>
                           {c.campaignEmailTemplates && c.campaignEmailTemplates.length > 1
                             ? `สุ่ม ${c.campaignEmailTemplates.length} เทมเพลต (${c.campaignEmailTemplates.map((cet: any) => cet.emailTemplate?.name).join(', ')})`
                             : c.emailTemplate?.name || '-'}
                         </p>
                       </div>
-                      <div>
+                      <div className="lg:col-span-2 min-w-0">
                         <p className="text-gray-400 font-medium">📤 โปรไฟล์ SMTP:</p>
-                        <p className="font-semibold text-deep-slate mt-0.5 truncate">
+                        <p className="font-semibold text-deep-slate mt-0.5 truncate" title={c.smtpProfile?.name}>
                           {c.smtpProfile?.name || '-'}
                         </p>
                       </div>
-                      <div>
+                      <div className="lg:col-span-4 min-w-0">
                         <p className="text-gray-400 font-medium">📅 รูปแบบการส่ง:</p>
-                        <p className="font-semibold text-deep-slate mt-0.5 truncate">
-                          {c.scheduleType === 'RANDOMIZED'
-                            ? `สุ่มตามวันทำการ (${c.startDate ? new Date(c.startDate).toLocaleDateString('th-TH') : ''} - ${c.endDate ? new Date(c.endDate).toLocaleDateString('th-TH') : ''} เวลา ${c.dailyStartTime || '08:30'} - ${c.dailyEndTime || '17:00'})`
-                            : 'ส่งทันที (Immediate)'}
-                        </p>
+                        {c.scheduleType === 'RANDOMIZED' ? (
+                          <div
+                            className="flex items-center space-x-1.5 mt-0.5 min-w-0"
+                            title={`สุ่มส่งเฉพาะวันทำการ จันทร์-ศุกร์ เวลา ${c.dailyStartTime || '08:30'} - ${c.dailyEndTime || '17:00'} น. (${c.startDate ? new Date(c.startDate).toLocaleDateString('th-TH') : ''} ถึง ${c.endDate ? new Date(c.endDate).toLocaleDateString('th-TH') : ''})`}
+                          >
+                            <span className="font-mono text-blue-700 bg-blue-50 border border-blue-200/60 px-1.5 py-0.5 rounded text-[11px] font-bold flex-shrink-0">
+                              {c.dailyStartTime || '08:30'} - {c.dailyEndTime || '17:00'}
+                            </span>
+                            <span className="font-semibold text-deep-slate truncate text-[11px]">
+                              สุ่มวันทำการ ({c.startDate ? new Date(c.startDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'numeric', year: '2-digit' }) : ''} - {c.endDate ? new Date(c.endDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'numeric', year: '2-digit' }) : ''})
+                            </span>
+                          </div>
+                        ) : (
+                          <p className="font-semibold text-deep-slate mt-0.5 truncate">
+                            ส่งทันที (Immediate)
+                          </p>
+                        )}
                       </div>
                     </div>
 
