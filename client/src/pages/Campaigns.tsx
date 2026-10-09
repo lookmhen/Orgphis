@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Send, Play, Pause, Square, Download, Plus, CheckCircle2, Clock, AlertCircle, RotateCcw, Trash2, RefreshCw, Calendar, Sliders, Users, Search, X, Filter, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Send, Play, Pause, Square, Download, Plus, CheckCircle2, Clock, AlertCircle, RotateCcw, Trash2, RefreshCw, Calendar, Sliders, Users, Search, X, Filter, ArrowUpDown, ArrowUp, ArrowDown, ChevronDown, ChevronUp, ChevronsUpDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const Campaigns: React.FC = () => {
@@ -44,6 +44,29 @@ export const Campaigns: React.FC = () => {
     dailyEndTime: '17:00',
     randomizeSendTimes: true
   });
+
+  // Expand/collapse campaign accordion state
+  const [expandedCampaignIds, setExpandedCampaignIds] = useState<Set<string>>(new Set());
+
+  const toggleExpand = (id: string) => {
+    setExpandedCampaignIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleExpandAll = () => {
+    if (expandedCampaignIds.size === campaigns.length) {
+      setExpandedCampaignIds(new Set());
+    } else {
+      setExpandedCampaignIds(new Set(campaigns.map(c => c.id)));
+    }
+  };
 
   // Viewing campaign recipients modal states
   const [viewingCampaign, setViewingCampaign] = useState<any | null>(null);
@@ -377,6 +400,16 @@ export const Campaigns: React.FC = () => {
           <p className="text-sm text-gray-500 mt-1">สร้าง รันคิวส่งอีเมลจำลอง ติดตามผล และดาวน์โหลดรายงานสถิติ</p>
         </div>
         <div className="flex items-center space-x-2">
+          {campaigns.length > 0 && (
+            <button
+              onClick={toggleExpandAll}
+              className="flex items-center space-x-1.5 px-3.5 py-2 border border-stone-border text-gray-700 bg-white hover:bg-stone-muted rounded-xl text-xs font-semibold shadow-xs transition-all"
+              title={expandedCampaignIds.size === campaigns.length ? 'ยุบการ์ดแคมเปญทั้งหมด' : 'ขยายการ์ดแคมเปญทั้งหมด'}
+            >
+              <ChevronsUpDown className="w-3.5 h-3.5 text-gray-500" />
+              <span>{expandedCampaignIds.size === campaigns.length ? 'ยุบทั้งหมด' : 'ขยายทั้งหมด'}</span>
+            </button>
+          )}
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
@@ -423,160 +456,275 @@ export const Campaigns: React.FC = () => {
             ยังไม่มีแคมเปญในระบบ เริ่มต้นสร้างแคมเปญแรกของคุณด้วยปุ่มด้านบน
           </div>
         ) : (
-          campaigns.map(c => (
-            <div key={c.id} className="bg-white rounded-xl border border-stone-border shadow-soft p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="flex items-center space-x-2.5">
-                    <h3 className="font-bold text-deep-slate text-base">{c.name}</h3>
-                    <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
-                      c.status === 'RUNNING' ? 'bg-amber-50 text-amber-terracotta animate-pulse' :
-                      c.status === 'PAUSED' ? 'bg-amber-100 text-amber-800 border border-amber-300' :
-                      c.status === 'COMPLETED' ? 'bg-forest-light text-forest' :
-                      c.status === 'CANCELLED' ? 'bg-red-50 text-red-600' :
-                      'bg-stone-muted text-gray-600'
-                    }`}>
-                      {c.status === 'PAUSED' ? 'PAUSED (พักชั่วคราว)' : c.status}
-                    </span>
-                    {c.scheduleType === 'RANDOMIZED' && (
-                      <span className="flex items-center space-x-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                        <Calendar className="w-3 h-3 text-blue-600" />
-                        <span>Randomized Schedule ({c.startDate ? new Date(c.startDate).toLocaleDateString() : ''} - {c.endDate ? new Date(c.endDate).toLocaleDateString() : ''})</span>
-                      </span>
-                    )}
-                    {c.campaignEmailTemplates && c.campaignEmailTemplates.length > 1 && (
-                      <span className="flex items-center space-x-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
-                        <Sliders className="w-3 h-3 text-purple-600" />
-                        <span>สุ่ม {c.campaignEmailTemplates.length} เทมเพลต (Multi-Vector)</span>
-                      </span>
-                    )}
+          campaigns.map(c => {
+            const isExpanded = expandedCampaignIds.has(c.id);
+            const totalTargets = c.stats?.total ?? c._count?.campaignTargets ?? 0;
+            const sentCount = c.stats?.sent ?? 0;
+            const clickedCount = c.stats?.clicked ?? 0;
+            const submittedCount = c.stats?.submitted ?? 0;
+            const reportedCount = c.stats?.reported ?? 0;
+
+            return (
+              <div
+                key={c.id}
+                className="bg-white rounded-xl border border-stone-border shadow-xs hover:border-forest/40 transition-all overflow-hidden"
+              >
+                {/* Clickable Header Bar (Collapsed View) */}
+                <div
+                  onClick={() => toggleExpand(c.id)}
+                  className="p-3.5 sm:px-4 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-3 hover:bg-stone-50/60 transition-colors select-none"
+                >
+                  {/* Left: Chevron + Name + Badges + Quick Metrics Pill */}
+                  <div className="flex items-center space-x-3 min-w-0 flex-1">
+                    <div className="text-gray-400 hover:text-forest transition-colors flex-shrink-0 p-1 rounded-md">
+                      {isExpanded ? (
+                        <ChevronUp className="w-4 h-4 text-forest" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-gray-400" />
+                      )}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-bold text-deep-slate text-sm sm:text-base truncate max-w-[200px] sm:max-w-xs md:max-w-sm" title={c.name}>
+                          {c.name}
+                        </h3>
+
+                        {/* Status Badge */}
+                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${
+                          c.status === 'RUNNING' ? 'bg-amber-50 text-amber-terracotta animate-pulse border border-amber-200' :
+                          c.status === 'PAUSED' ? 'bg-amber-100 text-amber-800 border border-amber-300' :
+                          c.status === 'COMPLETED' ? 'bg-forest-light text-forest border border-forest/20' :
+                          c.status === 'CANCELLED' ? 'bg-red-50 text-red-600 border border-red-200' :
+                          'bg-stone-muted text-gray-600 border border-stone-border'
+                        }`}>
+                          {c.status === 'PAUSED' ? 'PAUSED (พัก)' : c.status}
+                        </span>
+
+                        {/* Schedule Badge */}
+                        {c.scheduleType === 'RANDOMIZED' && (
+                          <span className="hidden sm:inline-flex items-center space-x-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 flex-shrink-0">
+                            <Calendar className="w-3 h-3 text-blue-600" />
+                            <span>Randomized</span>
+                          </span>
+                        )}
+
+                        {/* Multi-Vector Badge */}
+                        {c.campaignEmailTemplates && c.campaignEmailTemplates.length > 1 && (
+                          <span className="hidden md:inline-flex items-center space-x-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 flex-shrink-0">
+                            <Sliders className="w-3 h-3 text-purple-600" />
+                            <span>{c.campaignEmailTemplates.length} เทมเพลต</span>
+                          </span>
+                        )}
+
+                        {/* Quick Metrics Pill (Visible in Collapsed State) */}
+                        <div className="flex items-center divide-x divide-stone-border/80 bg-stone-muted/50 rounded-lg px-2.5 py-0.5 text-[11px] font-medium text-gray-600 border border-stone-border/70 flex-shrink-0">
+                          <span className="pr-2 flex items-center space-x-1" title="ผู้รับทั้งหมด">
+                            <span>👥</span>
+                            <span className="font-semibold text-deep-slate">{totalTargets}</span>
+                          </span>
+                          <span className="px-2 flex items-center space-x-1" title="ส่งสำเร็จแล้ว">
+                            <span>✉️</span>
+                            <span className="font-semibold text-deep-slate">{sentCount}</span>
+                          </span>
+                          <span className="px-2 flex items-center space-x-1" title="มีผู้คลิกลิงก์">
+                            <span>🔗</span>
+                            <span className="font-semibold text-amber-600">{clickedCount}</span>
+                          </span>
+                          <span className="px-2 flex items-center space-x-1" title="กรอกรหัสผ่าน/ข้อมูล">
+                            <span>🚨</span>
+                            <span className="font-semibold text-red-600">{submittedCount}</span>
+                          </span>
+                          <span className="pl-2 flex items-center space-x-1" title="แจ้งเตือนเบาะแส">
+                            <span>🛡️</span>
+                            <span className="font-semibold text-forest">{reportedCount}</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    กลุ่มผู้รับ: <span className="font-semibold text-deep-slate">
-                      {c.targetGroupNames && c.targetGroupNames.length > 0
-                        ? c.targetGroupNames.join(', ')
-                        : c.targetGroup?.name || 'ไม่มีกลุ่ม'}
-                    </span> &bull;
-                    เทมเพลต: <span className="font-semibold text-deep-slate">
-                      {c.campaignEmailTemplates && c.campaignEmailTemplates.length > 1
-                        ? `สุ่ม ${c.campaignEmailTemplates.length} เทมเพลต (${c.campaignEmailTemplates.map((cet: any) => cet.emailTemplate?.name).join(', ')})`
-                        : c.emailTemplate?.name}
-                    </span> &bull;
-                    SMTP Profile: <span className="font-semibold text-deep-slate">{c.smtpProfile?.name}</span>
-                  </p>
-                </div>
 
-                <div className="flex items-center space-x-2">
-                  {(c.status === 'DRAFT' || c.status === 'SCHEDULED') && (
-                    <button
-                      onClick={() => handleLaunch(c.id)}
-                      className="flex items-center space-x-1 px-3 py-1.5 bg-forest text-white rounded-lg text-xs font-semibold hover:bg-forest-hover shadow-soft"
-                    >
-                      <Play className="w-3.5 h-3.5" />
-                      <span>{c.scheduleType === 'RANDOMIZED' ? 'เปิดระบบส่งตามตาราง (Start Schedule)' : 'สั่งเริ่มส่ง (Launch)'}</span>
-                    </button>
-                  )}
-
-                  {c.status === 'RUNNING' && (
-                    <>
+                  {/* Right: Action Buttons (Uniform h-8, no dynamic stretching, stopPropagation) */}
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center gap-1.5 flex-shrink-0 self-end md:self-center"
+                  >
+                    {(c.status === 'DRAFT' || c.status === 'SCHEDULED') && (
                       <button
-                        onClick={() => handlePause(c.id)}
-                        className="flex items-center space-x-1 px-3 py-1.5 bg-amber-500 text-white rounded-lg text-xs font-semibold hover:bg-amber-600 shadow-soft"
-                        title="พักการส่งชั่วคราว (Pause)"
-                      >
-                        <Pause className="w-3.5 h-3.5" />
-                        <span>พักชั่วคราว (Pause)</span>
-                      </button>
-
-                      <button
-                        onClick={() => handleKill(c.id)}
-                        className="flex items-center space-x-1 px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700 shadow-soft"
-                        title="หยุดฉุกเฉิน (Kill)"
-                      >
-                        <Square className="w-3.5 h-3.5" />
-                        <span>หยุดฉุกเฉิน (Kill)</span>
-                      </button>
-                    </>
-                  )}
-
-                  {c.status === 'PAUSED' && (
-                    <>
-                      <button
-                        onClick={() => handleResume(c.id)}
-                        className="flex items-center space-x-1 px-3 py-1.5 bg-forest text-white rounded-lg text-xs font-semibold hover:bg-forest-hover shadow-soft"
-                        title="รันต่อ (Resume)"
+                        onClick={() => handleLaunch(c.id)}
+                        className="h-8 px-2.5 bg-forest hover:bg-forest-hover text-white rounded-lg text-xs font-semibold flex items-center space-x-1 shadow-soft transition-all"
+                        title={c.scheduleType === 'RANDOMIZED' ? 'เปิดระบบส่งตามตาราง (Start Schedule)' : 'สั่งเริ่มส่งอีเมลทันที (Launch)'}
                       >
                         <Play className="w-3.5 h-3.5" />
-                        <span>รันต่อ (Resume)</span>
+                        <span>เริ่มส่ง</span>
                       </button>
+                    )}
 
+                    {c.status === 'RUNNING' && (
+                      <>
+                        <button
+                          onClick={() => handlePause(c.id)}
+                          className="h-8 px-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-semibold flex items-center space-x-1 shadow-soft transition-all"
+                          title="พักการส่งชั่วคราว (Pause)"
+                        >
+                          <Pause className="w-3.5 h-3.5" />
+                          <span>พัก</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleKill(c.id)}
+                          className="h-8 px-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold flex items-center space-x-1 shadow-soft transition-all"
+                          title="หยุดฉุกเฉิน (Kill Switch)"
+                        >
+                          <Square className="w-3.5 h-3.5" />
+                          <span>หยุด</span>
+                        </button>
+                      </>
+                    )}
+
+                    {c.status === 'PAUSED' && (
+                      <>
+                        <button
+                          onClick={() => handleResume(c.id)}
+                          className="h-8 px-2.5 bg-forest hover:bg-forest-hover text-white rounded-lg text-xs font-semibold flex items-center space-x-1 shadow-soft transition-all"
+                          title="รันต่อ (Resume)"
+                        >
+                          <Play className="w-3.5 h-3.5" />
+                          <span>รันต่อ</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleKill(c.id)}
+                          className="h-8 px-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold flex items-center space-x-1 shadow-soft transition-all"
+                          title="หยุดฉุกเฉิน (Kill Switch)"
+                        >
+                          <Square className="w-3.5 h-3.5" />
+                          <span>หยุด</span>
+                        </button>
+                      </>
+                    )}
+
+                    {c.status !== 'RUNNING' && (
                       <button
-                        onClick={() => handleKill(c.id)}
-                        className="flex items-center space-x-1 px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700 shadow-soft"
-                        title="หยุดฉุกเฉิน (Kill)"
+                        onClick={() => handleResetCampaign(c.id, c.name)}
+                        className="h-8 px-2.5 border border-stone-border text-gray-600 hover:text-deep-slate hover:bg-stone-muted rounded-lg text-xs font-medium transition-all flex items-center space-x-1"
+                        title="Reset สถิติของแคมเปญนี้กลับเป็น 0 เพื่อเริ่มส่งใหม่"
                       >
-                        <Square className="w-3.5 h-3.5" />
-                        <span>หยุดฉุกเฉิน (Kill)</span>
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>รีเซ็ต</span>
                       </button>
-                    </>
-                  )}
+                    )}
 
-                  {c.status !== 'RUNNING' && (
                     <button
-                      onClick={() => handleResetCampaign(c.id, c.name)}
-                      className="flex items-center space-x-1 px-2.5 py-1.5 border border-stone-border text-gray-600 hover:text-deep-slate hover:bg-stone-muted rounded-lg text-xs font-medium transition-all"
-                      title="Reset สถิติของแคมเปญนี้กลับเป็น 0 เพื่อเริ่มส่งใหม่"
+                      onClick={() => handleViewRecipients(c.id, c.name)}
+                      className="h-8 px-2.5 bg-forest-light/80 text-forest hover:bg-forest-light border border-forest/30 rounded-lg text-xs font-semibold flex items-center space-x-1 transition-all shadow-xs"
+                      title="เปิดดูตารางรายชื่อผู้รับและผลลัพธ์การทดสอบรายบุคคล"
                     >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      <span>Reset</span>
+                      <Users className="w-3.5 h-3.5" />
+                      <span>ผู้รับ</span>
                     </button>
-                  )}
 
-                  <button
-                    onClick={() => handleViewRecipients(c.id, c.name)}
-                    className="flex items-center space-x-1 px-3 py-1.5 bg-forest-light/80 text-forest hover:bg-forest-light border border-forest/30 rounded-lg text-xs font-semibold transition-all shadow-xs"
-                    title="เปิดดูตารางรายชื่อผู้รับและผลลัพธ์การทดสอบบนหน้าเว็บ"
-                  >
-                    <Users className="w-3.5 h-3.5" />
-                    <span>ดูรายชื่อผู้รับ</span>
-                  </button>
+                    <a
+                      href={`/api/campaigns/${c.id}/export`}
+                      download
+                      className="h-8 px-2.5 border border-stone-border rounded-lg text-xs font-semibold text-gray-700 hover:bg-stone-muted transition-all flex items-center space-x-1"
+                      title="ดาวน์โหลดรายงานสรุปแยกรายบุคคลเป็นไฟล์ CSV"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>CSV</span>
+                    </a>
 
-                  <a
-                    href={`/api/campaigns/${c.id}/export`}
-                    download
-                    className="flex items-center space-x-1 px-3 py-1.5 border border-stone-border rounded-lg text-xs font-semibold text-gray-700 hover:bg-stone-muted transition-all"
-                    title="ดาวน์โหลดรายงานสรุปแยกรายบุคคลเป็นไฟล์ CSV สำหรับเปิดใน Excel"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>CSV Report</span>
-                  </a>
-
-                  <button
-                    onClick={() => handleDeleteCampaign(c.id, c.name)}
-                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                    title="ลบแคมเปญนี้ทิ้ง"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Mini Stats Funnel (4 Stages) */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-                {[
-                  { label: 'ส่งแล้ว (Sent)', val: c.stats?.sent || 0, color: 'text-deep-slate' },
-                  { label: 'คลิกลิงก์ (Clicked)', val: c.stats?.clicked || 0, color: 'text-amber-terracotta' },
-                  { label: 'กรอกฟอร์ม (Submitted)', val: c.stats?.submitted || 0, color: 'text-red-600 font-bold' },
-                  { label: 'แจ้งเบาะแส (Reported)', val: c.stats?.reported || 0, color: 'text-forest font-bold' }
-                ].map((s, idx) => (
-                  <div key={idx} className="bg-stone-muted/40 p-2.5 rounded-lg border border-stone-border/40 text-center">
-                    <p className="text-[11px] text-gray-500">{s.label}</p>
-                    <p className={`text-base font-mono font-semibold mt-0.5 ${s.color}`}>{s.val}</p>
+                    <button
+                      onClick={() => handleDeleteCampaign(c.id, c.name)}
+                      className="h-8 w-8 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all flex items-center justify-center flex-shrink-0"
+                      title="ลบแคมเปญนี้ทิ้ง"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
-                ))}
+                </div>
+
+                {/* Expanded Details Body */}
+                {isExpanded && (
+                  <div className="border-t border-stone-border/70 bg-stone-50/50 p-4 space-y-4">
+                    {/* Metadata Details Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs bg-white p-3.5 rounded-lg border border-stone-border/60">
+                      <div>
+                        <p className="text-gray-400 font-medium">🎯 กลุ่มเป้าหมาย:</p>
+                        <p className="font-semibold text-deep-slate mt-0.5 truncate" title={c.targetGroupNames?.join(', ') || c.targetGroup?.name}>
+                          {c.targetGroupNames && c.targetGroupNames.length > 0
+                            ? c.targetGroupNames.join(', ')
+                            : c.targetGroup?.name || 'ไม่มีกลุ่ม'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400 font-medium">✉️ เทมเพลตอีเมล:</p>
+                        <p className="font-semibold text-deep-slate mt-0.5 truncate">
+                          {c.campaignEmailTemplates && c.campaignEmailTemplates.length > 1
+                            ? `สุ่ม ${c.campaignEmailTemplates.length} เทมเพลต (${c.campaignEmailTemplates.map((cet: any) => cet.emailTemplate?.name).join(', ')})`
+                            : c.emailTemplate?.name || '-'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400 font-medium">📤 โปรไฟล์ SMTP:</p>
+                        <p className="font-semibold text-deep-slate mt-0.5 truncate">
+                          {c.smtpProfile?.name || '-'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400 font-medium">📅 รูปแบบการส่ง:</p>
+                        <p className="font-semibold text-deep-slate mt-0.5 truncate">
+                          {c.scheduleType === 'RANDOMIZED'
+                            ? `สุ่มตามวันทำการ (${c.startDate ? new Date(c.startDate).toLocaleDateString('th-TH') : ''} - ${c.endDate ? new Date(c.endDate).toLocaleDateString('th-TH') : ''} เวลา ${c.dailyStartTime || '08:30'} - ${c.dailyEndTime || '17:00'})`
+                            : 'ส่งทันที (Immediate)'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Mini Stats Funnel (4 Stages) */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      {[
+                        {
+                          label: 'ส่งแล้ว (Sent)',
+                          val: sentCount,
+                          percent: totalTargets > 0 ? Math.round((sentCount / totalTargets) * 100) : 0,
+                          color: 'text-deep-slate',
+                          bg: 'bg-white'
+                        },
+                        {
+                          label: 'คลิกลิงก์ (Clicked)',
+                          val: clickedCount,
+                          percent: sentCount > 0 ? Math.round((clickedCount / sentCount) * 100) : 0,
+                          color: 'text-amber-terracotta',
+                          bg: 'bg-amber-50/40'
+                        },
+                        {
+                          label: 'กรอกฟอร์ม (Submitted)',
+                          val: submittedCount,
+                          percent: sentCount > 0 ? Math.round((submittedCount / sentCount) * 100) : 0,
+                          color: 'text-red-600 font-bold',
+                          bg: 'bg-red-50/40'
+                        },
+                        {
+                          label: 'แจ้งเบาะแส (Reported)',
+                          val: reportedCount,
+                          percent: sentCount > 0 ? Math.round((reportedCount / sentCount) * 100) : 0,
+                          color: 'text-forest font-bold',
+                          bg: 'bg-forest-light/30'
+                        }
+                      ].map((s, idx) => (
+                        <div key={idx} className={`${s.bg} p-3 rounded-lg border border-stone-border text-center shadow-xs`}>
+                          <p className="text-[11px] text-gray-500">{s.label}</p>
+                          <p className={`text-lg font-mono font-bold mt-0.5 ${s.color}`}>{s.val}</p>
+                          <p className="text-[10px] text-gray-400 mt-0.5">({s.percent}% ของยอดส่ง)</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 
