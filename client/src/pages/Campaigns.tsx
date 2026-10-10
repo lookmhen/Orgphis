@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Send, Play, Pause, Square, Download, Plus, CheckCircle2, Clock, AlertCircle, RotateCcw, Trash2, RefreshCw, Calendar, Sliders, Users, Search, X, Filter, ArrowUpDown, ArrowUp, ArrowDown, ChevronDown, ChevronUp, ChevronsUpDown } from 'lucide-react';
+import { Send, Play, Pause, Square, Download, Plus, CheckCircle2, Clock, AlertCircle, RotateCcw, Trash2, RefreshCw, Calendar, Sliders, Users, Search, X, Filter, ArrowUpDown, ArrowUp, ArrowDown, ChevronDown, ChevronUp, ChevronsUpDown, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const Campaigns: React.FC = () => {
@@ -116,6 +116,81 @@ export const Campaigns: React.FC = () => {
       alert('เกิดข้อผิดพลาดในการโหลดข้อมูล');
     } finally {
       setRecipientsLoading(false);
+    }
+  };
+
+  // Simplified manual report toggle handler
+  const handleToggleManualReport = async (ct: any, isReporting: boolean) => {
+    if (!viewingCampaign) return;
+    const fullName = `${ct.target?.firstName || ''} ${ct.target?.lastName || ''}`.trim() || ct.target?.email;
+
+    if (isReporting) {
+      if (!confirm(`ยืนยันบันทึกว่าคุณ "${fullName}" (${ct.target?.email}) มีการแจ้งเบาะแสว่าพบอีเมลแปลกปลอมเข้ามาใช่หรือไม่?`)) return;
+
+      try {
+        const res = await fetch(`/api/campaigns/${viewingCampaign.id}/targets/${ct.id}/manual-report`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ note: 'มีการแจ้งเตือนเข้ามา' })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setViewingCampaign((prev: any) => {
+            if (!prev) return prev;
+            const updatedTargets = prev.campaignTargets.map((t: any) => {
+              if (t.id === ct.id) {
+                return {
+                  ...t,
+                  isReported: true,
+                  reportedAt: data.campaignTarget?.reportedAt || new Date().toISOString()
+                };
+              }
+              return t;
+            });
+            return { ...prev, campaignTargets: updatedTargets };
+          });
+          fetchCampaigns();
+        } else {
+          const data = await res.json().catch(() => ({}));
+          alert(data.error || 'บันทึกการแจ้งไม่สำเร็จ');
+        }
+      } catch (err) {
+        console.error('Failed to submit manual report:', err);
+        alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+      }
+    } else {
+      if (!confirm(`คุณต้องการยกเลิกการบันทึกแจ้งเบาะแสของ "${fullName}" ใช่หรือไม่?`)) return;
+
+      try {
+        const res = await fetch(`/api/campaigns/${viewingCampaign.id}/targets/${ct.id}/manual-report/cancel`, {
+          method: 'POST'
+        });
+
+        if (res.ok) {
+          setViewingCampaign((prev: any) => {
+            if (!prev) return prev;
+            const updatedTargets = prev.campaignTargets.map((t: any) => {
+              if (t.id === ct.id) {
+                return {
+                  ...t,
+                  isReported: false,
+                  reportedAt: null
+                };
+              }
+              return t;
+            });
+            return { ...prev, campaignTargets: updatedTargets };
+          });
+          fetchCampaigns();
+        } else {
+          const data = await res.json().catch(() => ({}));
+          alert(data.error || 'ยกเลิกการบันทึกไม่สำเร็จ');
+        }
+      } catch (err) {
+        console.error('Failed to cancel manual report:', err);
+        alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+      }
     }
   };
 
@@ -1452,6 +1527,9 @@ export const Campaigns: React.FC = () => {
                                 {renderSortHeader('clickedAt', 'เวลาคลิก')}
                                 {renderSortHeader('submittedAt', 'เวลากรอกข้อมูล')}
                                 {renderSortHeader('reportedAt', 'เวลาแจ้งเตือน')}
+                                <th className="py-3 px-3 text-center text-gray-600 font-semibold uppercase tracking-wider text-[11px] whitespace-nowrap">
+                                  บันทึกการแจ้ง
+                                </th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-stone-border/60">
@@ -1484,9 +1562,16 @@ export const Campaigns: React.FC = () => {
                                     </td>
                                     <td className="py-3 px-3 text-center">
                                       {ct.isSubmitted ? (
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-red-100 text-red-800 border border-red-200">
-                                          เผลอกรอกข้อมูล
-                                        </span>
+                                        <div className="flex flex-col items-center gap-0.5">
+                                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-red-100 text-red-800 border border-red-200">
+                                            เผลอกรอกข้อมูล
+                                          </span>
+                                          {ct.isReported && (
+                                            <span className="inline-flex items-center px-1.5 py-0.2 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200" title="มีรายงานแจ้งเบาะแสเข้ามาภายหลัง">
+                                              🛡️ มีแจ้งเบาะแส
+                                            </span>
+                                          )}
+                                        </div>
                                       ) : ct.isReported ? (
                                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
                                           แจ้งเบาะแส
@@ -1536,6 +1621,32 @@ export const Campaigns: React.FC = () => {
                                       {ct.reportedAt ? (
                                         <span className="text-forest font-semibold">{formatTimestamp(ct.reportedAt)}</span>
                                       ) : '-'}
+                                    </td>
+                                    <td className="py-3 px-3 text-center whitespace-nowrap">
+                                      {ct.isReported ? (
+                                        <div className="inline-flex items-center space-x-1.5 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-lg">
+                                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                          <span className="text-[11px] font-bold text-emerald-700">แจ้งแล้ว</span>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleToggleManualReport(ct, false)}
+                                            className="text-gray-400 hover:text-red-600 ml-1 p-0.5 hover:bg-red-50 rounded transition-colors"
+                                            title="ยกเลิกการบันทึกแจ้งเบาะแส"
+                                          >
+                                            <X className="w-3 h-3" />
+                                          </button>
+                                        </div>
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleToggleManualReport(ct, true)}
+                                          className="inline-flex items-center space-x-1 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-semibold transition-all shadow-2xs hover:shadow-xs active:scale-95"
+                                          title="คลิกเพื่อบันทึกว่าพนักงานคนนี้มีการแจ้งเข้ามาว่าพบอีเมลแปลกปลอม"
+                                        >
+                                          <ShieldCheck className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                          <span>บันทึกการแจ้ง</span>
+                                        </button>
+                                      )}
                                     </td>
                                   </tr>
                                 );

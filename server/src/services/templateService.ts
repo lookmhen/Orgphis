@@ -35,17 +35,6 @@ export function renderTemplate(templateString: string, variables: TemplateVariab
 }
 
 /**
- * Standard security footer with reporting link for all simulation emails
- */
-const SECURITY_FOOTER_HTML = `
-  <div style="margin-top: 28px; padding-top: 14px; border-top: 1px dashed #D1D5DB; font-size: 11px; color: #6B7280; text-align: center; line-height: 1.5;">
-    อีเมลฉบับนี้ส่งถึง {{email}} สำหรับการติดต่อภายในองค์กร<br>
-    หากท่านสงสัยว่าอีเมลนี้เป็นฟิชชิ่งหรือไม่พึงประสงค์ 
-    <a href="{{report_url}}" style="color: #059669; font-weight: 600; text-decoration: underline;">คลิกที่นี่เพื่อรายงานฝ่าย IT Security</a>
-  </div>
-`;
-
-/**
  * Default Official System Presets (Rewritten to sound natural, authentic, and convincing)
  */
 export const OFFICIAL_EMAIL_PRESETS = [
@@ -90,11 +79,9 @@ export const OFFICIAL_EMAIL_PRESETS = [
     <strong>ฝ่ายบริหารระบบสารสนเทศและโครงสร้างพื้นฐาน (IT Infrastructure)</strong><br>
     โทรศัพท์ภายใน: 1100-1102 (เวลาทำการ 08:30 - 17:30 น.)
   </p>
-
-  ${SECURITY_FOOTER_HTML}
 </div>
 `,
-    bodyText: 'แจ้งเตือนรหัสผ่านบัญชีองค์กรจะหมดอายุในวันที่ {{current_date}} กรุณาต่ออายุผ่านระบบ: {{phishing_url}} หรือรายงาน: {{report_url}}',
+    bodyText: 'แจ้งเตือนรหัสผ่านบัญชีองค์กรจะหมดอายุในวันที่ {{current_date}} กรุณาต่ออายุผ่านระบบ: {{phishing_url}}',
     isPreset: true
   },
 
@@ -139,11 +126,9 @@ export const OFFICIAL_EMAIL_PRESETS = [
     <em>หมายเหตุ: ข้อมูลนี้เป็นความลับเฉพาะท่าน ห้ามเปิดเผยหรือส่งต่อให้บุคคลภายนอก</em><br>
     ฝ่ายทรัพยากรบุคคล (Compensation & Benefits Section)
   </p>
-
-  ${SECURITY_FOOTER_HTML}
 </div>
 `,
-    bodyText: 'สรุปเอกสารผลตอบแทนและโบนัสส่วนบุคคล ตรวจสอบได้ที่: {{phishing_url}} หรือรายงาน: {{report_url}}',
+    bodyText: 'สรุปเอกสารผลตอบแทนและโบนัสส่วนบุคคล ตรวจสอบได้ที่: {{phishing_url}}',
     isPreset: true
   },
 
@@ -183,11 +168,9 @@ export const OFFICIAL_EMAIL_PRESETS = [
   <p style="color: #6B7280; font-size: 11px; margin-top: 20px;">
     อีเมลแจ้งเตือนนี้สร้างขึ้นโดยระบบรักษาความปลอดภัย Microsoft Defender อัตโนมัติสำหรับบัญชีโดเมนองค์กร
   </p>
-
-  ${SECURITY_FOOTER_HTML}
 </div>
 `,
-    bodyText: 'Microsoft ตรวจพบการลงชื่อเข้าใช้ผิดปกติในบัญชีของคุณ ตรวจสอบทันที: {{phishing_url}} หรือรายงาน: {{report_url}}',
+    bodyText: 'Microsoft ตรวจพบการลงชื่อเข้าใช้ผิดปกติในบัญชีของคุณ ตรวจสอบทันที: {{phishing_url}}',
     isPreset: true
   },
 
@@ -237,11 +220,9 @@ export const OFFICIAL_EMAIL_PRESETS = [
   <p style="color: #64748B; font-size: 11px; line-height: 1.5; margin: 18px 0 0 0;">
     หากท่านดำเนินการวางบิลแล้ว กรุณาเพิกเฉยต่ออีเมลฉบับนี้ | ติดต่อฝ่ายบัญชีเจ้าหนี้ โทร 02-xxx-xxxx ต่อ 4410
   </p>
-
-  ${SECURITY_FOOTER_HTML}
 </div>
 `,
-    bodyText: 'แจ้งเตือนใบกำกับภาษีอิเล็กทรอนิกส์ (e-Tax Invoice) พร้อมไฟล์แนบ ตรวจสอบเอกสาร: {{phishing_url}} หรือรายงาน: {{report_url}}',
+    bodyText: 'แจ้งเตือนใบกำกับภาษีอิเล็กทรอนิกส์ (e-Tax Invoice) พร้อมไฟล์แนบ ตรวจสอบเอกสาร: {{phishing_url}}',
     isPreset: true
   },
 
@@ -285,11 +266,9 @@ export const OFFICIAL_EMAIL_PRESETS = [
   <p style="color: #78716C; font-size: 11px; margin-top: 18px;">
     จุดคัดแยกและประสานงานพัสดุภายในองค์กร อาคารสำนักงานใหญ่
   </p>
-
-  ${SECURITY_FOOTER_HTML}
 </div>
 `,
-    bodyText: 'พัสดุเอกสารด่วนค้างส่ง กรุณายืนยันตำแหน่งจัดส่ง: {{phishing_url}} หรือรายงาน: {{report_url}}',
+    bodyText: 'พัสดุเอกสารด่วนค้างส่ง กรุณายืนยันตำแหน่งจัดส่ง: {{phishing_url}}',
     isPreset: true
   },
 
@@ -331,11 +310,9 @@ export const OFFICIAL_EMAIL_PRESETS = [
   <p style="color: #6B7280; font-size: 11px; margin-top: 18px; border-top: 1px solid #E5E7EB; padding-top: 12px;">
     ฝ่ายพัฒนานวัตกรรมดิจิทัลองค์กร (Digital Transformation Committee)
   </p>
-
-  ${SECURITY_FOOTER_HTML}
 </div>
 `,
-    bodyText: 'เปิดใช้งาน Microsoft 365 Copilot AI ฟรี: {{phishing_url}} หรือรายงาน: {{report_url}}',
+    bodyText: 'เปิดใช้งาน Microsoft 365 Copilot AI ฟรี: {{phishing_url}}',
     isPreset: true
   },
 
@@ -389,11 +366,9 @@ export const OFFICIAL_EMAIL_PRESETS = [
   <p style="color: #6B7280; font-size: 11px; margin-top: 18px; border-top: 1px solid #E5E7EB; padding-top: 12px; line-height: 1.5;">
     อีเมลแจ้งเตือนนี้ถูกส่งจาก Microsoft Teams เนื่องจากคุณตั้งค่าให้แจ้งเตือนทางอีเมลเมื่อมีกิจกรรมสำคัญที่ไม่ได้รับชม
   </p>
-
-  ${SECURITY_FOOTER_HTML}
 </div>
 `,
-    bodyText: 'Microsoft Teams: คุณมี 1 ข้อความเสียงใหม่และถูกกล่าวถึงในกลุ่มงาน ฟังข้อความเสียง: {{phishing_url}} หรือรายงาน: {{report_url}}',
+    bodyText: 'Microsoft Teams: คุณมี 1 ข้อความเสียงใหม่และถูกกล่าวถึงในกลุ่มงาน ฟังข้อความเสียง: {{phishing_url}}',
     isPreset: true
   },
 
@@ -447,11 +422,9 @@ export const OFFICIAL_EMAIL_PRESETS = [
   <p style="color: #64748B; font-size: 11px; margin-top: 18px; border-top: 1px solid #E2E8F0; padding-top: 12px;">
     ฝ่ายดูแลระบบข้อความอิเล็กทรอนิกส์และบริการคลาวด์ Microsoft 365 (Exchange Mail Administration)
   </p>
-
-  ${SECURITY_FOOTER_HTML}
 </div>
 `,
-    bodyText: 'แจ้งเตือนพื้นที่กล่องจดหมาย Exchange ใกล้เต็มความจุ 99.4% ตรวจสอบและปล่อยอีเมลค้างส่ง: {{phishing_url}} หรือรายงาน: {{report_url}}',
+    bodyText: 'แจ้งเตือนพื้นที่กล่องจดหมาย Exchange ใกล้เต็มความจุ 99.4% ตรวจสอบและปล่อยอีเมลค้างส่ง: {{phishing_url}}',
     isPreset: true
   }
 ];
@@ -604,11 +577,16 @@ export const OFFICIAL_LANDING_PRESETS = [
  * Seeds built-in official presets (Upserting so existing systems update to natural wording)
  */
 export async function seedOfficialPresets(): Promise<void> {
-  // 1. Sanitize any legacy empid references from all existing email templates in database
+  // 1. Sanitize any legacy empid references and report footer from all existing email templates in database
   const allTemplates = await prisma.emailTemplate.findMany();
   for (const t of allTemplates) {
-    if (t.bodyHtml.includes('empid') || (t.bodyText && t.bodyText.includes('empid')) || t.subject.includes('empid')) {
-      const cleanHtml = t.bodyHtml
+    let modified = false;
+    let cleanHtml = t.bodyHtml;
+    let cleanText = t.bodyText;
+    let cleanSubj = t.subject;
+
+    if (cleanHtml.includes('empid') || (cleanText && cleanText.includes('empid')) || cleanSubj.includes('empid')) {
+      cleanHtml = cleanHtml
         .replace(/\(แผนก \{\{department\}\} \/ รหัสพนักงาน: \{\{empid\}\}\)/g, '(แผนก {{department}})')
         .replace(/ \(รหัสพนักงาน: \{\{empid\}\}\)/g, '')
         .replace(/\(รหัสพนักงาน: \{\{empid\}\}\)/g, '')
@@ -617,16 +595,39 @@ export async function seedOfficialPresets(): Promise<void> {
         .replace(/STAFF-VIP-\{\{empid\}\}/g, 'STAFF-VIP-8892')
         .replace(/TH-DOC-\{\{empid\}\}-88X/g, 'TH-DOC-8892X')
         .replace(/\{\{empid\}\}/g, '');
-      const cleanText = t.bodyText ? t.bodyText
-        .replace(/\(แผนก \{\{department\}\} \/ รหัสพนักงาน: \{\{empid\}\}\)/g, '(แผนก {{department}})')
-        .replace(/ \(รหัสพนักงาน: \{\{empid\}\}\)/g, '')
-        .replace(/\(รหัสพนักงาน: \{\{empid\}\}\)/g, '')
-        .replace(/ \(Staff ID: \{\{empid\}\}\)/g, '')
-        .replace(/\(Staff ID: \{\{empid\}\}\)/g, '')
-        .replace(/STAFF-VIP-\{\{empid\}\}/g, 'STAFF-VIP-8892')
-        .replace(/TH-DOC-\{\{empid\}\}-88X/g, 'TH-DOC-8892X')
-        .replace(/\{\{empid\}\}/g, '') : null;
-      const cleanSubj = t.subject.replace(/\{\{empid\}\}/g, '');
+      if (cleanText) {
+        cleanText = cleanText
+          .replace(/\(แผนก \{\{department\}\} \/ รหัสพนักงาน: \{\{empid\}\}\)/g, '(แผนก {{department}})')
+          .replace(/ \(รหัสพนักงาน: \{\{empid\}\}\)/g, '')
+          .replace(/\(รหัสพนักงาน: \{\{empid\}\}\)/g, '')
+          .replace(/ \(Staff ID: \{\{empid\}\}\)/g, '')
+          .replace(/\(Staff ID: \{\{empid\}\}\)/g, '')
+          .replace(/STAFF-VIP-\{\{empid\}\}/g, 'STAFF-VIP-8892')
+          .replace(/TH-DOC-\{\{empid\}\}-88X/g, 'TH-DOC-8892X')
+          .replace(/\{\{empid\}\}/g, '');
+      }
+      cleanSubj = cleanSubj.replace(/\{\{empid\}\}/g, '');
+      modified = true;
+    }
+
+    // Sanitize any legacy report footers from existing email templates
+    if (cleanHtml.includes('report_url') || cleanHtml.includes('คลิกที่นี่เพื่อรายงานฝ่าย IT Security')) {
+      cleanHtml = cleanHtml
+        .replace(/<div style="margin-top: 28px; padding-top: 14px; border-top: 1px dashed #D1D5DB;[\s\S]*?<\/div>/gi, '')
+        .replace(/<div[^>]*>[\s\S]*?หากท่านสงสัยว่าอีเมลนี้เป็นฟิชชิ่งหรือไม่พึงประสงค์[\s\S]*?<\/div>/gi, '')
+        .replace(/<div[^>]*>[\s\S]*?\{\{report_url\}\}[\s\S]*?<\/div>/gi, '');
+      modified = true;
+    }
+
+    if (cleanText && (cleanText.includes('report_url') || cleanText.includes('หรือรายงาน:'))) {
+      cleanText = cleanText
+        .replace(/ หรือรายงาน: \{\{report_url\}\}/g, '')
+        .replace(/ หรือรายงาน: \{\{report_url\}\}/gi, '')
+        .replace(/ หรือแจ้งรายงาน: \{\{report_url\}\}/gi, '');
+      modified = true;
+    }
+
+    if (modified) {
       await prisma.emailTemplate.update({
         where: { id: t.id },
         data: {

@@ -452,6 +452,122 @@ campaignsRouter.post('/reset-all', async (_req: Request, res: Response) => {
   }
 });
 
+// MANUAL REPORT (Phone / Verbal / Walk-in / Helpdesk report by employee)
+campaignsRouter.post('/:campaignId/targets/:targetId/manual-report', async (req: Request, res: Response) => {
+  const { campaignId, targetId } = req.params;
+  const { channel = 'PHONE', note = '' } = req.body;
+  const adminUsername = (req as any).user?.username || (req as any).user?.displayName || 'admin';
+
+  try {
+    // Locate the campaign target by targetId (either CampaignTarget.id or Target.id)
+    const ct = await prisma.campaignTarget.findFirst({
+      where: {
+        campaignId,
+        OR: [
+          { id: targetId },
+          { targetId: targetId }
+        ]
+      },
+      include: { target: true, emailTemplate: true }
+    });
+
+    if (!ct) {
+      return res.status(404).json({ error: 'ไม่พบข้อมูลเป้าหมายในแคมเปญนี้' });
+    }
+
+    const reportTimestamp = new Date();
+
+    // Update campaign target status
+    const updated = await prisma.campaignTarget.update({
+      where: { id: ct.id },
+      data: {
+        isReported: true,
+        reportedAt: ct.reportedAt || reportTimestamp,
+        isOpened: true,
+        openedAt: ct.openedAt || reportTimestamp
+      },
+      include: { target: true, emailTemplate: true }
+    });
+
+    // Record EventLog for audit and analytics
+    await prisma.eventLog.create({
+      data: {
+        campaignId,
+        campaignTargetId: ct.id,
+        eventType: 'REPORTED',
+        isBot: false,
+        metadata: JSON.stringify({
+          source: 'MANUAL',
+          channel, // 'PHONE' | 'VERBAL' | 'CHAT' | 'OTHER'
+          note: (note || '').trim() || 'แจ้งเตือนด้วยตนเอง (โทรแจ้ง / ปากเปล่า)',
+          reportedByAdmin: adminUsername,
+          recordedAt: reportTimestamp.toISOString()
+        }),
+        createdAt: reportTimestamp
+      }
+    });
+
+    return res.json({
+      success: true,
+      message: `บันทึกการแจ้งเบาะแสของ ${updated.target.firstName || ''} ${updated.target.lastName || ''} (${updated.target.email}) เรียบร้อยแล้ว`,
+      campaignTarget: updated
+    });
+  } catch (err: any) {
+    console.error('[Campaigns] Manual report error:', err);
+    return res.status(500).json({ error: 'เกิดข้อผิดพลาดในการบันทึกการแจ้งเบาะแส' });
+  }
+});
+
+// CANCEL / UNDO MANUAL REPORT
+campaignsRouter.post('/:campaignId/targets/:targetId/manual-report/cancel', async (req: Request, res: Response) => {
+  const { campaignId, targetId } = req.params;
+
+  try {
+    const ct = await prisma.campaignTarget.findFirst({
+      where: {
+        campaignId,
+        OR: [
+          { id: targetId },
+          { targetId: targetId }
+        ]
+      },
+      include: { target: true, emailTemplate: true }
+    });
+
+    if (!ct) {
+      return res.status(404).json({ error: 'ไม่พบข้อมูลเป้าหมายในแคมเปญนี้' });
+    }
+
+    // Revert reported status
+    const updated = await prisma.campaignTarget.update({
+      where: { id: ct.id },
+      data: {
+        isReported: false,
+        reportedAt: null
+      },
+      include: { target: true, emailTemplate: true }
+    });
+
+    // Clean up or remove MANUAL report event log
+    await prisma.eventLog.deleteMany({
+      where: {
+        campaignId,
+        campaignTargetId: ct.id,
+        eventType: 'REPORTED'
+      }
+    });
+
+    return res.json({
+      success: true,
+      message: 'ยกเลิกการบันทึกแจ้งเบาะแสเรียบร้อยแล้ว',
+      campaignTarget: updated
+    });
+  } catch (err: any) {
+    console.error('[Campaigns] Cancel manual report error:', err);
+    return res.status(500).json({ error: 'เกิดข้อผิดพลาดในการยกเลิกการบันทึกแจ้งเบาะแส' });
+  }
+});
+
 // STREAMING EXPORT CSV
 campaignsRouter.get('/:id/export', async (req: Request, res: Response) => {
   const { id } = req.params;

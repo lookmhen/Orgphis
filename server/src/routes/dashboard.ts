@@ -363,7 +363,7 @@ dashboardRouter.get('/export', async (_req: Request, res: Response) => {
     res.write(`${escapeCsv('จำนวนอีเมลจำลองที่ส่ง (Total Emails Sent)')},${escapeCsv(metrics.globalStats.globalSent)},${escapeCsv('จำนวนครั้งที่มีการส่งอีเมลทดสอบออกไปยังพนักงาน')}\n`);
     res.write(`${escapeCsv('จำนวนการคลิกลิงก์ (Total Clicked)')},${escapeCsv(`${metrics.globalStats.globalClicked} (${metrics.globalStats.globalClickRate.toFixed(1)}%)`)},${escapeCsv('จำนวนพนักงานที่คลิกลิงก์ฟิชชิ่งทดสอบ')}\n`);
     res.write(`${escapeCsv('จำนวนการเผลอกรอกข้อมูล (Total Compromised)')},${escapeCsv(`${metrics.globalStats.globalSubmitted} (${metrics.globalStats.globalCompromiseRate.toFixed(1)}%)`)},${escapeCsv('จำนวนพนักงานที่เผลอกรอกข้อมูลในหน้าจำลอง (Phish-Prone Vulnerability)')}\n`);
-    res.write(`${escapeCsv('จำนวนการแจ้งเตือน Phishing (Total Reported)')},${escapeCsv(`${metrics.globalStats.globalReported} (${metrics.globalStats.globalReportRate.toFixed(1)}%)`)},${escapeCsv('จำนวนพนักงานที่รู้ทันและกดปุ่มรายงานอีเมลน่าสงสัย (Resilience Defense)')}\n`);
+    res.write(`${escapeCsv('จำนวนการแจ้งเตือน Phishing (Total Reported)')},${escapeCsv(`${metrics.globalStats.globalReported} (${metrics.globalStats.globalReportRate.toFixed(1)}%)`)},${escapeCsv('จำนวนพนักงานที่รู้ทันและรายงานอีเมลน่าสงสัย (Resilience Defense)')}\n`);
     res.write(`${escapeCsv('เวลาเฉลี่ยก่อนคลิกลิงก์ (Avg Speed to Click)')},${escapeCsv(metrics.avgMinutesToClick > 0 ? `${metrics.avgMinutesToClick} นาที` : 'ไม่มีข้อมูลการคลิก')},${escapeCsv('ความเร็วเฉลี่ยตั้งแต่อีเมลถูกส่งจนกระทั่งมีพนักงานเปิดคลิกลิงก์')}\n`);
     res.write('\n');
 
