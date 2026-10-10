@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../prisma.js';
-import { renderTemplate } from '../services/templateService.js';
+import { renderTemplate, generateStandardLandingHtml } from '../services/templateService.js';
 import { resolveServerBaseUrl } from '../utils/network.js';
 import nodemailer from 'nodemailer';
 
@@ -239,6 +239,10 @@ templatesRouter.post('/landing-pages', async (req: Request, res: Response) => {
   }
 
   try {
+    const finalHtml = (customHtml && customHtml.trim())
+      ? customHtml
+      : generateStandardLandingHtml({ name, pageTitle, logoUrl, headerText, subHeaderText, submitButtonText, showEmailField, showPasswordField });
+
     const template = await prisma.landingPageTemplate.create({
       data: {
         name, pageTitle, logoUrl, headerText, subHeaderText,
@@ -247,7 +251,7 @@ templatesRouter.post('/landing-pages', async (req: Request, res: Response) => {
         showPasswordField: showPasswordField ?? true,
         postSubmitAction: postSubmitAction || 'AWARENESS_PAGE',
         redirectUrl, awarenessContent,
-        customHtml: customHtml || null,
+        customHtml: finalHtml,
         isPreset: false
       }
     });
@@ -265,6 +269,10 @@ templatesRouter.post('/landing-pages/:id/clone', async (req: Request, res: Respo
     const source = await prisma.landingPageTemplate.findUnique({ where: { id } });
     if (!source) return res.status(404).json({ error: 'Source template not found' });
 
+    const htmlToClone = (source.customHtml && source.customHtml.trim())
+      ? source.customHtml
+      : generateStandardLandingHtml(source);
+
     const cloned = await prisma.landingPageTemplate.create({
       data: {
         name: `${source.name} (Customized)`,
@@ -278,7 +286,7 @@ templatesRouter.post('/landing-pages/:id/clone', async (req: Request, res: Respo
         postSubmitAction: source.postSubmitAction,
         redirectUrl: source.redirectUrl,
         awarenessContent: source.awarenessContent,
-        customHtml: source.customHtml,
+        customHtml: htmlToClone,
         isPreset: false
       }
     });

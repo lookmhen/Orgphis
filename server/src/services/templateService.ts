@@ -35,6 +35,134 @@ export function renderTemplate(templateString: string, variables: TemplateVariab
 }
 
 /**
+ * Generates full, standard HTML for a Landing Page Template from its structured attributes.
+ */
+export function generateStandardLandingHtml(t: any): string {
+  if (!t) return '';
+  const title = t.pageTitle || t.headerText || 'เข้าสู่ระบบบัญชีผู้ใช้';
+  const logo = t.logoUrl ? `<img src="${t.logoUrl}" alt="Logo" class="logo" />\n    ` : '';
+  const header = t.headerText || title;
+  const subHeader = t.subHeaderText ? `<p class="subtitle">${t.subHeaderText}</p>\n    ` : '';
+  const emailField = (t.showEmailField ?? true) ? `
+      <div class="form-group">
+        <label for="email">อีเมล / บัญชีผู้ใช้</label>
+        <input type="text" id="email" name="email" value="{{email}}" required />
+      </div>` : '';
+  const passField = (t.showPasswordField ?? true) ? `
+      <div class="form-group">
+        <label for="password">รหัสผ่าน</label>
+        <input type="password" id="password" name="password" required />
+      </div>` : '';
+  const btnText = t.submitButtonText || 'เข้าสู่ระบบ';
+
+  return `<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <title>${title}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #FAF8F5;
+      color: #24292F;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .login-card {
+      background: #ffffff;
+      border: 1px solid #E7E5E0;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 420px;
+      padding: 36px 32px;
+    }
+    .logo {
+      display: block;
+      max-height: 48px;
+      max-width: 180px;
+      margin-bottom: 24px;
+    }
+    h1 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #1F2937;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: #6B7280;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+    .form-group {
+      margin-bottom: 18px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+    input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #D1D5DB;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus {
+      border-color: #2D5A43;
+      box-shadow: 0 0 0 3px rgba(45,90,67,0.12);
+    }
+    button {
+      width: 100%;
+      background-color: #2D5A43;
+      color: #ffffff;
+      padding: 11px;
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background-color 0.15s;
+    }
+    button:hover {
+      background-color: #234735;
+    }
+    .footer {
+      margin-top: 24px;
+      text-align: center;
+      font-size: 12px;
+      color: #9CA3AF;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    ${logo}<h1>${header}</h1>
+    ${subHeader}<form method="POST" action="{{submit_url}}">
+      ${emailField}
+      ${passField}
+      <button type="submit">${btnText}</button>
+    </form>
+    <div class="footer">ระบบความปลอดภัยสารสนเทศองค์กร</div>
+  </div>
+</body>
+</html>`;
+}
+
+/**
  * Default Official System Presets (Rewritten to sound natural, authentic, and convincing)
  */
 export const OFFICIAL_EMAIL_PRESETS = [
@@ -677,8 +805,14 @@ export async function seedOfficialPresets(): Promise<void> {
 
   for (const preset of OFFICIAL_LANDING_PRESETS) {
     const exists = await prisma.landingPageTemplate.findFirst({ where: { name: preset.name } });
+    const standardHtml = generateStandardLandingHtml(preset);
     if (!exists) {
-      await prisma.landingPageTemplate.create({ data: preset });
+      await prisma.landingPageTemplate.create({ 
+        data: {
+          ...preset,
+          customHtml: standardHtml
+        } 
+      });
     } else if (exists.isPreset) {
       await prisma.landingPageTemplate.update({
         where: { id: exists.id },
@@ -691,7 +825,8 @@ export async function seedOfficialPresets(): Promise<void> {
           showEmailField: preset.showEmailField,
           showPasswordField: preset.showPasswordField,
           postSubmitAction: preset.postSubmitAction,
-          awarenessContent: preset.awarenessContent
+          awarenessContent: preset.awarenessContent,
+          customHtml: exists.customHtml && exists.customHtml.trim() ? exists.customHtml : standardHtml
         }
       });
     }
