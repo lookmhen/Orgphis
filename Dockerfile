@@ -1,5 +1,5 @@
 # Stage 1: Build Frontend (Vite)
-FROM node:20-alpine AS client-builder
+FROM node:24-alpine AS client-builder
 WORKDIR /app/client
 COPY client/package*.json ./
 RUN npm ci
@@ -7,7 +7,7 @@ COPY client/ ./
 RUN npm run build
 
 # Stage 2: Build Backend (Express TypeScript)
-FROM node:20-alpine AS server-builder
+FROM node:24-alpine AS server-builder
 RUN apk add --no-cache openssl tzdata
 WORKDIR /app/server
 COPY server/package*.json ./
@@ -18,7 +18,7 @@ RUN npx prisma generate
 RUN npm run build
 
 # Stage 3: Production Runner
-FROM node:20-alpine AS runner
+FROM node:24-alpine AS runner
 RUN apk add --no-cache openssl tzdata
 ENV TZ=Asia/Bangkok
 WORKDIR /app
