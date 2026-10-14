@@ -775,7 +775,7 @@ export const TemplateLibrary: React.FC = () => {
       {/* ================= MODAL: EDIT EMAIL TEMPLATE ================= */}
       {editingEmail && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-stone-border overflow-hidden">
+          <div className="bg-white rounded-2xl w-[96vw] max-w-[1440px] max-h-[94vh] flex flex-col shadow-2xl border border-stone-border overflow-hidden">
             <div className="flex items-center justify-between p-5 pb-4 border-b border-stone-border bg-white flex-shrink-0">
               <div>
                 <h3 className="font-bold text-deep-slate text-lg">
@@ -835,7 +835,7 @@ export const TemplateLibrary: React.FC = () => {
       {/* ================= MODAL: EDIT LANDING PAGE TEMPLATE ================= */}
       {editingLanding && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-6xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-stone-border overflow-hidden">
+          <div className="bg-white rounded-2xl w-[96vw] max-w-[1440px] max-h-[94vh] flex flex-col shadow-2xl border border-stone-border overflow-hidden">
             <div className="flex items-center justify-between p-5 pb-4 border-b border-stone-border bg-white flex-shrink-0">
               <div>
                 <h3 className="font-bold text-deep-slate text-lg">
@@ -1213,7 +1213,7 @@ export const TemplateLibrary: React.FC = () => {
       {/* ================= MODAL: SANDBOXED PREVIEW ================= */}
       {previewTemplate && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl border border-stone-border max-h-[90vh] flex flex-col">
+          <div className="bg-white rounded-2xl w-[92vw] max-w-[1100px] max-h-[92vh] p-6 shadow-2xl border border-stone-border flex flex-col">
             <div className="flex items-center justify-between pb-4 border-b border-stone-border">
               <div>
                 <div className="flex items-center space-x-2">
@@ -1267,12 +1267,12 @@ export const TemplateLibrary: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex-1 mt-4 border border-stone-border rounded-xl overflow-hidden bg-warm-sand min-h-[420px] flex items-center justify-center p-4">
+            <div className="flex-1 mt-4 border border-stone-border rounded-xl overflow-hidden bg-warm-sand min-h-[520px] flex items-center justify-center p-4">
               <div className={`transition-all duration-200 h-full w-full ${previewDevice === 'mobile' ? 'max-w-[375px] shadow-lg rounded-2xl border border-gray-300 overflow-hidden' : ''}`}>
                 <iframe
                   title="Preview"
                   sandbox="allow-scripts allow-forms"
-                  className="w-full h-full min-h-[420px] bg-white"
+                  className="w-full h-full min-h-[520px] bg-white"
                   srcDoc={
                     previewTemplate.bodyHtml
                       ? renderEmailPreviewHtml(previewTemplate.bodyHtml)

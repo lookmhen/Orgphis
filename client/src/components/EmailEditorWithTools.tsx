@@ -544,7 +544,7 @@ ${subHtml}
         {/* Left Column: Tools or HTML (7 cols) */}
         <div className="lg:col-span-7 space-y-3">
           {activeMode === 'tools' ? (
-            <div className="space-y-3 bg-stone-50/70 p-3.5 rounded-2xl border border-stone-border max-h-[480px] overflow-y-auto">
+            <div className="space-y-3 bg-stone-50/70 p-3.5 rounded-2xl border border-stone-border max-h-[560px] overflow-y-auto">
               
               {/* Visual Tools Header: Language Mode for New Blocks */}
               <div className="bg-white p-3 rounded-xl border border-stone-border shadow-xs space-y-1.5">
@@ -755,7 +755,7 @@ ${subHtml}
                 <span className="text-[11px] font-mono">{(bodyHtml || '').length} ตัวอักษร</span>
               </div>
               <textarea
-                rows={16}
+                rows={20}
                 required
                 value={bodyHtml}
                 onChange={e => {
@@ -783,9 +783,9 @@ ${subHtml}
 
           <div
             className={`transition-all bg-white rounded-xl shadow-md border border-stone-border overflow-hidden ${
-              previewDevice === 'desktop' ? 'w-full max-w-[550px]' : 'w-[320px]'
+              previewDevice === 'desktop' ? 'w-full max-w-[620px]' : 'w-[320px]'
             }`}
-            style={{ minHeight: '380px', maxHeight: '480px' }}
+            style={{ minHeight: '480px', maxHeight: '580px' }}
           >
             {/* Mock Email Client Header */}
             <div className="bg-stone-50 border-b border-stone-border p-2.5 text-[11px] space-y-1">
@@ -800,11 +800,11 @@ ${subHtml}
             </div>
 
             {/* Email Body Iframe */}
-            <div className="p-2 overflow-y-auto max-h-[400px]">
+            <div className="p-2 overflow-y-auto max-h-[500px]">
               <iframe
                 title="Email Preview"
                 srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:12px;background:#ffffff;font-family:sans-serif;} *{box-sizing:border-box;}</style></head><body>${livePreviewHtml}</body></html>`}
-                className="w-full h-[380px] border-0"
+                className="w-full h-[480px] border-0"
                 sandbox="allow-same-origin"
               />
             </div>
