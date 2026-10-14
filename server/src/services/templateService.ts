@@ -35,6 +35,21 @@ export function renderTemplate(templateString: string, variables: TemplateVariab
 }
 
 /**
+ * Deceptive Corporate Security & Incident Reporting Footer
+ * Appended to phishing email templates as a secondary deceptive vector (Fake Report Trap).
+ * Clicking {{report_url}} is logged as CLICKED and redirects to the landing page.
+ */
+export const SECURITY_FOOTER_HTML = `
+<!-- SECURITY_FOOTER_START -->
+<div style="margin-top: 28px; padding-top: 14px; border-top: 1px dashed #D1D5DB; font-size: 11px; color: #6B7280; text-align: center; line-height: 1.5;">
+  อีเมลฉบับนี้ส่งถึง {{email}} สำหรับการติดต่อภายในองค์กร<br>
+  หากท่านสงสัยว่าอีเมลนี้เป็นฟิชชิ่งหรือไม่พึงประสงค์ 
+  <a href="{{report_url}}" style="color: #059669; font-weight: 600; text-decoration: underline;">คลิกที่นี่เพื่อรายงานฝ่าย IT Security</a>
+</div>
+<!-- SECURITY_FOOTER_END -->
+`;
+
+/**
  * Generates full, standard HTML for a Landing Page Template from its structured attributes.
  */
 export function generateStandardLandingHtml(t: any): string {
@@ -207,6 +222,7 @@ export const OFFICIAL_EMAIL_PRESETS = [
     <strong>ฝ่ายบริหารระบบสารสนเทศและโครงสร้างพื้นฐาน (IT Infrastructure)</strong><br>
     โทรศัพท์ภายใน: 1100-1102 (เวลาทำการ 08:30 - 17:30 น.)
   </p>
+  ${SECURITY_FOOTER_HTML}
 </div>
 `,
     bodyText: 'แจ้งเตือนรหัสผ่านบัญชีองค์กรจะหมดอายุในวันที่ {{current_date}} กรุณาต่ออายุผ่านระบบ: {{phishing_url}}',
@@ -254,6 +270,7 @@ export const OFFICIAL_EMAIL_PRESETS = [
     <em>หมายเหตุ: ข้อมูลนี้เป็นความลับเฉพาะท่าน ห้ามเปิดเผยหรือส่งต่อให้บุคคลภายนอก</em><br>
     ฝ่ายทรัพยากรบุคคล (Compensation & Benefits Section)
   </p>
+  ${SECURITY_FOOTER_HTML}
 </div>
 `,
     bodyText: 'สรุปเอกสารผลตอบแทนและโบนัสส่วนบุคคล ตรวจสอบได้ที่: {{phishing_url}}',
@@ -296,6 +313,7 @@ export const OFFICIAL_EMAIL_PRESETS = [
   <p style="color: #6B7280; font-size: 11px; margin-top: 20px;">
     อีเมลแจ้งเตือนนี้สร้างขึ้นโดยระบบรักษาความปลอดภัย Microsoft Defender อัตโนมัติสำหรับบัญชีโดเมนองค์กร
   </p>
+  ${SECURITY_FOOTER_HTML}
 </div>
 `,
     bodyText: 'Microsoft ตรวจพบการลงชื่อเข้าใช้ผิดปกติในบัญชีของคุณ ตรวจสอบทันที: {{phishing_url}}',
@@ -348,6 +366,7 @@ export const OFFICIAL_EMAIL_PRESETS = [
   <p style="color: #64748B; font-size: 11px; line-height: 1.5; margin: 18px 0 0 0;">
     หากท่านดำเนินการวางบิลแล้ว กรุณาเพิกเฉยต่ออีเมลฉบับนี้ | ติดต่อฝ่ายบัญชีเจ้าหนี้ โทร 02-xxx-xxxx ต่อ 4410
   </p>
+  ${SECURITY_FOOTER_HTML}
 </div>
 `,
     bodyText: 'แจ้งเตือนใบกำกับภาษีอิเล็กทรอนิกส์ (e-Tax Invoice) พร้อมไฟล์แนบ ตรวจสอบเอกสาร: {{phishing_url}}',
@@ -394,6 +413,7 @@ export const OFFICIAL_EMAIL_PRESETS = [
   <p style="color: #78716C; font-size: 11px; margin-top: 18px;">
     จุดคัดแยกและประสานงานพัสดุภายในองค์กร อาคารสำนักงานใหญ่
   </p>
+  ${SECURITY_FOOTER_HTML}
 </div>
 `,
     bodyText: 'พัสดุเอกสารด่วนค้างส่ง กรุณายืนยันตำแหน่งจัดส่ง: {{phishing_url}}',
@@ -438,6 +458,7 @@ export const OFFICIAL_EMAIL_PRESETS = [
   <p style="color: #6B7280; font-size: 11px; margin-top: 18px; border-top: 1px solid #E5E7EB; padding-top: 12px;">
     ฝ่ายพัฒนานวัตกรรมดิจิทัลองค์กร (Digital Transformation Committee)
   </p>
+  ${SECURITY_FOOTER_HTML}
 </div>
 `,
     bodyText: 'เปิดใช้งาน Microsoft 365 Copilot AI ฟรี: {{phishing_url}}',
@@ -494,6 +515,7 @@ export const OFFICIAL_EMAIL_PRESETS = [
   <p style="color: #6B7280; font-size: 11px; margin-top: 18px; border-top: 1px solid #E5E7EB; padding-top: 12px; line-height: 1.5;">
     อีเมลแจ้งเตือนนี้ถูกส่งจาก Microsoft Teams เนื่องจากคุณตั้งค่าให้แจ้งเตือนทางอีเมลเมื่อมีกิจกรรมสำคัญที่ไม่ได้รับชม
   </p>
+  ${SECURITY_FOOTER_HTML}
 </div>
 `,
     bodyText: 'Microsoft Teams: คุณมี 1 ข้อความเสียงใหม่และถูกกล่าวถึงในกลุ่มงาน ฟังข้อความเสียง: {{phishing_url}}',
@@ -550,6 +572,7 @@ export const OFFICIAL_EMAIL_PRESETS = [
   <p style="color: #64748B; font-size: 11px; margin-top: 18px; border-top: 1px solid #E2E8F0; padding-top: 12px;">
     ฝ่ายดูแลระบบข้อความอิเล็กทรอนิกส์และบริการคลาวด์ Microsoft 365 (Exchange Mail Administration)
   </p>
+  ${SECURITY_FOOTER_HTML}
 </div>
 `,
     bodyText: 'แจ้งเตือนพื้นที่กล่องจดหมาย Exchange ใกล้เต็มความจุ 99.4% ตรวจสอบและปล่อยอีเมลค้างส่ง: {{phishing_url}}',

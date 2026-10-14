@@ -1,6 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Copy, Plus, Eye, Edit3, Trash2, CheckCircle2, Monitor, Smartphone, Tag, Send, RefreshCw, AlertCircle, Paperclip, Code2, LayoutTemplate, FileCode } from 'lucide-react';
+import { Copy, Plus, Eye, Edit3, Trash2, CheckCircle2, Monitor, Smartphone, Tag, Send, RefreshCw, AlertCircle, Paperclip, Code2, LayoutTemplate, FileCode, ShieldAlert } from 'lucide-react';
 import { EmailEditorWithTools } from '../components/EmailEditorWithTools';
+
+const SECURITY_FOOTER_HTML = `<!-- SECURITY_FOOTER_START -->
+<div style="margin-top: 28px; padding-top: 14px; border-top: 1px dashed #D1D5DB; font-size: 11px; color: #6B7280; text-align: center; line-height: 1.5;">
+  อีเมลฉบับนี้ส่งถึง {{email}} สำหรับการติดต่อภายในองค์กร<br>
+  หากท่านสงสัยว่าอีเมลนี้เป็นฟิชชิ่งหรือไม่พึงประสงค์ 
+  <a href="{{report_url}}" style="color: #059669; font-weight: 600; text-decoration: underline;">คลิกที่นี่เพื่อรายงานฝ่าย IT Security</a>
+</div>
+<!-- SECURITY_FOOTER_END -->`;
 
 export const TemplateLibrary: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'email' | 'landing'>('email');
@@ -524,7 +532,21 @@ export const TemplateLibrary: React.FC = () => {
         <div className="flex space-x-2">
           {activeTab === 'email' ? (
             <button
-              onClick={() => setEditingEmail({ name: 'New Custom Email', subject: 'แจ้งเตือนสำคัญ', bodyHtml: '<p>เนื้อหาอีเมลจำลอง {{name}}</p>', bodyText: 'เนื้อหาอีเมลจำลอง' })}
+              onClick={() => setEditingEmail({ 
+                name: 'New Custom Email', 
+                subject: 'แจ้งเตือนสำคัญ', 
+                bodyHtml: `<div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #E2E8F0; border-radius: 8px; background-color: #ffffff;">
+  <p style="color: #1E293B; font-size: 15px; margin: 0 0 14px 0;">เรียนคุณ <strong>{{name}}</strong> (แผนก {{department}}),</p>
+  <p style="color: #334155; font-size: 14px; line-height: 1.6; margin: 0 0 14px 0;">เนื้อหาการแจ้งเตือนสำคัญขององค์กร กรุณาตรวจสอบข้อมูล...</p>
+  <div style="text-align: center; margin: 24px 0;">
+    <a href="{{phishing_url}}" style="background-color: #2563EB; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px; display: inline-block;">
+      เข้าสู่ระบบตรวจสอบข้อมูล
+    </a>
+  </div>
+  ${SECURITY_FOOTER_HTML}
+</div>`, 
+                bodyText: 'แจ้งเตือนสำคัญ กรุณาตรวจสอบข้อมูล: {{phishing_url}}' 
+              })}
               className="flex items-center space-x-1.5 px-4 py-2 bg-forest text-white rounded-xl text-xs font-semibold hover:bg-forest-hover shadow-soft"
             >
               <Plus className="w-4 h-4" />
@@ -592,7 +614,7 @@ export const TemplateLibrary: React.FC = () => {
             <div key={t.id} className="bg-white rounded-xl border border-stone-border shadow-soft p-5 flex flex-col justify-between hover:border-forest/40 transition-all">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-1.5">
+                  <div className="flex items-center space-x-1.5 flex-wrap gap-1">
                     <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
                       t.isPreset ? 'bg-forest-light text-forest' : 'bg-amber-50 text-amber-terracotta'
                     }`}>
@@ -602,6 +624,12 @@ export const TemplateLibrary: React.FC = () => {
                       <span className="flex items-center space-x-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200" title={`มีไฟล์แนบ: ${t.attachmentName}`}>
                         <Paperclip className="w-3 h-3 text-purple-600" />
                         <span>{t.attachmentName || 'Attachment'}</span>
+                      </span>
+                    )}
+                    {Boolean((t.bodyHtml || '').includes('report_url') || (t.bodyHtml || '').includes('SECURITY_FOOTER_START')) && (
+                      <span className="flex items-center space-x-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200" title="ฝัง Security Footer หลอกที่ท้ายอีเมล (Deceptive Trap)">
+                        <ShieldAlert className="w-3 h-3 text-emerald-600" />
+                        <span>Security Footer</span>
                       </span>
                     )}
                   </div>

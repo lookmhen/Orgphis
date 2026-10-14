@@ -204,17 +204,6 @@ publicTrackingRouter.get('/l/:token', async (req: Request, res: Response) => {
     button:hover {
       background-color: #234735;
     }
-    .report-link {
-      display: block;
-      text-align: center;
-      margin-top: 20px;
-      font-size: 13px;
-      color: #D97736;
-      text-decoration: none;
-    }
-    .report-link:hover {
-      text-decoration: underline;
-    }
   </style>
 </head>
 <body>
@@ -238,8 +227,6 @@ publicTrackingRouter.get('/l/:token', async (req: Request, res: Response) => {
 
       <button type="submit">${lp.submitButtonText || 'เข้าสู่ระบบ'}</button>
     </form>
-
-    <a href="/report/${token}" class="report-link">⚠️ รายงานอีเมลหรือหน้านี้เป็นฟิชชิ่ง</a>
   </div>
 </body>
 </html>
@@ -393,74 +380,10 @@ publicTrackingRouter.post('/l/:token/submit', async (req: Request, res: Response
 });
 
 /**
- * Target Reports Phishing
+ * Target Clicks Deceptive Security Footer Link (Secondary Phishing Trap)
+ * Treated as CLICKED - redirects to the phishing landing page.
  */
 publicTrackingRouter.get('/report/:token', async (req: Request, res: Response) => {
   const { token } = req.params;
-  const userAgent = req.headers['user-agent'] || '';
-  const ipAddress = req.ip || req.socket.remoteAddress;
-
-  try {
-    const target = await prisma.campaignTarget.findUnique({
-      where: { token }
-    });
-
-    if (!target) {
-      return res.status(404).send('Invalid token');
-    }
-
-    trackingService.enqueueEvent({
-      campaignId: target.campaignId,
-      campaignTargetId: target.id,
-      eventType: 'REPORTED',
-      ipAddress: ipAddress || undefined,
-      userAgent,
-      isBot: false,
-      createdAt: new Date()
-    });
-
-    // Positive reinforcement page
-    return res.send(`
-<!DOCTYPE html>
-<html lang="th">
-<head>
-  <meta charset="UTF-8">
-  <title>ขอบคุณสำหรับการรายงาน</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      background: #FAF8F5;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      color: #24292F;
-    }
-    .box {
-      background: #fff;
-      border: 1px solid #E7E5E0;
-      padding: 36px;
-      border-radius: 12px;
-      max-width: 500px;
-      text-align: center;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
-    }
-    .icon { font-size: 48px; margin-bottom: 16px; }
-    h1 { color: #2D5A43; font-size: 22px; margin-bottom: 12px; }
-    p { color: #4B5563; line-height: 1.6; }
-  </style>
-</head>
-<body>
-  <div class="box">
-    <div class="icon">🛡️</div>
-    <h1>ยอดเยี่ยมมาก! คุณช่วยปกป้ององค์กร</h1>
-    <p>คุณตรวจพบและรายงานอีเมลจำลอง Phishing ได้อย่างถูกต้อง ความระมัดระวังของคุณคือกำแพงความปลอดภัยที่สำคัญที่สุดขององค์กร</p>
-  </div>
-</body>
-</html>
-    `);
-  } catch (err) {
-    console.error('[Tracking] Report error:', err);
-    return res.status(500).send('Internal server error');
-  }
+  return res.redirect(`/l/${token}?from=footer_trap`);
 });

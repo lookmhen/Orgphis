@@ -14,7 +14,8 @@ import {
   Redo2,
   Languages,
   Paperclip,
-  FileText
+  FileText,
+  ShieldAlert
 } from 'lucide-react';
 
 interface EmailEditorWithToolsProps {
@@ -94,6 +95,46 @@ export const EmailEditorWithTools: React.FC<EmailEditorWithToolsProps> = ({
   const [headerTitleEn, setHeaderTitleEn] = useState('Corporate IT & AI Innovation Department');
   const [headerSubTh, setHeaderSubTh] = useState('โครงการสนับสนุนการใช้งาน AI สำหรับบุคลากร');
   const [headerSubEn, setHeaderSubEn] = useState('Corporate AI Enablement Program for Staff');
+
+  // Deceptive Security Footer Trap constant & toggle logic
+  const SECURITY_FOOTER_HTML = `<!-- SECURITY_FOOTER_START -->
+<div style="margin-top: 28px; padding-top: 14px; border-top: 1px dashed #D1D5DB; font-size: 11px; color: #6B7280; text-align: center; line-height: 1.5;">
+  อีเมลฉบับนี้ส่งถึง {{email}} สำหรับการติดต่อภายในองค์กร<br>
+  หากท่านสงสัยว่าอีเมลนี้เป็นฟิชชิ่งหรือไม่พึงประสงค์ 
+  <a href="{{report_url}}" style="color: #059669; font-weight: 600; text-decoration: underline;">คลิกที่นี่เพื่อรายงานฝ่าย IT Security</a>
+</div>
+<!-- SECURITY_FOOTER_END -->`;
+
+  const hasSecurityFooter = Boolean(
+    (bodyHtml || '').includes('SECURITY_FOOTER_START') || 
+    (bodyHtml || '').includes('{{report_url}}') ||
+    (bodyHtml || '').includes('รายงานฝ่าย IT Security')
+  );
+
+  const handleToggleSecurityFooter = (enable: boolean) => {
+    if (enable) {
+      if (!hasSecurityFooter) {
+        let updated = bodyHtml || '';
+        const lastDivIndex = updated.lastIndexOf('</div>');
+        if (lastDivIndex !== -1) {
+          updated = updated.slice(0, lastDivIndex) + `  ${SECURITY_FOOTER_HTML}\n` + updated.slice(lastDivIndex);
+        } else {
+          updated = updated ? `${updated}\n\n${SECURITY_FOOTER_HTML}` : SECURITY_FOOTER_HTML;
+        }
+        updateHtmlWithHistory(updated);
+      }
+    } else {
+      let updated = bodyHtml || '';
+      const markedRegex = /\s*<!-- SECURITY_FOOTER_START -->[\s\S]*?<!-- SECURITY_FOOTER_END -->/g;
+      if (markedRegex.test(updated)) {
+        updated = updated.replace(markedRegex, '');
+      } else {
+        const fallbackRegex = /<div[^>]*>[\s\S]*?\{\{report_url\}\}[\s\S]*?<\/div>/g;
+        updated = updated.replace(fallbackRegex, '');
+      }
+      updateHtmlWithHistory(updated.trim());
+    }
+  };
 
   // Append block to HTML with history
   const appendBlock = (htmlBlock: string) => {
@@ -347,6 +388,39 @@ ${subHtml}
         )}
       </div>
 
+      {/* Security Footer Simulation Configuration (Deceptive Report Trap) */}
+      <div className="bg-stone-50 border border-stone-border/80 rounded-xl p-3.5 space-y-2.5">
+        <div className="flex items-center justify-between">
+          <label className="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={hasSecurityFooter}
+              onChange={e => handleToggleSecurityFooter(e.target.checked)}
+              className="rounded text-forest focus:ring-forest cursor-pointer"
+            />
+            <span className="text-xs font-bold text-deep-slate flex items-center space-x-1.5">
+              <ShieldAlert className="w-3.5 h-3.5 text-forest" />
+              <span>ฝัง Security Footer หลอกที่ท้ายอีเมล (Deceptive Security Footer Trap)</span>
+            </span>
+          </label>
+          <span className="text-[11px] text-gray-400">
+            กับดักรายงานปลอม (&#123;&#123;report_url&#125;&#125;) หลอกให้เหยื่อคลิกเพื่อนับเป็น Clicked
+          </span>
+        </div>
+
+        {hasSecurityFooter && (
+          <div className="p-2.5 bg-white border border-stone-border/70 rounded-lg text-[11px] text-gray-600 space-y-1 animate-in fade-in duration-150">
+            <div className="flex items-center justify-between text-forest font-semibold">
+              <span>ตัวอย่างข้อความท้ายอีเมลที่ถูกฝัง:</span>
+              <span className="text-[10px] bg-forest-light px-2 py-0.5 rounded text-forest font-medium">ลิ้งก์หลอกซ้อน (Trap Link)</span>
+            </div>
+            <div className="italic text-gray-500 text-[11px]">
+              "อีเมลฉบับนี้ส่งถึง {'{{email}}'} สำหรับการติดต่อภายในองค์กร • หากท่านสงสัยว่าอีเมลนี้เป็นฟิชชิ่งหรือไม่พึงประสงค์ <u className="text-forest font-semibold">คลิกที่นี่เพื่อรายงานฝ่าย IT Security</u>"
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Dynamic Variables Bar */}
       <div className="bg-stone-muted/50 p-2.5 rounded-xl border border-stone-border/60">
         <div className="flex items-center justify-between flex-wrap gap-2">
@@ -360,6 +434,7 @@ ${subHtml}
               { tag: '{{email}}', label: 'อีเมล' },
               { tag: '{{department}}', label: 'แผนก' },
               { tag: '{{phishing_url}}', label: 'ลิงก์เป้าหมาย' },
+              { tag: '{{report_url}}', label: 'ลิงก์รายงานหลอก (Trap)' },
               { tag: '{{current_date}}', label: 'วันที่ปัจจุบัน' },
               { tag: '{{signin_location}}', label: 'ตำแหน่งสุ่ม (เช่น Hanoi, Vietnam)' },
               { tag: '{{signin_ip}}', label: 'IP สุ่ม (เช่น 14.162.180.95)' }
