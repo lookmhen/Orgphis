@@ -4,10 +4,14 @@ import { generateTrackingToken } from '../utils/tokenAndBot.js';
 import { dispatchService } from '../services/dispatchService.js';
 import { resolveServerBaseUrl } from '../utils/network.js';
 import { generateRandomizedSchedule, generateDepartmentAwareSchedule } from '../utils/scheduler.js';
+import { syncTelemetryData } from '../services/reconciliationService.js';
 
 export const campaignsRouter = Router();
 campaignsRouter.get('/', async (_req: Request, res: Response) => {
   try {
+    // Reconcile telemetry to ensure all submissions and events are accurately reflected
+    await syncTelemetryData();
+
     const campaigns = await prisma.campaign.findMany({
       include: {
         targetGroup: { select: { name: true } },
@@ -52,6 +56,19 @@ campaignsRouter.get('/', async (_req: Request, res: Response) => {
           if (s.isSubmitted) submitted += count;
           if (s.isReported) reported += count;
         }
+
+        // Defensive verification: ensure count is never less than targets with confirmed SUBMITTED events
+        const verifiedSubmitted = await prisma.campaignTarget.count({
+          where: {
+            campaignId: c.id,
+            OR: [
+              { isSubmitted: true },
+              { events: { some: { eventType: 'SUBMITTED', isBot: false } } }
+            ]
+          }
+        });
+        submitted = Math.max(submitted, verifiedSubmitted);
+        clicked = Math.max(clicked, submitted);
 
         const totalTargets = c._count.campaignTargets;
         const compromiseRate = sent > 0 ? ((submitted / sent) * 100).toFixed(1) : '0';
@@ -107,7 +124,14 @@ campaignsRouter.get('/:id', async (req: Request, res: Response) => {
         landingPageTemplate: true,
         smtpProfile: true,
         campaignTargets: {
-          include: { target: true, emailTemplate: true }
+          include: {
+            target: true,
+            emailTemplate: true,
+            events: {
+              where: { isBot: false },
+              select: { eventType: true, createdAt: true }
+            }
+          }
         },
         events: {
           orderBy: { createdAt: 'desc' },
@@ -118,9 +142,34 @@ campaignsRouter.get('/:id', async (req: Request, res: Response) => {
 
     if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
 
+    // Reconcile and enrich campaign targets with verified event telemetry
+    const enrichedTargets = campaign.campaignTargets.map(ct => {
+      const subEv = ct.events?.find(e => e.eventType === 'SUBMITTED');
+      const isSub = ct.isSubmitted || Boolean(subEv);
+      const subAt = ct.submittedAt || subEv?.createdAt || null;
+
+      const clkEv = ct.events?.find(e => e.eventType === 'CLICKED');
+      const isClk = ct.isClicked || Boolean(clkEv) || isSub;
+      const clkAt = ct.clickedAt || clkEv?.createdAt || (isSub ? subAt : null);
+
+      const repEv = ct.events?.find(e => e.eventType === 'REPORTED');
+      const isRep = ct.isReported || Boolean(repEv);
+      const repAt = ct.reportedAt || repEv?.createdAt || null;
+
+      return {
+        ...ct,
+        isSubmitted: isSub,
+        submittedAt: subAt,
+        isClicked: isClk,
+        clickedAt: clkAt,
+        isReported: isRep,
+        reportedAt: repAt
+      };
+    });
+
     // Department breakdown
     const departmentStats: Record<string, { sent: number; compromised: number; reported: number }> = {};
-    for (const ct of campaign.campaignTargets) {
+    for (const ct of enrichedTargets) {
       const dept = ct.target.department || 'Unknown';
       if (!departmentStats[dept]) {
         departmentStats[dept] = { sent: 0, compromised: 0, reported: 0 };
@@ -132,7 +181,7 @@ campaignsRouter.get('/:id', async (req: Request, res: Response) => {
 
     // Per-template breakdown (Multi-vector template analytics)
     const templateStatsMap: Record<string, { id: string; name: string; subject: string; sent: number; clicked: number; compromised: number; reported: number }> = {};
-    for (const ct of campaign.campaignTargets) {
+    for (const ct of enrichedTargets) {
       const tmpl = ct.emailTemplate || campaign.emailTemplate;
       const tid = tmpl.id;
       if (!templateStatsMap[tid]) {
@@ -161,6 +210,7 @@ campaignsRouter.get('/:id', async (req: Request, res: Response) => {
 
     return res.json({
       ...campaign,
+      campaignTargets: enrichedTargets,
       targetGroupNames: groupNames,
       departmentStats,
       templateStats: Object.values(templateStatsMap),
@@ -573,12 +623,22 @@ campaignsRouter.get('/:id/export', async (req: Request, res: Response) => {
   const { id } = req.params;
 
   try {
+    // Reconcile telemetry to ensure all submissions and events are accurately reflected
+    await syncTelemetryData();
+
     const campaign = await prisma.campaign.findUnique({
       where: { id },
       include: {
         emailTemplate: true,
         campaignTargets: {
-          include: { target: true, emailTemplate: true }
+          include: {
+            target: true,
+            emailTemplate: true,
+            events: {
+              where: { isBot: false },
+              select: { eventType: true, createdAt: true }
+            }
+          }
         }
       }
     });
@@ -591,20 +651,62 @@ campaignsRouter.get('/:id/export', async (req: Request, res: Response) => {
     // UTF-8 BOM for Excel compatibility
     res.write('\ufeffEmail,Name,Department,Template,Status,ScheduledAt,SentAt,ClickedAt,SubmittedAt,ReportedAt\n');
 
+    let totalSent = 0;
+    let totalClicked = 0;
+    let totalSubmitted = 0;
+    let totalReported = 0;
+
+    const escapeCsv = (val: any): string => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
     for (const ct of campaign.campaignTargets) {
-      const name = `"${(`${ct.target.firstName || ''} ${ct.target.lastName || ''}`).trim()}"`;
-      const email = `"${ct.target.email}"`;
-      const dept = `"${ct.target.department || ''}"`;
-      const tmplName = `"${(ct.emailTemplate?.name || campaign.emailTemplate?.name || 'General').replace(/"/g, '""')}"`;
-      const status = ct.isSubmitted ? 'COMPROMISED' : ct.isReported ? 'REPORTED' : ct.isClicked ? 'CLICKED' : ct.isSent ? 'SENT' : 'PENDING';
-      const scheduled = ct.scheduledAt ? `"${ct.scheduledAt.toISOString()}"` : '""';
-      const sent = ct.sentAt ? `"${ct.sentAt.toISOString()}"` : '""';
-      const clicked = ct.clickedAt ? `"${ct.clickedAt.toISOString()}"` : '""';
-      const submitted = ct.submittedAt ? `"${ct.submittedAt.toISOString()}"` : '""';
-      const reported = ct.reportedAt ? `"${ct.reportedAt.toISOString()}"` : '""';
+      const subEv = ct.events?.find((e: any) => e.eventType === 'SUBMITTED');
+      const isSub = ct.isSubmitted || Boolean(subEv);
+      const submittedAt = ct.submittedAt || subEv?.createdAt || null;
+
+      const clkEv = ct.events?.find((e: any) => e.eventType === 'CLICKED');
+      const isClk = ct.isClicked || Boolean(clkEv) || isSub;
+      const clickedAt = ct.clickedAt || clkEv?.createdAt || (isSub ? submittedAt : null);
+
+      const repEv = ct.events?.find((e: any) => e.eventType === 'REPORTED');
+      const isRep = ct.isReported || Boolean(repEv);
+      const reportedAt = ct.reportedAt || repEv?.createdAt || null;
+
+      if (ct.isSent) totalSent++;
+      if (isClk) totalClicked++;
+      if (isSub) totalSubmitted++;
+      if (isRep) totalReported++;
+
+      const name = escapeCsv((`${ct.target.firstName || ''} ${ct.target.lastName || ''}`).trim());
+      const email = escapeCsv(ct.target.email);
+      const dept = escapeCsv(ct.target.department || '');
+      const tmplName = escapeCsv(ct.emailTemplate?.name || campaign.emailTemplate?.name || 'General');
+      const status = escapeCsv(isSub ? 'COMPROMISED' : isRep ? 'REPORTED' : isClk ? 'CLICKED' : ct.isSent ? 'SENT' : 'PENDING');
+      const scheduled = escapeCsv(ct.scheduledAt ? ct.scheduledAt.toISOString() : '');
+      const sent = escapeCsv(ct.sentAt ? ct.sentAt.toISOString() : '');
+      const clicked = escapeCsv(clickedAt ? clickedAt.toISOString() : '');
+      const submitted = escapeCsv(submittedAt ? submittedAt.toISOString() : '');
+      const reported = escapeCsv(reportedAt ? reportedAt.toISOString() : '');
 
       res.write(`${email},${name},${dept},${tmplName},${status},${scheduled},${sent},${clicked},${submitted},${reported}\n`);
     }
+
+    // Append Campaign Summary section at bottom of CSV for Excel overview
+    const compRate = totalSent > 0 ? ((totalSubmitted / totalSent) * 100).toFixed(1) : '0.0';
+    const repRate = totalSent > 0 ? ((totalReported / totalSent) * 100).toFixed(1) : '0.0';
+
+    res.write('\n');
+    res.write('"=== สรุปผลลัพธ์แคมเปญ (CAMPAIGN SUMMARY) ===","","","","","","","","",""\n');
+    res.write(`"เป้าหมายทั้งหมด (Total Targets)",${campaign.campaignTargets.length},"","","","","","","",""\n`);
+    res.write(`"ส่งแล้ว (Total Sent)",${totalSent},"","","","","","","",""\n`);
+    res.write(`"คลิกลิงก์ (Total Clicked)",${totalClicked},"","","","","","","",""\n`);
+    res.write(`"เผลอกรอกข้อมูล (Total Compromised)",${totalSubmitted},"","","","","","","",""\n`);
+    res.write(`"แจ้งเบาะแส (Total Reported)",${totalReported},"","","","","","","",""\n`);
+    res.write(`"อัตราเผลอกรอกข้อมูล (Compromise Rate)","${compRate}%","","","","","","","",""\n`);
+    res.write(`"อัตราแจ้งเบาะแส (Report Rate)","${repRate}%","","","","","","","",""\n`);
 
     res.end();
   } catch (err) {

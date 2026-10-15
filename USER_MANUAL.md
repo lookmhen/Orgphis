@@ -199,7 +199,7 @@ docker compose up -d --build
 
 #### 3. การดาวน์โหลดรายงานผลเฉพาะแคมเปญ (Campaign Detail CSV Export):
 - ในหน้ารายการแคมเปญ คลิกปุ่ม **"Export CSV"** ประจำแคมเปญนั้นๆ
-- ระบบจะสร้างไฟล์รายงานผลลัพธ์รายบุคคล (`campaign-[id]-report.csv`) แบบ Real-time พร้อมระบุเวลา Sent, Clicked, Submitted, Reported รายคน
+- ระบบจะสร้างไฟล์รายงานผลลัพธ์รายบุคคล (`campaign-[id]-report.csv`) แบบ Real-time พร้อมระบุเวลา Sent, Clicked, Submitted, Reported รายคน และต่อท้ายด้วยตาราง **CAMPAIGN SUMMARY** สรุปยอดรวมและอัตราความเสี่ยงทันทีในไฟล์เดียว
 
 ---
 
@@ -209,8 +209,9 @@ docker compose up -d --build
 |---|---|
 | **Zero-Password Storage** | Express Middleware ดักกรองและตัดฟิลด์ `password`, `pin`, `otp` ออกจากทุกคำขอในระดับโครงสร้าง ปลอดภัยตามมาตรฐาน PDPA และ ISO 27001 |
 | **Anti-Scanner Defense** | กรอง User-Agent ของระบบสแกนอัตโนมัติ (เช่น Microsoft Safe Links, Proofpoint) เพื่อไม่ให้สถิติการคลิกผิดเพี้ยน |
-| **Domain Blacklist Protection** | ฝัง Header `X-Robots-Tag: noindex, nofollow, noarchive` ป้องกันไม่ให้ Search Engine นำหน้าทดสอบไปจัดทำดัชนี |
-| **SOC Status Freezing** | เมื่อมีคนกดปุ่ม **"รายงาน Phishing"** ระบบจะหยุดการบันทึกสถานะ Compromised สำหรับรายการนั้นทันที เพื่อไม่ให้กระทบสถิติเมื่อทีม SOC เปิดตรวจสอบ |
+| **SOC IP Whitelisting** | กรอง IP Address ของทีมตรวจสอบ SOC และระบบรักษาความปลอดภัย ไม่ให้นำมานับปะปนกับสถิติของพนักงานจริง |
+| **Full Telemetry Tracking** | บันทึกสถิติครบทุกขั้นตอน ทั้งการคลิกลิงก์ (Clicked), การเผลอกรอกข้อมูล (Compromised), และการแจ้งเตือน (Reported) อย่างอิสระ ไม่มีการทิ้งหรือแช่แข็งข้อมูลพนักงาน |
+| **Self-Healing Telemetry** | ระบบตรวจสอบและซิงก์สถานะ CampaignTarget ให้ตรงกับประวัติ EventLog เสมอโดยอัตโนมัติ ป้องกันข้อมูลตกหล่นจากการปิดเซิร์ฟเวอร์หรือแคมเปญที่สิ้นสุดแล้ว |
 | **Iframe Sandboxed Preview** | หน้าจอพรีวิวโค้ด HTML ผ่าน Sandbox Iframe ที่ปิดการเข้าถึง Session/Cookie เพื่อป้องกันช่องโหว่ XSS |
 
 ---
@@ -224,12 +225,15 @@ docker compose up -d --build
 npm test
 ```
 
-### ชุดทดสอบในระบบ (5 Test Suites - ผ่าน 100%):
+### ชุดทดสอบในระบบ (Automated Test Suites):
 1. `sanitizer.test.ts`: ยืนยันการตัดข้อมูลรหัสผ่านจริงออกจากระบบ 100%
 2. `tokenAndBot.test.ts`: ยืนยันความปลอดภัยของ Tracking Token และการตรวจจับ Bot แม่นยำ
 3. `templateEngine.test.ts`: ยืนยันการประมวลผลตัวแปร Dynamic Tags และความปลอดภัยของโค้ด HTML
 4. `scheduler.test.ts`: ตรวจสอบการคำนวณวันทำการ การตัดวันหยุดสุดสัปดาห์ และการกระจายเวลางาน
 5. `features.test.ts`: ตรวจสอบ API การนำเข้า Auto-Group, การแก้ไข Target และระบบไฟล์แนบจำลอง
+6. `multiTemplateCampaign.test.ts`: ตรวจสอบการกระจายหลายเทมเพลต และการตัดรายชื่อซ้ำ
+7. `network.test.ts`: ตรวจสอบการป้องกัน Localhost Loopback และการค้นหา Host IP / Domain
+8. `reconciliation.test.ts`: ยืนยันการซิงก์ข้อมูลประวัติการกรอกฟอร์ม และความถูกต้องของรายงาน CSV Summary 100%
 
 ---
 

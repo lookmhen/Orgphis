@@ -19,6 +19,7 @@ import { dashboardRouter } from './routes/dashboard.js';
 import { publicTrackingRouter } from './routes/publicTracking.js';
 import { getLocalIpAddress, resolveServerBaseUrl } from './utils/network.js';
 import { dispatchService } from './services/dispatchService.js';
+import { syncTelemetryData } from './services/reconciliationService.js';
 
 dotenv.config();
 
@@ -121,6 +122,7 @@ app.get('*', (_req, res, next) => {
 // Initialize database pragmas, seed presets, seed default admin, auto-resume running campaigns, and start server
 async function bootstrap() {
   await initDatabasePragmas();
+  await syncTelemetryData();
   await seedOfficialPresets();
   await authService.seedDefaultAdmin();
 

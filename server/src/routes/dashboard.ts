@@ -1,10 +1,13 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../prisma.js';
+import { syncTelemetryData } from '../services/reconciliationService.js';
 
 export const dashboardRouter = Router();
 
 // Helper function to compute all dashboard metrics
 async function computeDashboardMetrics() {
+  // Always reconcile telemetry state before computing metrics to guarantee 100% data consistency
+  await syncTelemetryData();
   // 1. Fetch all campaign targets with related target, campaign, and template
   const campaignTargets = await prisma.campaignTarget.findMany({
     include: {
@@ -38,9 +41,33 @@ async function computeDashboardMetrics() {
             }
           }
         }
+      },
+      events: {
+        where: { isBot: false },
+        select: {
+          eventType: true,
+          createdAt: true
+        }
       }
     }
   });
+
+  // Pre-calculate verified status flags for every target
+  const targetTelemetry = new Map<string, { isSubmitted: boolean; isClicked: boolean; isReported: boolean; submittedAt: Date | null; clickedAt: Date | null }>();
+  for (const ct of campaignTargets) {
+    const hasSubmittedEvent = ct.events?.find(e => e.eventType === 'SUBMITTED');
+    const isSubmitted = ct.isSubmitted || Boolean(hasSubmittedEvent);
+    const submittedAt = ct.submittedAt || hasSubmittedEvent?.createdAt || null;
+
+    const hasClickedEvent = ct.events?.find(e => e.eventType === 'CLICKED');
+    const isClicked = ct.isClicked || Boolean(hasClickedEvent) || isSubmitted;
+    const clickedAt = ct.clickedAt || hasClickedEvent?.createdAt || (isSubmitted ? submittedAt : null);
+
+    const hasReportedEvent = ct.events?.some(e => e.eventType === 'REPORTED');
+    const isReported = ct.isReported || Boolean(hasReportedEvent);
+
+    targetTelemetry.set(ct.id, { isSubmitted, isClicked, isReported, submittedAt, clickedAt });
+  }
 
   // 2. Department Benchmark
   const deptMap = new Map<string, {
@@ -52,6 +79,7 @@ async function computeDashboardMetrics() {
   }>();
 
   for (const ct of campaignTargets) {
+    const status = targetTelemetry.get(ct.id)!;
     const deptName = ct.target?.department?.trim() || 'ทั่วไป (General)';
     if (!deptMap.has(deptName)) {
       deptMap.set(deptName, {
@@ -64,9 +92,9 @@ async function computeDashboardMetrics() {
     }
     const entry = deptMap.get(deptName)!;
     if (ct.isSent) entry.sent += 1;
-    if (ct.isClicked) entry.clicked += 1;
-    if (ct.isSubmitted) entry.submitted += 1;
-    if (ct.isReported) entry.reported += 1;
+    if (status.isClicked) entry.clicked += 1;
+    if (status.isSubmitted) entry.submitted += 1;
+    if (status.isReported) entry.reported += 1;
   }
 
   const departmentStats = Array.from(deptMap.values()).map(d => {
@@ -84,7 +112,7 @@ async function computeDashboardMetrics() {
   // 3. Campaign Progress Over Time (Campaign Trends)
   const campaigns = await prisma.campaign.findMany({
     where: {
-      status: { in: ['RUNNING', 'COMPLETED'] }
+      status: { in: ['RUNNING', 'COMPLETED', 'CANCELLED'] }
     },
     include: {
       campaignTargets: {
@@ -92,7 +120,11 @@ async function computeDashboardMetrics() {
           isSent: true,
           isClicked: true,
           isSubmitted: true,
-          isReported: true
+          isReported: true,
+          events: {
+            where: { isBot: false },
+            select: { eventType: true }
+          }
         }
       }
     },
@@ -106,10 +138,14 @@ async function computeDashboardMetrics() {
     let reported = 0;
 
     for (const ct of c.campaignTargets) {
+      const isSub = ct.isSubmitted || ct.events?.some(e => e.eventType === 'SUBMITTED');
+      const isClk = ct.isClicked || ct.events?.some(e => e.eventType === 'CLICKED') || isSub;
+      const isRep = ct.isReported || ct.events?.some(e => e.eventType === 'REPORTED');
+
       if (ct.isSent) sent += 1;
-      if (ct.isClicked) clicked += 1;
-      if (ct.isSubmitted) submitted += 1;
-      if (ct.isReported) reported += 1;
+      if (isClk) clicked += 1;
+      if (isSub) submitted += 1;
+      if (isRep) reported += 1;
     }
 
     const compromiseRate = sent > 0 ? Number(((submitted / sent) * 100).toFixed(1)) : 0;
@@ -180,6 +216,7 @@ async function computeDashboardMetrics() {
   }>();
 
   for (const ct of campaignTargets) {
+    const status = targetTelemetry.get(ct.id)!;
     const templateName = ct.emailTemplate?.name || ct.campaign?.emailTemplate?.name || 'Unknown Template';
     if (!templateMap.has(templateName)) {
       templateMap.set(templateName, {
@@ -191,8 +228,8 @@ async function computeDashboardMetrics() {
     }
     const entry = templateMap.get(templateName)!;
     if (ct.isSent) entry.sent += 1;
-    if (ct.isClicked) entry.clicked += 1;
-    if (ct.isSubmitted) entry.submitted += 1;
+    if (status.isClicked) entry.clicked += 1;
+    if (status.isSubmitted) entry.submitted += 1;
   }
 
   const templateStats = Array.from(templateMap.values()).map(t => {
@@ -212,10 +249,11 @@ async function computeDashboardMetrics() {
   let globalReported = 0;
 
   for (const ct of campaignTargets) {
+    const status = targetTelemetry.get(ct.id)!;
     if (ct.isSent) globalSent += 1;
-    if (ct.isClicked) globalClicked += 1;
-    if (ct.isSubmitted) globalSubmitted += 1;
-    if (ct.isReported) globalReported += 1;
+    if (status.isClicked) globalClicked += 1;
+    if (status.isSubmitted) globalSubmitted += 1;
+    if (status.isReported) globalReported += 1;
   }
 
   const globalClickRate = globalSent > 0 ? (globalClicked / globalSent) * 100 : 0;
@@ -277,8 +315,9 @@ async function computeDashboardMetrics() {
       });
     }
     const entry = targetCompromiseMap.get(emailKey)!;
-    if (ct.isSubmitted) entry.compromisedCount += 1;
-    if (ct.isClicked) entry.clickedCount += 1;
+    const status = targetTelemetry.get(ct.id)!;
+    if (status.isSubmitted) entry.compromisedCount += 1;
+    if (status.isClicked) entry.clickedCount += 1;
   }
 
   // Filter repeat clickers (compromised or clicked >= 2 times)

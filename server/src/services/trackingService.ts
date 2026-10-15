@@ -72,11 +72,6 @@ class TrackingService {
             });
 
             if (currentTarget) {
-              // If already reported, freeze state (do not count as compromised)
-              if (currentTarget.isReported && (ev.eventType === 'CLICKED' || ev.eventType === 'SUBMITTED')) {
-                continue;
-              }
-
               const updateData: Record<string, any> = {};
               if (ev.eventType === 'OPENED' && !currentTarget.isOpened) {
                 updateData.isOpened = true;

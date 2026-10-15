@@ -263,6 +263,34 @@ publicTrackingRouter.post('/l/:token/submit', async (req: Request, res: Response
       return res.status(404).send('Invalid token');
     }
 
+    if (target.campaign.status === 'CANCELLED') {
+      return res.status(200).send(`
+        <!DOCTYPE html>
+        <html>
+        <head><title>Simulation Ended</title></head>
+        <body style="font-family: sans-serif; text-align: center; padding: 40px;">
+          <h2>การทดสอบความปลอดภัยนี้สิ้นสุดลงแล้ว</h2>
+          <p>ขอบคุณที่ให้ความร่วมมือในการเสริมสร้างความปลอดภัยไซเบอร์ขององค์กร</p>
+        </body>
+        </html>
+      `);
+    }
+
+    const submitNow = new Date();
+
+    // Directly persist CampaignTarget status to guarantee zero latency and 100% database consistency
+    await prisma.campaignTarget.update({
+      where: { id: target.id },
+      data: {
+        isSubmitted: true,
+        submittedAt: target.submittedAt || submitNow,
+        isClicked: true,
+        clickedAt: target.clickedAt || submitNow,
+        isOpened: true,
+        openedAt: target.openedAt || submitNow
+      }
+    });
+
     // Record Compromised event (Password was already stripped by ZeroPasswordSanitizer middleware)
     trackingService.enqueueEvent({
       campaignId: target.campaignId,
@@ -272,7 +300,7 @@ publicTrackingRouter.post('/l/:token/submit', async (req: Request, res: Response
       userAgent,
       isBot: false,
       metadata: { fieldsSubmitted: Object.keys(req.body || {}) },
-      createdAt: new Date()
+      createdAt: submitNow
     });
 
     const lp = target.campaign.landingPageTemplate;
