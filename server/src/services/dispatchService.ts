@@ -3,7 +3,7 @@ import { prisma } from '../prisma.js';
 import { renderTemplate } from './templateService.js';
 import { trackingService } from './trackingService.js';
 import { isWithinBusinessHours, generateDepartmentAwareSchedule } from '../utils/scheduler.js';
-import { getLocalIpAddress } from '../utils/network.js';
+import { getLocalIpAddress, resolveServerBaseUrl, isLoopbackOrLocalhost } from '../utils/network.js';
 
 interface DispatchOptions {
   campaignId: string;
@@ -17,7 +17,8 @@ class DispatchService {
    * Starts or resumes email dispatch for a campaign
    */
   public async launchCampaign(options: DispatchOptions): Promise<void> {
-    const { campaignId, baseUrl } = options;
+    const { campaignId, baseUrl: rawBaseUrl } = options;
+    const baseUrl = resolveServerBaseUrl(rawBaseUrl);
 
     if (this.activeCampaigns.has(campaignId)) {
       return;
@@ -185,13 +186,27 @@ class DispatchService {
               report_url: reportUrl
             };
 
-            // Use target-specific assigned template if multi-template campaign, else fallback to campaign template
-            const tmpl = ct.emailTemplate || campaign.emailTemplate;
+            // Use target-specific assigned template if multi-template campaign, else fetch latest campaign template from DB
+            const tmpl = ct.emailTemplate || (campaign.emailTemplateId ? await prisma.emailTemplate.findUnique({ where: { id: campaign.emailTemplateId } }) : null) || campaign.emailTemplate;
 
-            const htmlBody = renderTemplate(tmpl.bodyHtml, variables);
-            const textBody = tmpl.bodyText
+            let htmlBody = renderTemplate(tmpl.bodyHtml, variables);
+            let textBody = tmpl.bodyText
               ? renderTemplate(tmpl.bodyText, variables)
               : undefined;
+
+            // Strict Anti-Loopback Sanitizer: Ensure zero hardcoded localhost or 127.0.0.1 in rendered output
+            if (htmlBody.includes('localhost') || htmlBody.includes('127.0.0.1')) {
+              htmlBody = htmlBody
+                .replace(/http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/l\//g, `${baseUrl}/l/`)
+                .replace(/http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/report\//g, `${baseUrl}/report/`)
+                .replace(/http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?/g, baseUrl);
+            }
+            if (textBody && (textBody.includes('localhost') || textBody.includes('127.0.0.1'))) {
+              textBody = textBody
+                .replace(/http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/l\//g, `${baseUrl}/l/`)
+                .replace(/http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/report\//g, `${baseUrl}/report/`)
+                .replace(/http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?/g, baseUrl);
+            }
 
             // Simulation headers
             const headers: Record<string, string> = {
@@ -394,12 +409,7 @@ class DispatchService {
 
       console.log(`[DispatchService] Auto-resume: Found ${runningCampaigns.length} running campaign(s) to restore...`);
 
-      let resolvedBaseUrl = defaultBaseUrl;
-      if (!resolvedBaseUrl) {
-        const localIp = getLocalIpAddress();
-        const port = process.env.PORT || '3000';
-        resolvedBaseUrl = process.env.BASE_URL || `http://${localIp}:${port}`;
-      }
+      const resolvedBaseUrl = resolveServerBaseUrl(defaultBaseUrl);
 
       for (const campaign of runningCampaigns) {
         // 1. Reset any targets stuck in SENDING from unexpected server crash

@@ -350,14 +350,19 @@ export const Campaigns: React.FC = () => {
   };
 
   const handleLaunch = async (id: string) => {
-    if (!confirm('ยืนยันเริ่มส่งอีเมลจำลอง Phishing สำหรับแคมเปญนี้?')) return;
-    
     // Automatically infer accessible Base URL from client browser
     // In dev mode (port 5173), target backend port 3000
     let clientBaseUrl = window.location.origin;
     if (clientBaseUrl.includes(':5173')) {
       clientBaseUrl = clientBaseUrl.replace(':5173', ':3000');
     }
+
+    const isLocalhost = clientBaseUrl.includes('localhost') || clientBaseUrl.includes('127.0.0.1');
+    const confirmMessage = isLocalhost
+      ? 'ยืนยันเริ่มส่งอีเมลจำลอง Phishing สำหรับแคมเปญนี้?\n\n💡 หมายเหตุ: เนื่องจากเปิดหน้าเว็บจาก localhost ระบบจะแปลงลิงก์ในอีเมลเป็น Host Domain/IP อัตโนมัติ เพื่อให้ผู้รับสามารถคลิกได้จริง'
+      : `ยืนยันเริ่มส่งอีเมลจำลอง Phishing สำหรับแคมเปญนี้?\n\n🌐 ลิงก์ฟิชชิ่งในอีเมลจะถูกสร้างภายใต้โดเมน: ${clientBaseUrl}`;
+
+    if (!confirm(confirmMessage)) return;
 
     const res = await fetch(`/api/campaigns/${id}/launch`, {
       method: 'POST',
@@ -387,12 +392,17 @@ export const Campaigns: React.FC = () => {
   };
 
   const handleResume = async (id: string) => {
-    if (!confirm('ยืนยันให้ระบบรันต่อ (Resume) และส่งอีเมลต่อจากเดิม?')) return;
-
     let clientBaseUrl = window.location.origin;
     if (clientBaseUrl.includes(':5173')) {
       clientBaseUrl = clientBaseUrl.replace(':5173', ':3000');
     }
+
+    const isLocalhost = clientBaseUrl.includes('localhost') || clientBaseUrl.includes('127.0.0.1');
+    const confirmMessage = isLocalhost
+      ? 'ยืนยันให้ระบบรันต่อ (Resume) และส่งอีเมลต่อจากเดิม?\n\n💡 หมายเหตุ: ระบบจะแปลงลิงก์ในอีเมลเป็น Host Domain/IP อัตโนมัติ'
+      : `ยืนยันให้ระบบรันต่อ (Resume) และส่งอีเมลต่อจากเดิม?\n\n🌐 ลิงก์ฟิชชิ่งจะสร้างภายใต้โดเมน: ${clientBaseUrl}`;
+
+    if (!confirm(confirmMessage)) return;
 
     const res = await fetch(`/api/campaigns/${id}/resume`, {
       method: 'POST',

@@ -17,7 +17,7 @@ import { smtpRouter } from './routes/smtp.js';
 import { campaignsRouter } from './routes/campaigns.js';
 import { dashboardRouter } from './routes/dashboard.js';
 import { publicTrackingRouter } from './routes/publicTracking.js';
-import { getLocalIpAddress } from './utils/network.js';
+import { getLocalIpAddress, resolveServerBaseUrl } from './utils/network.js';
 import { dispatchService } from './services/dispatchService.js';
 
 dotenv.config();
@@ -126,13 +126,13 @@ async function bootstrap() {
 
   // Auto-resume any campaigns that were in RUNNING state prior to server restart
   const localIp = getLocalIpAddress();
-  const defaultBaseUrl = process.env.BASE_URL || `http://${localIp}:${PORT}`;
+  const defaultBaseUrl = resolveServerBaseUrl(process.env.BASE_URL);
   await dispatchService.autoResumeRunningCampaigns(defaultBaseUrl);
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`====================================================`);
     console.log(`🛡️  PhishCentral Server running on port ${PORT} (0.0.0.0)`);
-    console.log(`🌐 Base URL: ${process.env.BASE_URL || `http://${localIp}:${PORT}`}`);
+    console.log(`🌐 Base URL: ${defaultBaseUrl}`);
     console.log(`🏠 LAN Host Access: http://${localIp}:${PORT}`);
     console.log(`🔒 Authentication: ENABLED`);
     console.log(`====================================================`);

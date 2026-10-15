@@ -238,9 +238,11 @@ npm test
 ระบบพร้อมรันบน Cloud Server หรือ On-Premise ภายในองค์กรผ่าน Docker Compose:
 
 ```bash
-# 1. ตรวจสอบค่าในไฟล์ .env ที่โฟลเดอร์หลัก
+# 1. ตรวจสอบและตั้งค่าในไฟล์ .env
 PORT=3000
-BASE_URL=http://<IP-หรือ-Domain-เซิร์ฟเวอร์>:3000
+# กำหนด Domain Name สำหรับลิงก์ในอีเมล (เช่น "https://phish.yourcompany.com")
+# หรือปล่อยว่างไว้ ("") เพื่อให้ระบบตรวจจับ Domain หรือ Host IP อัตโนมัติจากเบราว์เซอร์
+BASE_URL="https://phish.yourcompany.com"
 ADMIN_API_KEY=your-secure-admin-secret
 
 # 2. เริ่มต้นรันระบบผ่าน Docker Compose
@@ -250,7 +252,7 @@ docker compose up -d --build
 docker compose ps
 docker compose logs -f phishcentral
 ```
-*ระบบจะพร้อมให้บริการที่พอร์ต `3000` ทันที*
+*ระบบจะพร้อมให้บริการที่พอร์ต `3000` ทันที และการันตีว่าลิงก์ในอีเมลจะไม่มีทางเป็น localhost*
 
 ---
 

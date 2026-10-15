@@ -171,7 +171,13 @@ templatesRouter.post('/emails/test-send', async (req: Request, res: Response) =>
     };
 
     const renderedSubject = renderTemplate(subject, variables);
-    const renderedHtml = renderTemplate(bodyHtml, variables);
+    let renderedHtml = renderTemplate(bodyHtml, variables);
+    if (renderedHtml.includes('localhost') || renderedHtml.includes('127.0.0.1')) {
+      renderedHtml = renderedHtml
+        .replace(/http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/l\//g, `${baseUrl}/l/`)
+        .replace(/http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/report\//g, `${baseUrl}/report/`)
+        .replace(/http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?/g, baseUrl);
+    }
 
     const attachments: any[] = [];
     if (hasAttachment && attachmentName) {
