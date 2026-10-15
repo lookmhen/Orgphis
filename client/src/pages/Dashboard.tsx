@@ -600,7 +600,7 @@ export const Dashboard: React.FC = () => {
               <UsersRound className="w-5 h-5 text-amber-700" />
               <div>
                 <h3 className="text-base font-bold text-deep-slate">กลุ่มเป้าหมายที่ต้องเข้าอบรมเสริม (Targeted Retraining Needed)</h3>
-                <p className="text-xs text-gray-500 mt-0.5">รายชื่อพนักงานที่เผลอคลิกหรือส่งรหัสผ่านซ้ำซ้อนมากกว่า 1 ครั้ง ควรส่งหลักสูตรอบรมความตระหนักรู้เพิ่มเติม</p>
+                <p className="text-xs text-gray-500 mt-0.5">รายชื่อพนักงานกลุ่มเสี่ยงสูงที่เผลอกรอกข้อมูลหรือคลิกลิงก์ซ้ำซ้อน ควรจัดส่งหลักสูตรฝึกอบรมความตระหนักรู้เพิ่มเติม</p>
               </div>
             </div>
             <span className="text-xs font-bold px-3 py-1 bg-amber-100 text-amber-800 rounded-full">
@@ -637,9 +637,15 @@ export const Dashboard: React.FC = () => {
                       {offender.compromisedCount} ครั้ง
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <span className="px-2.5 py-1 bg-red-50 text-red-700 border border-red-200 rounded-lg font-bold text-[11px]">
-                        ต้องเข้ารับการอบรมซ้ำ
-                      </span>
+                      {offender.compromisedCount > 0 ? (
+                        <span className="px-2.5 py-1 bg-red-50 text-red-700 border border-red-200 rounded-lg font-bold text-[11px]">
+                          ต้องเข้าอบรมเร่งด่วน (Compromised)
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg font-bold text-[11px]">
+                          เฝ้าระวังพฤติกรรมเสี่ยง (Repeat Clicker)
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}

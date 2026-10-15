@@ -201,6 +201,9 @@ describe('Telemetry & Submission Reconciliation Test Suite', () => {
     expect(csvContent).toContain('=== สรุปภาพรวมระดับองค์กร (EXECUTIVE SUMMARY) ===');
     expect(csvContent).toContain('จำนวนการเผลอกรอกข้อมูล (Total Compromised)');
     expect(csvContent).toContain('Engineering');
+    // Section 3 check: high-risk target who submitted form must be listed
+    expect(csvContent).toContain('=== รายชื่อพนักงานกลุ่มเสี่ยงสูง (REPEAT OFFENDERS & HIGH RISK) ===');
+    expect(csvContent).toContain('victim_');
   });
 
   it('5. POST /l/:token/submit should directly persist isSubmitted to CampaignTarget immediately', async () => {

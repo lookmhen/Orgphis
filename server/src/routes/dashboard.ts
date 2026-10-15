@@ -320,11 +320,11 @@ async function computeDashboardMetrics() {
     if (status.isClicked) entry.clickedCount += 1;
   }
 
-  // Filter repeat clickers (compromised or clicked >= 2 times)
+  // Filter high-risk targets: compromised at least once (compromisedCount >= 1) or clicked repeatedly (clickedCount >= 2)
   const repeatOffenders = Array.from(targetCompromiseMap.values())
-    .filter(t => t.compromisedCount >= 2 || t.clickedCount >= 2)
+    .filter(t => t.compromisedCount >= 1 || t.clickedCount >= 2)
     .sort((a, b) => b.compromisedCount - a.compromisedCount || b.clickedCount - a.clickedCount)
-    .slice(0, 10);
+    .slice(0, 50);
 
   return {
     campaigns,
@@ -424,7 +424,7 @@ dashboardRouter.get('/export', async (_req: Request, res: Response) => {
     res.write(`${escapeCsv('ชื่อ-นามสกุล (Name)')},${escapeCsv('อีเมล (Email)')},${escapeCsv('แผนก (Department)')},${escapeCsv('จำนวนครั้งที่เผลอกรอกข้อมูล (Compromised Count)')},${escapeCsv('จำนวนครั้งที่คลิกลิงก์ (Clicked Count)')}\n`);
 
     if (metrics.repeatOffenders.length === 0) {
-      res.write(`${escapeCsv('ไม่พบกลุ่มเสี่ยงสูง (ไม่มีพนักงานที่เผลอกรอกข้อมูลซ้ำซ้อน)')},${escapeCsv('-')},${escapeCsv('-')},${escapeCsv(0)},${escapeCsv(0)}\n`);
+      res.write(`${escapeCsv('ไม่พบกลุ่มเสี่ยงสูง (ไม่มีพนักงานที่เผลอกรอกข้อมูลหรือคลิกลิงก์ซ้ำซ้อน)')},${escapeCsv('-')},${escapeCsv('-')},${escapeCsv(0)},${escapeCsv(0)}\n`);
     } else {
       for (const ro of metrics.repeatOffenders) {
         res.write(`${escapeCsv(ro.name)},${escapeCsv(ro.email)},${escapeCsv(ro.department)},${escapeCsv(ro.compromisedCount)},${escapeCsv(ro.clickedCount)}\n`);
