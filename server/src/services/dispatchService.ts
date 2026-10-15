@@ -194,18 +194,18 @@ class DispatchService {
               ? renderTemplate(tmpl.bodyText, variables)
               : undefined;
 
-            // Strict Anti-Loopback Sanitizer: Ensure zero hardcoded localhost or 127.0.0.1 in rendered output
+            // Strict Anti-Loopback Sanitizer: Ensure zero hardcoded localhost or 127.0.0.1 in rendered output (supports http and https)
             if (htmlBody.includes('localhost') || htmlBody.includes('127.0.0.1')) {
               htmlBody = htmlBody
-                .replace(/http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/l\//g, `${baseUrl}/l/`)
-                .replace(/http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/report\//g, `${baseUrl}/report/`)
-                .replace(/http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?/g, baseUrl);
+                .replace(/https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/l\//g, `${baseUrl}/l/`)
+                .replace(/https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/report\//g, `${baseUrl}/report/`)
+                .replace(/https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?/g, baseUrl);
             }
             if (textBody && (textBody.includes('localhost') || textBody.includes('127.0.0.1'))) {
               textBody = textBody
-                .replace(/http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/l\//g, `${baseUrl}/l/`)
-                .replace(/http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/report\//g, `${baseUrl}/report/`)
-                .replace(/http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?/g, baseUrl);
+                .replace(/https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/l\//g, `${baseUrl}/l/`)
+                .replace(/https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?\/report\//g, `${baseUrl}/report/`)
+                .replace(/https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?/g, baseUrl);
             }
 
             // Simulation headers
@@ -412,41 +412,45 @@ class DispatchService {
       const resolvedBaseUrl = resolveServerBaseUrl(defaultBaseUrl);
 
       for (const campaign of runningCampaigns) {
-        // 1. Reset any targets stuck in SENDING from unexpected server crash
-        await prisma.campaignTarget.updateMany({
-          where: { campaignId: campaign.id, dispatchStatus: 'SENDING' },
-          data: { dispatchStatus: 'PENDING' }
-        });
-
-        // 2. Check if all targets are already finished
-        const remaining = await prisma.campaignTarget.count({
-          where: {
-            campaignId: campaign.id,
-            dispatchStatus: { in: ['PENDING', 'QUEUED'] }
-          }
-        });
-
-        if (remaining === 0) {
-          await prisma.campaign.update({
-            where: { id: campaign.id },
-            data: { status: 'COMPLETED', endedAt: new Date() }
+        try {
+          // 1. Reset any targets stuck in SENDING from unexpected server crash
+          await prisma.campaignTarget.updateMany({
+            where: { campaignId: campaign.id, dispatchStatus: 'SENDING' },
+            data: { dispatchStatus: 'PENDING' }
           });
-          console.log(`[DispatchService] Campaign "${campaign.name}" (${campaign.id}) already completed all dispatches.`);
-          continue;
+
+          // 2. Check if all targets are already finished
+          const remaining = await prisma.campaignTarget.count({
+            where: {
+              campaignId: campaign.id,
+              dispatchStatus: { in: ['PENDING', 'QUEUED'] }
+            }
+          });
+
+          if (remaining === 0) {
+            await prisma.campaign.update({
+              where: { id: campaign.id },
+              data: { status: 'COMPLETED', endedAt: new Date() }
+            });
+            console.log(`[DispatchService] Campaign "${campaign.name}" (${campaign.id}) already completed all dispatches.`);
+            continue;
+          }
+
+          // 3. Reschedule any overdue targets
+          if (campaign.scheduleType === 'RANDOMIZED') {
+            await this.rescheduleOverdueTargets(campaign.id);
+          }
+
+          // 4. Launch campaign dispatch loop
+          this.launchCampaign({
+            campaignId: campaign.id,
+            baseUrl: resolvedBaseUrl
+          });
+
+          console.log(`[DispatchService] Auto-resumed campaign "${campaign.name}" (${campaign.id}) successfully.`);
+        } catch (campaignErr: any) {
+          console.error(`[DispatchService] Failed to auto-resume campaign "${campaign.name}" (${campaign.id}):`, campaignErr.message);
         }
-
-        // 3. Reschedule any overdue targets
-        if (campaign.scheduleType === 'RANDOMIZED') {
-          await this.rescheduleOverdueTargets(campaign.id);
-        }
-
-        // 4. Launch campaign dispatch loop
-        this.launchCampaign({
-          campaignId: campaign.id,
-          baseUrl: resolvedBaseUrl
-        });
-
-        console.log(`[DispatchService] Auto-resumed campaign "${campaign.name}" (${campaign.id}) successfully.`);
       }
     } catch (err: any) {
       console.error('[DispatchService] Error during auto-resume of running campaigns:', err.message);

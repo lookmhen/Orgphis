@@ -1,4 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, afterAll } from 'vitest';
+import fs from 'fs';
+import path from 'path';
 import { 
   isLoopbackOrLocalhost, 
   isDomainNameUrl, 
@@ -19,6 +21,19 @@ describe('Network & Base URL Resolution Suite', () => {
     } else {
       delete process.env.BASE_URL;
     }
+  });
+
+  afterAll(() => {
+    const candidates = [
+      path.resolve(process.cwd(), 'data/persistent_base_url.txt'),
+      path.resolve(process.cwd(), 'server/data/persistent_base_url.txt'),
+      path.resolve(process.cwd(), '../data/persistent_base_url.txt')
+    ];
+    candidates.forEach(f => {
+      if (fs.existsSync(f)) {
+        try { fs.unlinkSync(f); } catch {}
+      }
+    });
   });
 
   describe('isLoopbackOrLocalhost', () => {

@@ -777,7 +777,7 @@ ${subHtml}
               <span>แสดงผลแบบสด (Live Preview)</span>
             </span>
             <span className="text-[10px] text-gray-400">
-              {previewDevice === 'desktop' ? 'Desktop 600px' : 'Mobile 360px'}
+              {previewDevice === 'desktop' ? 'Desktop 600px' : 'Mobile 320px'}
             </span>
           </div>
 

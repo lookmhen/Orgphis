@@ -853,7 +853,7 @@ export const TemplateLibrary: React.FC = () => {
             </div>
 
             <form onSubmit={handleSaveLanding} className="flex flex-col flex-1 overflow-hidden text-xs">
-              <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 overflow-hidden min-h-0">
+              <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 overflow-y-auto lg:overflow-hidden min-h-0">
                 {/* Left Column: Form Builder or Raw HTML Editor */}
                 <div className="lg:col-span-7 flex flex-col border-b lg:border-b-0 lg:border-r border-stone-border overflow-hidden bg-white">
                   <div className="p-5 overflow-y-auto space-y-4 flex-1">
