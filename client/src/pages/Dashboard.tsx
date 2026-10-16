@@ -74,6 +74,7 @@ interface RepeatOffender {
   department: string;
   compromisedCount: number;
   clickedCount: number;
+  campaigns?: string;
 }
 
 interface InsightsData {
@@ -600,7 +601,7 @@ export const Dashboard: React.FC = () => {
               <UsersRound className="w-5 h-5 text-amber-700" />
               <div>
                 <h3 className="text-base font-bold text-deep-slate">กลุ่มเป้าหมายที่มีความเสี่ยงสูง (High-Risk Targets)</h3>
-                <p className="text-xs text-gray-500 mt-0.5">รายชื่อพนักงานที่มีความเสี่ยงสูงจากการเผลอกรอกข้อมูลหรือคลิกลิงก์ซ้ำซ้อน</p>
+                <p className="text-xs text-gray-500 mt-0.5">รายชื่อพนักงานที่มีประวัติคลิกลิงก์ฟิชชิ่ง หรือเผลอกรอกข้อมูลลงในหน้าจำลอง</p>
               </div>
             </div>
             <span className="text-xs font-bold px-3 py-1 bg-amber-100 text-amber-800 rounded-full">
@@ -615,6 +616,7 @@ export const Dashboard: React.FC = () => {
                   <th className="px-4 py-3 rounded-l-lg">ชื่อ - นามสกุล</th>
                   <th className="px-4 py-3">อีเมล</th>
                   <th className="px-4 py-3">แผนก</th>
+                  <th className="px-4 py-3">แคมเปญ</th>
                   <th className="px-4 py-3 text-center">จำนวนคลิกลิงก์</th>
                   <th className="px-4 py-3 text-center">จำนวนที่เผลอกรอกข้อมูล</th>
                   <th className="px-4 py-3 text-right rounded-r-lg">สถานะ (Status)</th>
@@ -630,6 +632,11 @@ export const Dashboard: React.FC = () => {
                         {offender.department}
                       </span>
                     </td>
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-0.5 bg-stone-100 border border-stone-200 rounded text-[11px] font-medium text-stone-700 max-w-[200px] truncate block" title={offender.campaigns || '-'}>
+                        {offender.campaigns || '-'}
+                      </span>
+                    </td>
                     <td className="px-4 py-3 text-center font-bold text-amber-700">
                       {offender.clickedCount} ครั้ง
                     </td>
@@ -643,7 +650,7 @@ export const Dashboard: React.FC = () => {
                         </span>
                       ) : (
                         <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg font-bold text-[11px]">
-                          Repeat Clicker
+                          Clicked
                         </span>
                       )}
                     </td>

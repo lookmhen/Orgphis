@@ -200,8 +200,9 @@ describe('Telemetry & Submission Reconciliation Test Suite', () => {
 
     expect(csvContent).toContain('=== สรุปภาพรวมระดับองค์กร (EXECUTIVE SUMMARY) ===');
     expect(csvContent).toContain('จำนวนการเผลอกรอกข้อมูล (Total Compromised)');
-    // Section 3 check: high-risk target who submitted form must be listed with Compromised status
+    // Section 3 check: high-risk target who submitted form must be listed with Compromised status and Campaign column
     expect(csvContent).toContain('=== รายชื่อพนักงานกลุ่มเสี่ยงสูง (HIGH-RISK TARGETS) ===');
+    expect(csvContent).toContain('แคมเปญที่พบพฤติกรรม (Campaigns)');
     expect(csvContent).toContain('victim_');
     expect(csvContent).toContain('Compromised');
   });

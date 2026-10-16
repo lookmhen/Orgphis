@@ -291,7 +291,7 @@ async function computeDashboardMetrics() {
     gradeColor = 'text-red-700 bg-red-50 border-red-200';
   }
 
-  // 7. High-Risk / Repeat Clickers (Targeted Retraining)
+  // 7. High-Risk / Clicked & Compromised Targets
   const targetCompromiseMap = new Map<string, {
     id: string;
     email: string;
@@ -299,6 +299,7 @@ async function computeDashboardMetrics() {
     department: string;
     compromisedCount: number;
     clickedCount: number;
+    campaignNames: Set<string>;
   }>();
 
   for (const ct of campaignTargets) {
@@ -311,20 +312,33 @@ async function computeDashboardMetrics() {
         name: `${ct.target.firstName || ''} ${ct.target.lastName || ''}`.trim() || ct.target.email.split('@')[0],
         department: ct.target.department || 'ทั่วไป (General)',
         compromisedCount: 0,
-        clickedCount: 0
+        clickedCount: 0,
+        campaignNames: new Set<string>()
       });
     }
     const entry = targetCompromiseMap.get(emailKey)!;
     const status = targetTelemetry.get(ct.id)!;
     if (status.isSubmitted) entry.compromisedCount += 1;
     if (status.isClicked) entry.clickedCount += 1;
+    if ((status.isClicked || status.isSubmitted) && ct.campaign?.name) {
+      entry.campaignNames.add(ct.campaign.name);
+    }
   }
 
-  // Filter high-risk targets: compromised at least once (compromisedCount >= 1) or clicked repeatedly (clickedCount >= 2)
+  // Filter targets: clicked at least once (clickedCount >= 1) or compromised at least once (compromisedCount >= 1)
   const repeatOffenders = Array.from(targetCompromiseMap.values())
-    .filter(t => t.compromisedCount >= 1 || t.clickedCount >= 2)
+    .filter(t => t.compromisedCount >= 1 || t.clickedCount >= 1)
     .sort((a, b) => b.compromisedCount - a.compromisedCount || b.clickedCount - a.clickedCount)
-    .slice(0, 50);
+    .map(t => ({
+      id: t.id,
+      email: t.email,
+      name: t.name,
+      department: t.department,
+      compromisedCount: t.compromisedCount,
+      clickedCount: t.clickedCount,
+      campaigns: Array.from(t.campaignNames).join(', ') || '-'
+    }))
+    .slice(0, 100);
 
   return {
     campaigns,
@@ -419,16 +433,16 @@ dashboardRouter.get('/export', async (_req: Request, res: Response) => {
     }
     res.write('\n');
 
-    // 4. Section 3: High-Risk Targets
+    // 4. Section 3: High-Risk Targets (Clicked & Compromised)
     res.write(`${escapeCsv('=== รายชื่อพนักงานกลุ่มเสี่ยงสูง (HIGH-RISK TARGETS) ===')}\n`);
-    res.write(`${escapeCsv('ชื่อ-นามสกุล (Name)')},${escapeCsv('อีเมล (Email)')},${escapeCsv('แผนก (Department)')},${escapeCsv('จำนวนครั้งที่เผลอกรอกข้อมูล (Compromised Count)')},${escapeCsv('จำนวนครั้งที่คลิกลิงก์ (Clicked Count)')},${escapeCsv('สถานะ (Status)')}\n`);
+    res.write(`${escapeCsv('ชื่อ-นามสกุล (Name)')},${escapeCsv('อีเมล (Email)')},${escapeCsv('แผนก (Department)')},${escapeCsv('แคมเปญที่พบพฤติกรรม (Campaigns)')},${escapeCsv('จำนวนครั้งที่เผลอกรอกข้อมูล (Compromised Count)')},${escapeCsv('จำนวนครั้งที่คลิกลิงก์ (Clicked Count)')},${escapeCsv('สถานะ (Status)')}\n`);
 
     if (metrics.repeatOffenders.length === 0) {
-      res.write(`${escapeCsv('ไม่พบกลุ่มเสี่ยงสูง (ไม่มีพนักงานที่มีพฤติกรรมเสี่ยง)')},${escapeCsv('-')},${escapeCsv('-')},${escapeCsv(0)},${escapeCsv(0)},${escapeCsv('-')}\n`);
+      res.write(`${escapeCsv('ไม่พบกลุ่มเสี่ยงสูง (ไม่มีพนักงานที่มีพฤติกรรมเสี่ยง)')},${escapeCsv('-')},${escapeCsv('-')},${escapeCsv('-')},${escapeCsv(0)},${escapeCsv(0)},${escapeCsv('-')}\n`);
     } else {
       for (const ro of metrics.repeatOffenders) {
-        const status = ro.compromisedCount > 0 ? 'Compromised' : 'Repeat Clicker';
-        res.write(`${escapeCsv(ro.name)},${escapeCsv(ro.email)},${escapeCsv(ro.department)},${escapeCsv(ro.compromisedCount)},${escapeCsv(ro.clickedCount)},${escapeCsv(status)}\n`);
+        const status = ro.compromisedCount > 0 ? 'Compromised' : 'Clicked';
+        res.write(`${escapeCsv(ro.name)},${escapeCsv(ro.email)},${escapeCsv(ro.department)},${escapeCsv(ro.campaigns)},${escapeCsv(ro.compromisedCount)},${escapeCsv(ro.clickedCount)},${escapeCsv(status)}\n`);
       }
     }
 
