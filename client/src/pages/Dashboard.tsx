@@ -592,15 +592,15 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Row 4: Repeat Offenders / High-Risk Targets (Targeted Retraining) */}
+      {/* Row 4: High-Risk Targets */}
       {insights && insights.repeatOffenders.length > 0 && (
         <div className="bg-white p-6 rounded-xl border border-amber-200 shadow-soft">
           <div className="flex items-center justify-between pb-4 border-b border-amber-100">
             <div className="flex items-center gap-2">
               <UsersRound className="w-5 h-5 text-amber-700" />
               <div>
-                <h3 className="text-base font-bold text-deep-slate">กลุ่มเป้าหมายที่ต้องเข้าอบรมเสริม (Targeted Retraining Needed)</h3>
-                <p className="text-xs text-gray-500 mt-0.5">รายชื่อพนักงานกลุ่มเสี่ยงสูงที่เผลอกรอกข้อมูลหรือคลิกลิงก์ซ้ำซ้อน ควรจัดส่งหลักสูตรฝึกอบรมความตระหนักรู้เพิ่มเติม</p>
+                <h3 className="text-base font-bold text-deep-slate">กลุ่มเป้าหมายที่มีความเสี่ยงสูง (High-Risk Targets)</h3>
+                <p className="text-xs text-gray-500 mt-0.5">รายชื่อพนักงานที่มีความเสี่ยงสูงจากการเผลอกรอกข้อมูลหรือคลิกลิงก์ซ้ำซ้อน</p>
               </div>
             </div>
             <span className="text-xs font-bold px-3 py-1 bg-amber-100 text-amber-800 rounded-full">
@@ -617,7 +617,7 @@ export const Dashboard: React.FC = () => {
                   <th className="px-4 py-3">แผนก</th>
                   <th className="px-4 py-3 text-center">จำนวนคลิกลิงก์</th>
                   <th className="px-4 py-3 text-center">จำนวนที่เผลอกรอกข้อมูล</th>
-                  <th className="px-4 py-3 text-right rounded-r-lg">สถานะการอบรม</th>
+                  <th className="px-4 py-3 text-right rounded-r-lg">สถานะ (Status)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -639,11 +639,11 @@ export const Dashboard: React.FC = () => {
                     <td className="px-4 py-3 text-right">
                       {offender.compromisedCount > 0 ? (
                         <span className="px-2.5 py-1 bg-red-50 text-red-700 border border-red-200 rounded-lg font-bold text-[11px]">
-                          ต้องเข้าอบรมเร่งด่วน (Compromised)
+                          Compromised
                         </span>
                       ) : (
                         <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg font-bold text-[11px]">
-                          เฝ้าระวังพฤติกรรมเสี่ยง (Repeat Clicker)
+                          Repeat Clicker
                         </span>
                       )}
                     </td>

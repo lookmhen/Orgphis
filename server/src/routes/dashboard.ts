@@ -419,15 +419,16 @@ dashboardRouter.get('/export', async (_req: Request, res: Response) => {
     }
     res.write('\n');
 
-    // 4. Section 3: High-Risk / Repeat Clickers
-    res.write(`${escapeCsv('=== รายชื่อพนักงานกลุ่มเสี่ยงสูง (REPEAT OFFENDERS & HIGH RISK) ===')}\n`);
-    res.write(`${escapeCsv('ชื่อ-นามสกุล (Name)')},${escapeCsv('อีเมล (Email)')},${escapeCsv('แผนก (Department)')},${escapeCsv('จำนวนครั้งที่เผลอกรอกข้อมูล (Compromised Count)')},${escapeCsv('จำนวนครั้งที่คลิกลิงก์ (Clicked Count)')}\n`);
+    // 4. Section 3: High-Risk Targets
+    res.write(`${escapeCsv('=== รายชื่อพนักงานกลุ่มเสี่ยงสูง (HIGH-RISK TARGETS) ===')}\n`);
+    res.write(`${escapeCsv('ชื่อ-นามสกุล (Name)')},${escapeCsv('อีเมล (Email)')},${escapeCsv('แผนก (Department)')},${escapeCsv('จำนวนครั้งที่เผลอกรอกข้อมูล (Compromised Count)')},${escapeCsv('จำนวนครั้งที่คลิกลิงก์ (Clicked Count)')},${escapeCsv('สถานะ (Status)')}\n`);
 
     if (metrics.repeatOffenders.length === 0) {
-      res.write(`${escapeCsv('ไม่พบกลุ่มเสี่ยงสูง (ไม่มีพนักงานที่เผลอกรอกข้อมูลหรือคลิกลิงก์ซ้ำซ้อน)')},${escapeCsv('-')},${escapeCsv('-')},${escapeCsv(0)},${escapeCsv(0)}\n`);
+      res.write(`${escapeCsv('ไม่พบกลุ่มเสี่ยงสูง (ไม่มีพนักงานที่มีพฤติกรรมเสี่ยง)')},${escapeCsv('-')},${escapeCsv('-')},${escapeCsv(0)},${escapeCsv(0)},${escapeCsv('-')}\n`);
     } else {
       for (const ro of metrics.repeatOffenders) {
-        res.write(`${escapeCsv(ro.name)},${escapeCsv(ro.email)},${escapeCsv(ro.department)},${escapeCsv(ro.compromisedCount)},${escapeCsv(ro.clickedCount)}\n`);
+        const status = ro.compromisedCount > 0 ? 'Compromised' : 'Repeat Clicker';
+        res.write(`${escapeCsv(ro.name)},${escapeCsv(ro.email)},${escapeCsv(ro.department)},${escapeCsv(ro.compromisedCount)},${escapeCsv(ro.clickedCount)},${escapeCsv(status)}\n`);
       }
     }
 
